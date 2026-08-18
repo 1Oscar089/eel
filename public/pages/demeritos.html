@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deméritos - CE Cantón Los Prados</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/navbar.css" as="style">
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark:#243C4C; --primary-steel:#5289AD; 
+            --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; 
+            --success:#16a34a; --warning:#d97706; --danger:#dc2626; --info:#0284c7;
+            --gap:0.5rem;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .app-content { 
+            height: calc(100vh - 60px) !important; 
+            min-height: 0 !important;
+            width: calc(100vw - 220px) !important; 
+            margin-left: 220px !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex; 
+            flex-direction: column;
+            margin-top: 0 !important; /* CORRECCIÓN: Se elimina el enorme margen blanco superior */
+            -ms-overflow-style: none; 
+            scrollbar-width: none;
+        }
+        .app-content::-webkit-scrollbar { display: none; }
+        @media (max-width: 768px) {
+            .app-content { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: 1rem !important; }
+        }
+
+        .page-header { margin-bottom: var(--gap); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; flex-shrink: 0;}
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; margin: 0; display: flex; align-items: center; gap: 0.5rem;}
+        
+        .year-selector { display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .year-selector label { font-size: 0.75rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .year-selector select { border: none; font-size: 0.9rem; font-weight: 800; color: var(--primary-dark); outline: none; background: transparent; cursor: pointer;}
+        
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap); margin-bottom: var(--gap); flex-shrink: 0; }
+        .kpi-card { background: white; border-radius: 12px; padding: 1rem 1.2rem; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 1rem; transition: 0.2s; }
+        .kpi-card:hover { border-color: var(--primary-steel); transform: translateY(-2px); }
+        .kpi-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
+        .kpi-info { flex: 1; display: flex; flex-direction: column; }
+        .kpi-title { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 0.1rem; }
+        .kpi-value { font-size: 1.4rem; font-weight: 900; color: var(--primary-dark); line-height: 1; }
+        
+        /* ESCALA DE CONSECUENCIAS AJUSTADA A INSTRUMENTO 001 */
+        .scale-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; margin-bottom: var(--gap); box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex-shrink: 0;}
+        .scale-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
+        .scale-label { font-size: 0.8rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem; }
+        .scale-label i { color: var(--warning); font-size: 1.2rem; }
+        .scale-status { font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+        
+        .scale-bar { height: 14px; border-radius: 20px; background: var(--bg-light); overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05); }
+        .scale-fill { height: 100%; border-radius: 20px; transition: width 0.8s ease, background 0.8s ease; }
+        .scale-ticks { display: flex; justify-content: space-between; margin-top: 6px; }
+        .scale-tick { font-size: 0.65rem; font-weight: 800; color: var(--accent); position: relative; }
+        
+        .timeline-container { background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 250px;}
+        .timeline-header { padding: 1rem; border-bottom: 1px solid var(--bg-light); background: #f8fafc; font-size: 0.9rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;}
+        .timeline-header i { font-size: 1.2rem; color: var(--primary-steel); }
+        
+        /* TABLA DE HISTORIAL */
+        .history-table-container { flex: 1; overflow-y: auto; padding: 0.5rem; }
+        .history-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .history-table th { background: white; padding: 0.8rem 1rem; font-size: 0.75rem; color: var(--accent); text-transform: uppercase; border-bottom: 2px solid var(--bg-light); position: sticky; top: 0; z-index: 10; font-weight: 800;}
+        .history-table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--bg-light); font-size: 0.85rem; color: var(--primary-dark); font-weight: 600; vertical-align: middle;}
+        .history-table tr:hover td { background: #f8fafc; }
+        
+        .type-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; display: inline-block; min-width: 85px; text-align: center;}
+        .tb-dem { background: #fee2e2; color: var(--danger); }
+        .tb-red { background: #dcfce7; color: var(--success); }
+        .tb-men { background: #fef3c7; color: var(--warning); }
+
+        .pagination { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; border-top: 1px solid var(--border); background: white; flex-shrink: 0;}
+        .btn-page { background: white; border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 800; color: var(--primary-dark); cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem;}
+        .btn-page:hover:not(:disabled) { background: var(--primary-steel); color: white; border-color: var(--primary-steel); }
+        .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-info { font-size: 0.8rem; font-weight: 800; color: var(--accent); }
+        
+        .empty-state { text-align: center; padding: 4rem 1rem; color: var(--accent); font-size: 0.9rem; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+        .empty-state i { font-size: 2.5rem; color: var(--primary-steel); }
+    </style>
+</head>
+<body>
+<div id="userbar-root"></div>
+<div id="navbar-root"></div>
+<div id="navbar-mobile-root"></div>
+
+<div class="app-content">
+    <div class="page-header">
+        <div>
+            <h1><i class='bx bx-shield-quarter'></i> Deméritos y Conducta</h1>
+        </div>
+        <div class="year-selector">
+            <label><i class='bx bx-calendar'></i> Año Lectivo</label>
+            <select id="yearSelect" onchange="loadConductaData()"></select>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #f8fafc; color: var(--primary-dark); border: 1px solid var(--border);"><i class='bx bx-user-check'></i></div>
+            <div class="kpi-info">
+                <span class="kpi-title">Estado de Conducta</span>
+                <span class="kpi-value" id="kpiEstado">Cargando...</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #fef2f2; color: var(--danger);"><i class='bx bx-shield-x'></i></div>
+            <div class="kpi-info">
+                <span class="kpi-title">Total Deméritos</span>
+                <span class="kpi-value" id="kpiDemeritos">0</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #f0fdf4; color: var(--success);"><i class='bx bx-shield-plus'></i></div>
+            <div class="kpi-info">
+                <span class="kpi-title">Total Redenciones</span>
+                <span class="kpi-value" id="kpiRedenciones">0</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #fef3c7; color: var(--warning);"><i class='bx bxs-medal'></i></div>
+            <div class="kpi-info">
+                <span class="kpi-title">Menciones Honoríficas</span>
+                <span class="kpi-value" id="kpiMenciones">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="scale-card">
+        <div class="scale-header">
+            <span class="scale-label"><i class='bx bxs-error'></i> Escala de Consecuencias (Instrumento 001)</span>
+            <span class="scale-status" id="scaleStatus">Solvente</span>
+        </div>
+        <div class="scale-bar">
+            <div class="scale-fill" id="scaleFill" style="width:0%; background: var(--success);"></div>
+        </div>
+        <div class="scale-ticks">
+            <span class="scale-tick">0</span>
+            <span class="scale-tick">3</span>
+            <span class="scale-tick">6</span>
+            <span class="scale-tick">10</span>
+            <span class="scale-tick" style="color: var(--danger);">15</span>
+        </div>
+        <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--accent); line-height: 1.4; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: space-between;">
+            <span><strong>3 pts:</strong> Reflexión escrita</span>
+            <span><strong>6 pts:</strong> Tarea correctiva</span>
+            <span><strong>10 pts:</strong> Suspensión de privilegios</span>
+            <span><strong>>10 pts:</strong> Reunión de Dirección</span>
+            <span style="color: var(--danger);"><strong>15 pts:</strong> No promovido de grado</span>
+        </div>
+    </div>
+
+    <div class="timeline-container">
+        <div class="timeline-header">
+            <i class='bx bx-history'></i> Historial Detallado de Registros
+        </div>
+        <div class="history-table-container">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Registro</th>
+                        <th style="width: 120px; text-align: center;">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="timelineBody">
+                    <tr><td colspan="2"><div class="empty-state"><i class='bx bx-loader-alt bx-spin'></i><span>Sincronizando registros con el servidor...</span></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <button class="btn-page" id="btnPrev" onclick="changePage(-1)"><i class='bx bx-chevron-left'></i> Anterior</button>
+            <span class="page-info" id="pageInfo">Página 1 de 1</span>
+            <button class="btn-page" id="btnNext" onclick="changePage(1)">Siguiente <i class='bx bx-chevron-right'></i></button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initUserbar } from '../js/userbar.js';
+    import { initNavbar } from '../js/navbar.js';
+    import { auth, db } from '../js/initFirebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+    
+    initNavbar();
+    await initUserbar({ brandHref: '../index.html' });
+    
+    let studentId = null;
+    let demeritosGlobal = [];
+    let redencionesGlobal = [];
+    let mencionesGlobal = [];
+    let mergedTimeline = [];
+    
+    let currentPage = 1;
+    const itemsPerPage = 20;
+    
+    const initYearSelector = () => {
+        const curYear = new Date().getFullYear();
+        const sel = document.getElementById('yearSelect');
+        sel.innerHTML = [curYear, curYear-1, curYear-2, curYear-3].map(y => `<option value="${y}">${y}</option>`).join('');
+    };
+    initYearSelector();
+    
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = '../index.html'; return; }
+        try {
+            const q = query(collection(db, 'users'), where('email', '==', user.email));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                studentId = snap.docs[0].id;
+                await fetchAllMetadata();
+                window.loadConductaData();
+            }
+        } catch (error) {
+            document.getElementById('timelineBody').innerHTML = `<tr><td colspan="2"><div class="empty-state"><i class='bx bx-error-circle'></i><span>Error de conexión. Intente recargar.</span></div></td></tr>`;
+        }
+    });
+    
+    async function fetchAllMetadata() {
+        try {
+            const [dDoc, rDoc, mDoc] = await Promise.all([
+                getDoc(doc(db, "users", studentId, "metadata", "demeritos")),
+                getDoc(doc(db, "users", studentId, "metadata", "redenciones")),
+                getDoc(doc(db, "users", studentId, "metadata", "reconocimientos"))
+            ]);
+            demeritosGlobal = dDoc.exists() ? Object.values(dDoc.data()) : [];
+            redencionesGlobal = rDoc.exists() ? Object.values(rDoc.data()) : [];
+            mencionesGlobal = mDoc.exists() ? Object.values(mDoc.data()) : [];
+        } catch (e) { }
+    }
+    
+    window.loadConductaData = () => {
+        const year = document.getElementById('yearSelect').value;
+        const demAnio = demeritosGlobal.filter(d => d.fecha && d.fecha.startsWith(year));
+        const redAnio = redencionesGlobal.filter(r => r.fecha && r.fecha.startsWith(year));
+        const menAnio = mencionesGlobal.filter(m => String(m.anioAsociado) === String(year) || (m.fecha && m.fecha.startsWith(year)));
+        
+        const totalDem = demAnio.length;
+        const totalRed = redAnio.length;
+        const netPoints = totalDem - totalRed;
+        
+        document.getElementById('kpiDemeritos').innerText = totalDem;
+        document.getElementById('kpiRedenciones').innerText = totalRed;
+        document.getElementById('kpiMenciones').innerText = menAnio.length;
+        
+        const kpiEstado = document.getElementById('kpiEstado');
+        const scaleStatus = document.getElementById('scaleStatus');
+        const scaleFill = document.getElementById('scaleFill');
+        
+        if (netPoints <= 0) {
+            kpiEstado.innerText = "Solvente"; kpiEstado.style.color = "var(--success)";
+            scaleStatus.innerText = "Excelente (0 Pts)"; scaleStatus.style.background = "#dcfce7"; scaleStatus.style.color = "#16a34a";
+            scaleFill.style.width = "0%"; scaleFill.style.background = "var(--success)";
+        } else {
+            kpiEstado.innerText = `${netPoints} Pts. Acumulados`;
+            
+            let pct = (netPoints / 15) * 100;
+            if (pct > 100) pct = 100;
+            scaleFill.style.width = `${pct}%`;
+            
+            if (netPoints >= 15) {
+                kpiEstado.style.color = "var(--danger)";
+                scaleStatus.innerText = "15 Pts: No promovido de grado"; scaleStatus.style.background = "#fee2e2"; scaleStatus.style.color = "#dc2626";
+                scaleFill.style.background = "var(--danger)";
+            } else if (netPoints > 10) {
+                kpiEstado.style.color = "var(--danger)";
+                scaleStatus.innerText = ">10 Pts: Reunión de Dirección"; scaleStatus.style.background = "#fee2e2"; scaleStatus.style.color = "#dc2626";
+                scaleFill.style.background = "var(--danger)";
+            } else if (netPoints >= 10) {
+                kpiEstado.style.color = "var(--warning)";
+                scaleStatus.innerText = "10 Pts: Suspensión de privilegios"; scaleStatus.style.background = "#fef3c7"; scaleStatus.style.color = "#d97706";
+                scaleFill.style.background = "var(--warning)";
+            } else if (netPoints >= 6) {
+                kpiEstado.style.color = "var(--primary-steel)";
+                scaleStatus.innerText = "6 Pts: Tarea correctiva y aviso"; scaleStatus.style.background = "#e0f2fe"; scaleStatus.style.color = "#0369a1";
+                scaleFill.style.background = "var(--primary-steel)";
+            } else if (netPoints >= 3) {
+                kpiEstado.style.color = "var(--primary-steel)";
+                scaleStatus.innerText = "3 Pts: Advertencia y reflexión"; scaleStatus.style.background = "#e0f2fe"; scaleStatus.style.color = "#0369a1";
+                scaleFill.style.background = "var(--primary-steel)";
+            } else {
+                kpiEstado.style.color = "var(--primary-dark)";
+                scaleStatus.innerText = "Regular"; scaleStatus.style.background = "var(--bg-light)"; scaleStatus.style.color = "var(--primary-dark)";
+                scaleFill.style.background = "var(--success)";
+            }
+        }
+        
+        mergedTimeline = [
+            ...demAnio.map(d => ({ ...d, tipoVisual: 'demerito' })),
+            ...redAnio.map(r => ({ ...r, tipoVisual: 'redencion' })),
+            ...menAnio.map(m => ({ ...m, tipoVisual: 'mencion' }))
+        ];
+        
+        mergedTimeline.sort((a, b) => {
+            const dateA = new Date(a.fecha || a.timestamp).getTime() + (a.timestamp || 0);
+            const dateB = new Date(b.fecha || b.timestamp).getTime() + (b.timestamp || 0);
+            return dateB - dateA; 
+        });
+        
+        currentPage = 1;
+        renderTimelinePage();
+    };
+    
+    window.changePage = (dir) => {
+        currentPage += dir;
+        renderTimelinePage();
+    };
+    
+    function renderTimelinePage() {
+        const tbody = document.getElementById('timelineBody');
+        const totalItems = mergedTimeline.length;
+        
+        if (totalItems === 0) {
+            tbody.innerHTML = `
+                <tr><td colspan="2"><div class="empty-state">
+                    <i class='bx bx-check-shield'></i>
+                    <span>¡Excelente! No tienes registros en este año lectivo.</span>
+                </div></td></tr>`;
+            document.getElementById('pageInfo').innerText = "Página 1 de 1";
+            document.getElementById('btnPrev').disabled = true;
+            document.getElementById('btnNext').disabled = true;
+            return;
+        }
+        
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedItems = mergedTimeline.slice(start, end);
+        
+        let html = '';
+        paginatedItems.forEach(item => {
+            let badgeClass, badgeText, title;
+            
+            if (item.tipoVisual === 'demerito') {
+                badgeClass = 'tb-dem'; badgeText = 'Demérito';
+                title = item.descripcion || item.causal || `Falta Literal ${item.letra || '?'}`;
+            } else if (item.tipoVisual === 'redencion') {
+                badgeClass = 'tb-red'; badgeText = 'Redención';
+                title = item.descripcion || item.causal || `Redención Literal ${item.letra || '?'}`;
+            } else if (item.tipoVisual === 'mencion') {
+                badgeClass = 'tb-men'; badgeText = 'Mención';
+                title = item.descripcion || 'Mención Honorífica';
+            }
+            
+            let visualDate = item.fecha;
+            if (visualDate && visualDate.includes('-')) {
+                const [y, m, d] = visualDate.split('-');
+                visualDate = `${d}/${m}/${y}`;
+            }
+            
+            html += `
+                <tr>
+                    <td>
+                        <span class="type-badge ${badgeClass}">${badgeText}</span>
+                        <span style="margin-left: 0.8rem;">${title}</span>
+                    </td>
+                    <td style="text-align: center; color: var(--accent);">${visualDate || 'S/F'}</td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        document.getElementById('pageInfo').innerText = `Página ${currentPage} de ${totalPages}`;
+        document.getElementById('btnPrev').disabled = (currentPage === 1);
+        document.getElementById('btnNext').disabled = (currentPage === totalPages);
+    }
+</script>
+</body>
+</html>

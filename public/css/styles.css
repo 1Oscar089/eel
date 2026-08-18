@@ -1,0 +1,440 @@
+/* ==========================================================================
+   HOJA DE ESTILOS GLOBAL - CE CANTÓN LOS PRADOS (ICONIC EDITION)
+   ========================================================================== */
+
+/* 1. VARIABLES GLOBALES (Paleta de Colores y Espaciados) */
+:root { 
+    --primary-dark: #243C4C; 
+    --primary-steel: #5289AD; 
+    --accent: #698696; 
+    --border: #ACBCBF; 
+    --bg-light: #F4FCFB; 
+    --success: #16a34a; 
+    --warning: #d97706; 
+    --danger: #dc2626; 
+    --info: #3b82f6;
+    --gap: 1rem; 
+    --gap-sm: 0.5rem;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.02);
+    --shadow-md: 0 4px 15px rgba(0,0,0,0.03);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+    --shadow-modal: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* 2. RESET Y TIPOGRAFÍA BASE */
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important; 
+}
+
+html, body { 
+    background: var(--bg-light); 
+    color: var(--primary-dark); 
+    width: 100vw; 
+    max-width: 100%; 
+    overflow-x: hidden; 
+}
+
+/* 3. LAYOUT PRINCIPAL */
+.admin-main { 
+    height: calc(100vh - 60px); 
+    width: 100%; 
+    max-width: 100%; 
+    overflow-y: auto; 
+    overflow-x: hidden; 
+    padding: var(--gap); 
+    display: flex; 
+    flex-direction: column; 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+.admin-main::-webkit-scrollbar { display: none; }
+
+.page-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: var(--gap); 
+    flex-wrap: wrap; 
+    gap: var(--gap-sm); 
+    flex-shrink: 0;
+}
+.page-header h1 { 
+    font-size: 1.5rem; 
+    font-weight: 800; 
+    letter-spacing: -0.5px; 
+    display: flex; 
+    align-items: center; 
+    gap: var(--gap-sm);
+}
+
+/* 4. TARJETAS Y CONTENEDORES (CARDS) */
+.card, .panel-card, .controls-card, .form-card, .list-card { 
+    background: white; 
+    padding: 1.2rem; 
+    border-radius: var(--border-radius-lg); 
+    border: 1px solid var(--border); 
+    margin-bottom: var(--gap); 
+    box-shadow: var(--shadow-md); 
+    flex-shrink: 0;
+}
+.card h2, .form-card h2, .list-card h2 { 
+    font-size: 1.1rem; 
+    font-weight: 800; 
+    color: var(--primary-steel); 
+    margin-bottom: 1rem; 
+    display: flex; 
+    align-items: center; 
+    gap: var(--gap-sm); 
+}
+
+/* 5. FORMULARIOS E INPUTS */
+.form-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: var(--gap); 
+}
+.form-group { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 0.3rem; 
+    flex: 1; 
+}
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group label { 
+    font-size: 0.65rem; 
+    font-weight: 800; 
+    color: var(--primary-steel); 
+    text-transform: uppercase; 
+}
+.form-group input, .form-group select, .form-group textarea { 
+    padding: 0.7rem 0.8rem; 
+    border: 1px solid var(--border); 
+    border-radius: var(--border-radius-md); 
+    outline: none; 
+    font-size: 0.85rem; 
+    font-weight: 700; 
+    color: var(--primary-dark); 
+    background: white; 
+    transition: all 0.2s ease; 
+    width: 100%; 
+    font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+    border-color: var(--primary-steel); 
+    box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); 
+}
+.form-group input:disabled, .form-group input[readonly], .form-group select:disabled { 
+    background: #f8fafc; 
+    color: #475569; 
+    border-color: #cbd5e1; 
+    cursor: not-allowed; 
+}
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+/* Buscador genérico */
+.search-wrapper { 
+    display: flex; 
+    align-items: center; 
+    background: white; 
+    border: 1px solid var(--border); 
+    border-radius: var(--border-radius-md); 
+    padding: 0 0.8rem; 
+    flex: 3; 
+    min-width: 250px; 
+    transition: 0.2s; 
+}
+.search-wrapper:focus-within { border-color: var(--primary-steel); }
+.search-wrapper i { color: var(--accent); font-size: 1.2rem; }
+.search-wrapper input { 
+    border: none; 
+    padding: 0.7rem 0.5rem; 
+    outline: none; 
+    flex: 1; 
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    color: var(--primary-dark); 
+    background: transparent; 
+}
+
+/* 6. BOTONES */
+.btn-primary, .btn-save-text { 
+    background: var(--primary-dark); 
+    color: white; 
+    padding: 0.7rem 1.2rem; 
+    border-radius: var(--border-radius-md); 
+    font-weight: 800; 
+    font-size: 0.85rem; 
+    cursor: pointer; 
+    border: none; 
+    transition: 0.2s; 
+    display: inline-flex; 
+    justify-content: center; 
+    align-items: center; 
+    gap: 0.5rem; 
+}
+.btn-primary:hover, .btn-save-text:hover { 
+    background: var(--primary-steel); 
+    transform: translateY(-1px); 
+    box-shadow: 0 4px 10px rgba(82, 137, 173, 0.2); 
+}
+.btn-primary:disabled, .btn-save-text:disabled { 
+    opacity: 0.6; 
+    cursor: not-allowed; 
+    transform: none; 
+    box-shadow: none; 
+}
+
+/* Botones Cuadrados (Acciones, Editar, Borrar) */
+.btn-sq { 
+    width: 32px; height: 32px; 
+    border-radius: 6px; 
+    display: flex; align-items: center; justify-content: center; 
+    font-size: 1.1rem; cursor: pointer; border: none; transition: 0.2s; flex-shrink: 0;
+}
+.btn-sq-close { background: #f1f5f9; color: #64748b; }
+.btn-sq-close:hover { background: #e2e8f0; color: var(--danger); }
+.btn-sq-edit { background: #eff6ff; color: var(--info); }
+.btn-sq-edit:hover { background: #dbeafe; }
+.btn-sq-delete { background: #fef2f2; color: var(--danger); }
+.btn-sq-delete:hover { background: #fee2e2; }
+
+/* 7. TABLAS */
+.table-container { 
+    background: white; 
+    border-radius: var(--border-radius-lg); 
+    border: 1px solid var(--border); 
+    overflow-x: auto; 
+    flex: 1; 
+    width: 100%; 
+}
+.list-table { width: 100%; border-collapse: collapse; min-width: 750px; }
+.list-table th, .list-table td { 
+    padding: 0.6rem 0.8rem; 
+    text-align: left; 
+    border-bottom: 1px solid var(--border); 
+    vertical-align: middle; 
+}
+.list-table th { 
+    font-size: 0.65rem; 
+    font-weight: 800; 
+    color: var(--accent); 
+    text-transform: uppercase; 
+    background: #f8fafc; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+}
+.list-table td { font-size: 0.85rem; color: var(--primary-dark); transition: 0.2s; }
+.list-table tbody tr { cursor: pointer; transition: 0.2s; }
+.list-table tbody tr:hover { background: #f0f8ff; }
+
+/* 8. ETIQUETAS (BADGES) Y TEXTOS AUXILIARES */
+.badge { 
+    padding: 0.3rem 0.6rem; 
+    border-radius: 6px; 
+    font-weight: 800; 
+    font-size: 0.75rem; 
+    font-family: monospace; 
+    display: inline-block; 
+    text-align: center; 
+}
+.b-success { background: #dcfce7; color: var(--success); }
+.b-danger { background: #fee2e2; color: var(--danger); }
+.b-warning { background: #fef3c7; color: var(--warning); }
+.b-info { background: #e0f2fe; color: var(--info); }
+.empty-state { 
+    text-align: center; 
+    padding: 3rem; 
+    color: var(--accent); 
+    font-size: 0.85rem; 
+    font-style: italic; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 0.5rem; 
+}
+.empty-state i { font-size: 2.5rem; color: var(--border); }
+
+/* ==========================================================================
+   SISTEMAS FLOTANTES (MODALES Y TOASTS)
+   ========================================================================== */
+
+/* 9. VENTANAS MODALES */
+.modal-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(36, 60, 76, 0.6); 
+    display: none; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 3000; 
+    padding: 1rem; 
+    backdrop-filter: blur(3px); 
+    animation: fadeIn 0.2s ease;
+}
+.modal-overlay.active { display: flex; }
+.modal { 
+    background: white; 
+    padding: 1.8rem; 
+    border-radius: var(--border-radius-xl); 
+    width: 100%; 
+    max-width: 500px; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+    overflow-x: hidden; 
+    position: relative; 
+    box-shadow: var(--shadow-modal); 
+    display: flex; 
+    flex-direction: column; 
+}
+.modal-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    margin-bottom: 1rem; 
+    border-bottom: 1px solid var(--bg-light); 
+    padding-bottom: 1rem; 
+}
+.modal-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); margin: 0; }
+.modal-header p { font-size: 0.8rem; color: var(--accent); font-weight: 600; margin-top: 0.2rem;}
+
+.modal-actions { 
+    display: flex; 
+    gap: 0.6rem; 
+    justify-content: flex-end; 
+    align-items: center; 
+    border-top: 1px solid var(--bg-light); 
+    padding-top: 1rem; 
+    margin-top: 1.5rem; 
+    flex-shrink: 0;
+}
+
+.btn-close-absolute { 
+    position: absolute; 
+    top: 1rem; 
+    right: 1rem; 
+    background: #f1f5f9; 
+    border: none; 
+    font-size: 1.5rem; 
+    color: var(--accent); 
+    cursor: pointer; 
+    border-radius: 8px; 
+    width: 32px; 
+    height: 32px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: 0.2s;
+    z-index: 10;
+}
+.btn-close-absolute:hover { background: #e2e8f0; color: var(--danger); }
+
+/* 10. NOTIFICACIONES EFÍMERAS (TOASTS) */
+#toast-container { 
+    position: fixed; 
+    top: 20px; 
+    right: 20px; 
+    z-index: 9999; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    pointer-events: none; 
+}
+.toast { 
+    min-width: 250px; 
+    padding: 1rem 1.5rem; 
+    border-radius: 10px; 
+    color: white; 
+    font-weight: 700; 
+    font-size: 0.9rem; 
+    box-shadow: var(--shadow-lg); 
+    display: flex; 
+    align-items: center; 
+    gap: 0.8rem; 
+    pointer-events: auto;
+    animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), fadeOut 0.5s 4.5s forwards; 
+}
+.toast.success { background: var(--success); border-left: 6px solid #065f46; }
+.toast.error { background: var(--danger); border-left: 6px solid #991b1b; }
+.toast.warning { background: var(--warning); border-left: 6px solid #b45309; color: white;}
+.toast.info { background: var(--info); border-left: 6px solid #1e40af; }
+
+@keyframes slideIn { 
+    from { transform: translateX(120%); opacity: 0; } 
+    to { transform: translateX(0); opacity: 1; } 
+}
+@keyframes fadeOut { 
+    to { opacity: 0; transform: translateY(-20px); } 
+}
+
+/* ==========================================================================
+   DISEÑO RESPONSIVO MULTIPANTALLA
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .page-header h1 { font-size: 1.3rem; }
+}
+
+@media (max-width: 768px) {
+    .desktop-only { display: none !important; }
+    
+    .admin-main { padding: var(--gap-sm) !important; padding-bottom: 90px !important; }
+    .card, .panel-card, .form-card, .list-card { padding: 1rem; gap: 0.5rem;}
+    
+    .page-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .page-header h1 { font-size: 1.2rem; }
+
+    .form-grid { grid-template-columns: 1fr; gap: 0.6rem; }
+    .form-group label { font-size: 0.6rem; }
+    .form-group input, .form-group select, .form-group textarea { padding: 0.6rem; font-size: 0.85rem; }
+
+    .btn-primary, .btn-save-text { width: 100%; justify-content: center; padding: 0.8rem; }
+    .search-wrapper { min-width: 100%; }
+
+    /* TABLAS RESPONSIVAS */
+    .table-container { border-radius: 8px; margin-top: 0;}
+    .list-table { min-width: 100% !important; table-layout: fixed; }
+    .list-table th, .list-table td { padding: 0.5rem 0.3rem; word-wrap: break-word; white-space: normal; }
+    .list-table th { font-size: 0.55rem; text-align: center;}
+    .list-table td { font-size: 0.75rem; text-align: center; line-height: 1.2; }
+    .badge { font-size: 0.65rem; min-width: 50px; padding: 0.2rem; }
+    
+    /* MODALES */
+    .modal { padding: 1.2rem; width: 95%; max-height: 95vh; border-radius: 12px; }
+    .modal-header h2 { font-size: 1.1rem; margin-bottom: 0.5rem; padding-right: 2rem;}
+    .modal-actions { flex-direction: column-reverse; gap: 0.5rem; }
+    .modal-actions button { width: 100%; height: 40px; }
+    
+    /* CORRECCIÓN: Botones cuadrados en móviles NO se estiran */
+    .btn-sq { width: 32px !important; height: 32px !important; flex-shrink: 0 !important; border-radius: 6px; font-size: 1.1rem; }
+    
+    #toast-container { top: 10px; right: 10px; left: 10px; align-items: stretch; }
+    .toast { min-width: 100%; font-size: 0.8rem; padding: 0.8rem 1rem;}
+}
+
+@media (max-width: 375px) {
+    :root { --gap: 0.4rem; --gap-sm: 0.3rem; }
+    .admin-main { padding: var(--gap-sm) !important; padding-bottom: 90px !important; }
+    
+    .list-table th { font-size: 0.45rem !important; padding: 0.3rem 0.1rem; }
+    .list-table td { font-size: 0.6rem !important; padding: 0.3rem 0.1rem; }
+    
+    .form-group label { font-size: 0.5rem; }
+    .form-group input, .form-group select { padding: 0.5rem; font-size: 0.75rem; height: 35px; }
+    
+    .badge { font-size: 0.55rem; min-width: 45px; }
+    
+    .modal { padding: 1rem; width: 98%; }
+    .modal-header h2 { font-size: 1rem; }
+    
+    .empty-state { padding: 1.5rem; font-size: 0.7rem; }
+    .empty-state i { font-size: 2rem; }
+}

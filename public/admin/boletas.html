@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generación de Boletas - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <!-- LIBRERÍAS PARA GENERACIÓN DE PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; }
+
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 800; font-size: 0.95rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;}
+        .btn-primary:hover:not(:disabled) { background: var(--primary-steel); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .form-group select, .form-group input { padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.95rem; font-weight: 700; background: white; width: 100%; color: var(--primary-dark); font-family: inherit; transition: 0.2s;}
+        .form-group select:focus, .form-group input:focus { border-color: var(--primary-steel); }
+        .form-group select:disabled { background: #f8fafc; color: #64748b; cursor: not-allowed; }
+
+        .info-msg { background: #e0f2fe; color: var(--primary-steel); padding: 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #bae6fd; margin-bottom: 1rem;}
+
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .form-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+            .form-group select, .form-group input { padding: 0.6rem; font-size: 0.85rem; min-height: 44px; }
+            .card { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bxs-file-pdf'></i> Generación de Boletas Anuales</h1>
+            </div>
+
+            <div class="info-msg">
+                <i class='bx bx-info-circle' style="font-size: 1.2rem;"></i>
+                Este módulo generará un PDF de boletas optimizado para tamaño Oficio (Legal), acomodando 6 boletas por página. Las notas faltantes se rellenarán automáticamente con 0.0 o un guión.
+            </div>
+
+            <div class="card">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>1. Año Lectivo</label>
+                        <input type="number" id="vYear" onchange="resetAndLoadData()" title="Ingrese el año">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>2. Grado</label>
+                        <select id="vGrade" onchange="onGradeChange()">
+                            <option value="" disabled selected>Cargando grados...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="containerDocente" style="display: none;">
+                        <label>3. Docente a cargo de la firma</label>
+                        <select id="vDocente">
+                            <option value="" disabled selected>Seleccione docente...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btnGenerar" onclick="generarYDescargar()" disabled>
+                    <i class='bx bxs-download'></i> Generar y Descargar PDF
+                </button>
+            </div>
+            
+        </main>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const { jsPDF } = window.jspdf;
+        const LOGO_URL = "../img/logo_mined.png"; // Usar variable del logo oficial
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        let allStudents = [];
+        let allGrades = {};
+        let allSubs = {};
+        let allDocentes = [];
+        
+        let userRole = null;
+        let userGrades = [];
+        let isAdmin = false;
+
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+        const getKeys = (fn) => { 
+            const w = fn.toLowerCase().split(/\s+/).filter(x => !['de','del','la','las','los','y'].includes(x)); 
+            return { a1: w[w.length-2] || w[0], a2: w[w.length-1] || '', n1: w[0] }; 
+        };
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        document.getElementById('vYear').value = new Date().getFullYear();
+
+        onAuthStateChanged(auth, async (u) => {
+            if (!u) { window.location.href = '../index.html'; return; }
+            
+            // Cargar docentes
+            onSnapshot(collection(db, 'docentes'), (snap) => {
+                allDocentes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const myProfile = allDocentes.find(d => d.correo === u.email);
+                if (myProfile) {
+                    userRole = (myProfile.cargo || '').toLowerCase();
+                    userGrades = (myProfile.grados || []).map(String);
+                    isAdmin = ['director', 'subdirector'].includes(userRole);
+                }
+                buildGradeDropdown();
+            });
+
+            onSnapshot(doc(db, "control", "asignaturas"), (s) => { if(s.exists()) allSubs = s.data(); });
+            onSnapshot(doc(db, "control", "grados"), (s) => { 
+                if(s.exists()) allGrades = s.data(); 
+                buildGradeDropdown(); 
+            });
+
+            onSnapshot(collection(db, "users"), (snap) => {
+                allStudents = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(s => s.nombreCompleto && !s.archivado);
+            });
+        });
+
+        function buildGradeDropdown() {
+            if (!allGrades || Object.keys(allGrades).length === 0 || !userRole) return;
+            
+            const sel = document.getElementById('vGrade');
+            const allowed = isAdmin ? Object.keys(allGrades) : userGrades;
+            const sorted = allowed.sort((a,b) => parseInt(a) - parseInt(b));
+            
+            const opts = sorted.map(id => `<option value="${id}">${cap(allGrades[id]?.nombre || `Grado ${id}`)}</option>`).join('');
+            
+            sel.innerHTML = '<option value="" disabled selected>Seleccione un grado...</option>' + opts;
+        }
+
+        window.onGradeChange = () => {
+            const g = document.getElementById('vGrade').value;
+            const containerDoc = document.getElementById('containerDocente');
+            const selDocente = document.getElementById('vDocente');
+            const btnGenerar = document.getElementById('btnGenerar');
+
+            if (!g) {
+                containerDoc.style.display = 'none';
+                btnGenerar.disabled = true;
+                return;
+            }
+
+            const docentesCargo = allDocentes.filter(d => {
+                const gs = (d.grados || d.gradosAsignados || []).map(String);
+                return gs.includes(String(g));
+            });
+
+            selDocente.innerHTML = '';
+            
+            if (docentesCargo.length === 0) {
+                selDocente.innerHTML = `<option value="Docente Encargado">Sin docente asignado (Usar "Docente Encargado")</option>`;
+                containerDoc.style.display = 'none';
+            } else if (docentesCargo.length === 1) {
+                const name = docentesCargo[0].nombre || docentesCargo[0].name || docentesCargo[0].correo;
+                selDocente.innerHTML = `<option value="${name}" selected>${name}</option>`;
+                containerDoc.style.display = 'none';
+            } else {
+                docentesCargo.forEach(d => {
+                    const name = d.nombre || d.name || d.correo;
+                    selDocente.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+                containerDoc.style.display = 'flex';
+            }
+            
+            btnGenerar.disabled = false;
+        };
+
+        window.resetAndLoadData = () => {
+            document.getElementById('vGrade').value = "";
+            document.getElementById('containerDocente').style.display = 'none';
+            document.getElementById('btnGenerar').disabled = true;
+        };
+
+        // LÓGICA PRINCIPAL DE PDF
+        window.generarYDescargar = async () => {
+            const y = document.getElementById('vYear').value;
+            const g = document.getElementById('vGrade').value;
+            const docenteFirma = document.getElementById('vDocente').value || "Docente Encargado";
+            
+            const btn = document.getElementById('btnGenerar');
+
+            if (!y || !g) return;
+
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Construyendo documento...";
+
+            // Obtener estudiantes del grado
+            const cohort = allStudents.filter(s => 
+                (y === String(new Date().getFullYear()) && String(s.grade) === String(g)) || 
+                s.calificaciones_history?.[y] === g
+            ).sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto); 
+                const kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); 
+            });
+
+            if(cohort.length === 0) {
+                showToast("No hay estudiantes registrados en este grado.", "error");
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bxs-download'></i> Generar y Descargar PDF";
+                return;
+            }
+
+            const cyc = parseInt(g) <= 3 ? "primer_ciclo" : parseInt(g) <= 6 ? "segundo_ciclo" : "tercer_ciclo";
+            const subjects = allSubs[cyc] || [];
+            const gradoNombre = cap(allGrades[g]?.nombre || `Grado ${g}`);
+
+            try {
+                // Instanciar jsPDF (Oficio/Legal: 215.9 x 355.6 mm, Portrato)
+                const docPdf = new jsPDF('p', 'mm', 'legal');
+                
+                let count = 0; // Índice de la boleta general
+
+                for (let i = 0; i < cohort.length; i++) {
+                    const s = cohort[i];
+                    
+                    // Si ya dibujamos 6 boletas, crear nueva página
+                    if (count > 0 && count % 6 === 0) {
+                        docPdf.addPage();
+                    }
+
+                    // Coordenadas (2 Columnas x 3 Filas)
+                    const posEnPagina = count % 6;
+                    const col = posEnPagina % 2; 
+                    const row = Math.floor(posEnPagina / 2);
+                    
+                    // Dimensiones por boleta: ancho 95mm, alto 105mm, con gap
+                    const cardX = 10 + (col * 100); 
+                    const cardY = 10 + (row * 110); 
+                    const cardW = 95;
+                    const cardH = 105;
+
+                    // Dibujar borde de la boleta
+                    docPdf.setDrawColor(0, 0, 0);
+                    docPdf.setLineWidth(0.3);
+                    docPdf.roundedRect(cardX, cardY, cardW, cardH, 2, 2);
+
+                    // --- ENCABEZADO DE LA BOLETA ---
+                    // Ajuste de Logo a formato rectangular para evitar aplastamiento
+                    try { docPdf.addImage(LOGO_URL, 'PNG', cardX + 2, cardY + 2, 18, 10); } catch(e){}
+
+                    docPdf.setFontSize(8); 
+                    docPdf.setFont("helvetica", "bold");
+                    docPdf.text("CENTRO ESCOLAR CANTÓN LOS PRADOS", cardX + 50, cardY + 6, {align: "center"});
+                    
+                    docPdf.setFontSize(7); 
+                    docPdf.setFont("helvetica", "normal");
+                    docPdf.text("Boleta de Calificaciones Oficial", cardX + 50, cardY + 10, {align: "center"});
+
+                    // Línea divisoria encabezado
+                    docPdf.setLineWidth(0.1);
+                    docPdf.line(cardX + 2, cardY + 15, cardX + cardW - 2, cardY + 15);
+
+                    // --- CUERPO Y TEXTO DESCRIPTIVO ---
+                    const textoDesc = `El Centro Escolar Cantón Los Prados, código 10856, del distrito La Laguna, Chalatenango Sur, Chalatenango, hace constar que el Estudiante ${cap(s.nombreCompleto)}, con NIE ${s.nie || s.NIE || '---'}, de ${gradoNombre}, hasta la fecha ha obtenido las siguientes calificaciones:`;
+                    
+                    docPdf.setFontSize(7);
+                    const splitText = docPdf.splitTextToSize(textoDesc, cardW - 4);
+                    docPdf.text(splitText, cardX + 2, cardY + 19);
+
+                    // --- DESCARGAR Y CALCULAR CALIFICACIONES ---
+                    let sD = {};
+                    try {
+                        const snap = await getDoc(doc(db, "users", s.id, "metadata", "calificaciones"));
+                        if(snap.exists()) sD = snap.data()?.[y] || {};
+                    } catch(e) {}
+
+                    let tableData = [];
+                    subjects.forEach(sub => {
+                        const t1 = parseFloat(sD['1']?.[sub]?.total) || 0;
+                        const t2 = parseFloat(sD['2']?.[sub]?.total) || 0;
+                        const t3 = parseFloat(sD['3']?.[sub]?.total) || 0;
+                        const r1 = sD['r1']?.[sub]?.total;
+                        const r2 = sD['r2']?.[sub]?.total;
+                        
+                        let nf = (t1 + t2 + t3) / 3;
+                        if (r1 !== undefined && parseFloat(r1) > nf) nf = parseFloat(r1);
+                        if (r2 !== undefined && parseFloat(r2) > nf) nf = parseFloat(r2);
+
+                        tableData.push([
+                            cap(sub),
+                            t1.toFixed(1),
+                            t2.toFixed(1),
+                            t3.toFixed(1),
+                            r1 !== undefined && r1 !== null ? parseFloat(r1).toFixed(1) : '-',
+                            r2 !== undefined && r2 !== null ? parseFloat(r2).toFixed(1) : '-',
+                            nf.toFixed(1)
+                        ]);
+                    });
+
+                    // Dibujar Tabla (7 Columnas)
+                    docPdf.autoTable({
+                        startY: cardY + 34,
+                        margin: { left: cardX + 2 },
+                        tableWidth: cardW - 4,
+                        head: [['Asignatura', 'T1', 'T2', 'T3', 'R1', 'R2', 'NF']],
+                        body: tableData,
+                        theme: 'grid',
+                        styles: { fontSize: 6, cellPadding: 1, halign: 'center', minCellHeight: 4, textColor: [0,0,0], lineColor: [0,0,0], lineWidth: 0.1 },
+                        columnStyles: { 0: { halign: 'left', cellWidth: 32, fontStyle: 'bold' } },
+                        headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' }
+                    });
+
+                    // --- FIRMA AL PIE DE LA BOLETA ---
+                    const sigY = cardY + 95;
+                    docPdf.setLineWidth(0.2);
+                    docPdf.line(cardX + 20, sigY, cardX + 75, sigY);
+                    docPdf.setFontSize(6);
+                    docPdf.setFont("helvetica", "bold");
+                    docPdf.text("Firma del Docente", cardX + 47.5, sigY + 3, {align: "center"});
+                    docPdf.text(docenteFirma, cardX + 47.5, sigY + 6, {align: "center"});
+
+                    count++;
+                }
+
+                // Guardar PDF
+                docPdf.save(`Boletas_${gradoNombre}_${y}.pdf`);
+                showToast("PDF descargado correctamente.");
+
+            } catch (error) {
+                console.error("Error al generar PDF:", error);
+                showToast("Hubo un error al generar el PDF.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bxs-download'></i> Generar y Descargar PDF";
+            }
+        };
+
+    </script>
+</body>
+</html>

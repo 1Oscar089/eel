@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calificaciones - CE Cantón Los Prados</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/navbar.css" as="style">
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        :root {
+            --primary-dark:#243C4C; --primary-steel:#5289AD;
+            --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB;
+            --success:#16a34a; --warning:#d97706; --danger:#dc2626;
+            --gap:0.5rem;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        .app-content {
+            height: calc(100vh - 60px) !important;
+            min-height: 0 !important;
+            width: calc(100vw - 220px) !important;
+            margin-left: 220px !important;
+            padding: var(--gap) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            display: flex;
+            flex-direction: column;
+            margin-top: 0 !important; 
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .app-content::-webkit-scrollbar { display: none; }
+        @media (max-width: 768px) {
+            .app-content { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: 1rem !important; }
+        }
+        
+        .page-header { margin-bottom: var(--gap); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; flex-shrink: 0;}
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; margin: 0; display: flex; align-items: center; gap: 0.5rem;}
+        
+        .year-selector { display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .year-selector label { font-size: 0.75rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .year-selector select { border: none; font-size: 0.9rem; font-weight: 800; color: var(--primary-dark); outline: none; background: transparent; cursor: pointer;}
+        
+        .period-tabs { display: flex; gap: 0.5rem; margin-bottom: var(--gap); flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.2rem; -ms-overflow-style: none; scrollbar-width: none; flex-shrink: 0;}
+        .period-tabs::-webkit-scrollbar { display: none; }
+        .period-tab { padding: 0.5rem 1.2rem; border-radius: 8px; font-size: 0.85rem; font-weight: 800; cursor: pointer; border: 1px solid var(--border); background: white; color: var(--accent); transition: 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 0.4rem;}
+        .period-tab.active { background: var(--primary-dark); color: white; border-color: var(--primary-dark); box-shadow: 0 4px 10px rgba(36, 60, 76, 0.15);}
+        .period-tab:hover:not(.active) { border-color: var(--primary-steel); color: var(--primary-steel); }
+
+        .tab-warning { background: #fffbeb; color: var(--warning); border-color: #fde68a; }
+        .tab-warning:hover { background: #fef3c7; border-color: #fcd34d; color: #b45309; }
+        
+        .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--gap); margin-bottom: var(--gap); flex-shrink: 0; }
+        .summary-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; }
+        .summary-label { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.3rem;}
+        .summary-value { font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--primary-dark); }
+        .val-good { color: var(--success); }
+        .val-warn { color: var(--warning); }
+        .val-bad { color: var(--danger); }
+        
+        .table-card { background: white; border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex: 1; min-height: 250px;}
+        table { width: 100%; border-collapse: collapse; min-width: 600px;}
+        thead th { padding: 0.8rem; text-align: center; font-size: 0.7rem; font-weight: 800; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.5px; background: #f8fafc; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 10;}
+        thead th:first-child { text-align: left; left: 0; z-index: 11;}
+        tbody tr { border-bottom: 1px solid var(--bg-light); transition: background 0.15s; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody td { padding: 0.6rem; font-size: 0.85rem; text-align: center; vertical-align: middle; }
+        
+        .sticky-main { text-align: left; padding-left: 1rem !important; position: sticky; left: 0; background: white; border-right: 1px solid var(--border); width: 160px; font-size: 0.8rem; font-weight: 700; color: var(--primary-dark); z-index: 5;}
+        .subject-cell { display: flex; align-items: center; gap: 0.6rem; font-weight: 800; color: var(--primary-dark); font-size: 0.8rem; }
+        
+        .grade-pill { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 45px; padding: 0.3rem 0.5rem; border-radius: 8px; font-weight: 900; font-size: 0.95rem; font-family: monospace; }
+        .grade-pct { font-size: 0.55rem; font-weight: 800; opacity: 0.7; margin-bottom: 2px; font-family: 'Segoe UI', sans-serif;}
+        
+        .gp-good { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0;}
+        .gp-warn { background: #fffbeb; color: var(--warning); border: 1px solid #fde68a;}
+        .gp-bad { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca;}
+        .gp-null { background: var(--bg-light); color: var(--accent); border: 1px dashed var(--border); font-weight: 500;}
+        .gp-final { box-shadow: 0 2px 5px rgba(0,0,0,0.1); transform: scale(1.05); }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--accent); font-size: 0.85rem; font-style: italic; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+        .empty-state i { font-size: 2.5rem; color: var(--border); }
+
+        /* MODALES */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; padding: 1.8rem; border-radius: 12px; width: 100%; max-width: 500px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column;}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-shrink: 0; }
+        .modal-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem; margin: 0;}
+        .btn-close-absolute { background: transparent; border: none; font-size: 1.5rem; color: var(--accent); cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;}
+        .btn-close-absolute:hover { color: var(--danger); }
+        .modal-body { overflow-y: auto; flex: 1; padding-right: 0.5rem; }
+        .info-msg { background: #e0f2fe; color: var(--primary-steel); padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; border: 1px solid #bae6fd; margin-bottom: 1rem; line-height: 1.4;}
+        
+        .badge { padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 800; font-size: 0.75rem; display: inline-block; text-align: center; min-width: 70px;}
+        .b-success { background: #dcfce7; color: #16a34a; }
+        .b-danger { background: #fee2e2; color: #dc2626; }
+        .b-warning { background: #fef3c7; color: #d97706; }
+
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+        @media (max-width: 768px) {
+            .modal { padding: 1.2rem; width: 95%; max-height: 95vh; border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+<div id="userbar-root"></div>
+<div id="navbar-root"></div>
+<div id="navbar-mobile-root"></div>
+<div class="app-content">
+    <div class="page-header">
+        <div>
+            <h1><i class='bx bx-task'></i> Mis Calificaciones</h1>
+        </div>
+        
+        <div class="year-selector">
+            <label><i class='bx bx-calendar'></i> Año Lectivo</label>
+            <select id="yearSelect" onchange="loadGradesData()"></select>
+        </div>
+    </div>
+    
+    <div class="period-tabs" id="tabsContainer">
+        <button class="period-tab active" data-period="anual" onclick="switchPeriod('anual')"><i class='bx bx-bar-chart-alt-2'></i> Anual (Promedio)</button>
+        <button class="period-tab" data-period="1" onclick="switchPeriod('1')">1° Trimestre</button>
+        <button class="period-tab" data-period="2" onclick="switchPeriod('2')">2° Trimestre</button>
+        <button class="period-tab" data-period="3" onclick="switchPeriod('3')">3° Trimestre</button>
+        <button class="period-tab tab-warning" onclick="abrirModalRestante()"><i class='bx bx-calculator'></i> Nota Restante</button>
+    </div>
+    
+    <div class="summary-row">
+        <div class="summary-card">
+            <div class="summary-label"><i class='bx bx-target-lock'></i> Promedio Global</div>
+            <div class="summary-value val-good" id="sumPromedio">0.0</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label"><i class='bx bx-book-bookmark'></i> Materias Evaluadas</div>
+            <div class="summary-value" style="color: var(--primary-steel);" id="sumMaterias">0</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label"><i class='bx bx-check-circle'></i> Aprobadas</div>
+            <div class="summary-value val-good" id="sumAprobadas">0</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label"><i class='bx bx-x-circle'></i> Reprobadas</div>
+            <div class="summary-value val-bad" id="sumReprobadas">0</div>
+        </div>
+    </div>
+    
+    <div class="table-card">
+        <table id="gradesTable">
+            <thead>
+                <tr id="tableHead">
+                    <th>Materia</th>
+                    <th>Cargando...</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="2">
+                        <div class="empty-state">
+                            <i class='bx bx-loader-alt bx-spin'></i>
+                            <span>Sincronizando información académica...</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalRestante">
+    <div class="modal">
+        <div class="modal-header">
+            <h2><i class='bx bx-math'></i> Puntos Faltantes</h2>
+            <button class="btn-close-absolute" onclick="cerrarModalRestante()"><i class='bx bx-x'></i></button>
+        </div>
+        <div class="info-msg">
+            <i class='bx bx-info-circle'></i> Se requieren al menos <b>14 puntos acumulados</b> sumando los 3 trimestres para aprobar la materia de forma directa.
+        </div>
+        <div class="modal-body">
+            <div class="table-responsive">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 450px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">Materia</th>
+                            <th style="text-align: center; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">Acumulado</th>
+                            <th style="text-align: center; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">Faltan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="restanteBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initUserbar } from '../js/userbar.js';
+    import { initNavbar } from '../js/navbar.js';
+    import { auth, db } from '../js/initFirebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+    
+    initNavbar();
+    await initUserbar({ brandHref: '../index.html' });
+    
+    let studentId = null;
+    let studentGrade = null;
+    let myGradesHistory = {};
+    let allSubs = {};
+    let studentMetadata = {};
+    let currentPeriod = 'anual';
+
+    const SUBJECT_PALETTE = [
+        { bg: '#e0f2fe', border: '#38bdf8', text: '#0369a1' }, { bg: '#dcfce7', border: '#4ade80', text: '#15803d' }, 
+        { bg: '#fef3c7', border: '#fbbf24', text: '#b45309' }, { bg: '#f3e8ff', border: '#c084fc', text: '#7e22ce' }, 
+        { bg: '#ffe4e6', border: '#f43f5e', text: '#be123c' }, { bg: '#ffedd5', border: '#fb923c', text: '#c2410c' }, 
+        { bg: '#ecfccb', border: '#a3e635', text: '#3f6212' }, { bg: '#ccfbf1', border: '#2dd4bf', text: '#0f766e' }
+    ];
+    let assignedColors = {};
+    let nextColorIndex = 0;
+    
+    window.showToast = (msg, type = 'success') => {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    };
+
+    function getSubjectColor(subjectName) {
+        if (!subjectName) return { bg: '#f8fafc', border: '#cbd5e1', text: '#64748b' };
+        const s = subjectName.toLowerCase().trim();
+        if (assignedColors[s]) return assignedColors[s];
+        
+        const color = SUBJECT_PALETTE[nextColorIndex % SUBJECT_PALETTE.length];
+        assignedColors[s] = color;
+        nextColorIndex++;
+        return color;
+    }
+    
+    const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+    
+    const initYearSelector = () => {
+        const curYear = new Date().getFullYear();
+        const sel = document.getElementById('yearSelect');
+        sel.innerHTML = [curYear, curYear-1, curYear-2, curYear-3].map(y => `<option value="${y}">${y}</option>`).join('');
+    };
+    initYearSelector();
+    
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = '../index.html'; return; }
+        try {
+            onSnapshot(doc(db, "control", "asignaturas"), (s) => { 
+                if(s.exists()) allSubs = s.data(); 
+            });
+            const q = query(collection(db, 'users'), where('email', '==', user.email));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const sData = snap.docs[0].data();
+                studentId = snap.docs[0].id;
+                studentGrade = sData.grade;
+                myGradesHistory = sData.calificaciones_history || {};
+                
+                onSnapshot(doc(db, "users", studentId, "metadata", "calificaciones"), (gradeSnap) => {
+                    if (gradeSnap.exists()) {
+                        studentMetadata = gradeSnap.data();
+                    } else {
+                        studentMetadata = {};
+                    }
+                    window.loadGradesData();
+                });
+            }
+        } catch (error) { }
+    });
+    
+    window.switchPeriod = (period) => {
+        currentPeriod = period;
+        document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.period-tab[data-period="${period}"]`).classList.add('active');
+        window.loadGradesData();
+    };
+    
+    window.loadGradesData = () => {
+        const year = document.getElementById('yearSelect').value;
+        const currentYear = new Date().getFullYear();
+        let targetGrade = myGradesHistory[year] || (String(year) === String(currentYear) ? studentGrade : null);
+        
+        const tHead = document.getElementById('tableHead');
+        const tBody = document.getElementById('tableBody');
+        
+        if (!targetGrade) {
+            tHead.innerHTML = `<th class="sticky-main">Materia</th><th>Estado</th>`;
+            tBody.innerHTML = `<tr><td colspan="2"><div class="empty-state"><i class='bx bx-folder-minus'></i>No hay registro de grado para el año ${year}.</div></td></tr>`;
+            resetKPIs();
+            return;
+        }
+        
+        const cyc = parseInt(targetGrade) <= 3 ? "primer_ciclo" : parseInt(targetGrade) <= 6 ? "segundo_ciclo" : "tercer_ciclo";
+        const subjects = allSubs[cyc] || [];
+        
+        if (subjects.length === 0) {
+            tHead.innerHTML = `<th class="sticky-main">Materia</th><th>Estado</th>`;
+            tBody.innerHTML = `<tr><td colspan="2"><div class="empty-state"><i class='bx bx-book-reader'></i>La malla curricular para tu grado aún no está configurada.</div></td></tr>`;
+            resetKPIs();
+            return;
+        }
+        
+        const yearData = studentMetadata[year] || {};
+        const configData = studentMetadata.config || {};
+        
+        let totalSuma = 0; let countSuma = 0; let aprobadas = 0; let reprobadas = 0;
+        let headHtml = ''; let bodyHtml = '';
+        assignedColors = {}; nextColorIndex = 0;
+        
+        if (currentPeriod === 'anual') {
+            headHtml = `
+                <th class="sticky-main">Asignatura</th>
+                <th>1° Trim</th><th>2° Trim</th><th>3° Trim</th>
+                <th>Recup 1</th><th>Recup 2</th>
+                <th style="color:var(--primary-steel);">Nota Final</th>
+            `;
+            subjects.forEach(sub => {
+                const t1 = yearData['1']?.[sub]?.total;
+                const t2 = yearData['2']?.[sub]?.total;
+                const t3 = yearData['3']?.[sub]?.total;
+                const r1 = yearData['r1']?.[sub]?.total;
+                const r2 = yearData['r2']?.[sub]?.total;
+                let nf = null;
+                
+                if (t1 !== undefined || t2 !== undefined || t3 !== undefined) {
+                    nf = ((t1 || 0) + (t2 || 0) + (t3 || 0)) / 3;
+                    if (r1 !== undefined && parseFloat(r1) > nf) nf = parseFloat(r1);
+                    if (r2 !== undefined && parseFloat(r2) > nf) nf = parseFloat(r2);
+                }
+                
+                if (nf !== null) {
+                    totalSuma += nf; countSuma++;
+                    if(nf >= 5.0) aprobadas++; else reprobadas++;
+                }
+                
+                const c = getSubjectColor(sub);
+                bodyHtml += `
+                <tr>
+                    <td class="sticky-main">
+                        <div class="subject-cell" style="color: ${c.text};">
+                            ${cap(sub)}
+                        </div>
+                    </td>
+                    <td>${formatPill(t1)}</td>
+                    <td>${formatPill(t2)}</td>
+                    <td>${formatCell(t3)}</td>
+                    <td>${formatCell(r1)}</td>
+                    <td>${formatCell(r2)}</td>
+                    <td>${formatPill(nf, true)}</td>
+                </tr>`;
+            });
+        } else {
+            let maxEvals = 0;
+            subjects.forEach(sub => {
+                const evalsList = configData[`${currentPeriod}_${sub}`] || [];
+                if (evalsList.length > maxEvals) maxEvals = evalsList.length;
+            });
+            
+            headHtml = `<th class="sticky-main">Asignatura</th>`;
+            for (let i = 0; i < maxEvals; i++) headHtml += `<th>Actividad ${i+1}</th>`;
+            headHtml += `<th style="color:var(--primary-steel);">Promedio</th>`;
+            
+            const periodData = yearData[currentPeriod] || {};
+            
+            subjects.forEach(sub => {
+                const evalsConfig = configData[`${currentPeriod}_${sub}`] || [];
+                const sD = periodData[sub] || {};
+                
+                const c = getSubjectColor(sub);
+                let subRow = `<tr>
+                    <td class="sticky-main">
+                        <div class="subject-cell" style="color: ${c.text};">
+                            ${cap(sub)}
+                        </div>
+                    </td>`;
+                
+                for(let i = 0; i < maxEvals; i++) {
+                    if (i < evalsConfig.length) {
+                        const ev = evalsConfig[i];
+                        let sum = 0, cnt = 0;
+                        ev.acts.forEach((_, a) => {
+                            const val = parseFloat(sD[`ev${i}_a${a}`]);
+                            if (!isNaN(val)) { sum += val; cnt++; }
+                        });
+                        const promAct = cnt > 0 ? (sum / cnt) : null;
+                        subRow += `<td>${formatPill(promAct, false, ev.pct)}</td>`;
+                    } else {
+                        subRow += `<td></td>`;
+                    }
+                }
+                
+                const totalTrim = sD.total;
+                if (totalTrim !== undefined) {
+                    totalSuma += totalTrim; countSuma++;
+                    if(totalTrim >= 5.0) aprobadas++; else reprobadas++;
+                }
+                subRow += `<td>${formatPill(totalTrim, true)}</td></tr>`;
+                bodyHtml += subRow;
+            });
+        }
+        
+        tHead.innerHTML = headHtml;
+        tBody.innerHTML = bodyHtml;
+        
+        const promedioFinal = countSuma > 0 ? (totalSuma / countSuma) : 0;
+        const kpiProm = document.getElementById('sumPromedio');
+        
+        kpiProm.innerText = countSuma > 0 ? promedioFinal.toFixed(1) : '0.0';
+        kpiProm.className = `summary-value ${promedioFinal >= 5.0 ? 'val-good' : 'val-bad'}`;
+        
+        document.getElementById('sumMaterias').innerText = countSuma;
+        document.getElementById('sumAprobadas').innerText = aprobadas;
+        document.getElementById('sumReprobadas').innerText = reprobadas;
+    };
+    
+    function resetKPIs() {
+        document.getElementById('sumPromedio').innerText = '0.0';
+        document.getElementById('sumPromedio').className = 'summary-value';
+        document.getElementById('sumMaterias').innerText = '0';
+        document.getElementById('sumAprobadas').innerText = '0';
+        document.getElementById('sumReprobadas').innerText = '0';
+    }
+    
+    function formatCell(v) {
+        if(v === undefined || v === null || v === '') return '<span style="color:var(--border); font-weight:500;">-</span>';
+        return formatPill(v);
+    }
+    
+    function formatPill(val, isFinal = false, pct = null) {
+        if (val === undefined || val === null || val === '') {
+            return `<div class="grade-pill gp-null">
+                        ${pct ? `<span class="grade-pct">${pct}%</span>` : ''}
+                        -
+                    </div>`;
+        }
+        const n = parseFloat(val);
+        const cls = n >= 5.0 ? 'gp-good' : 'gp-bad';
+        const finalCls = isFinal ? 'gp-final' : '';
+        return `
+            <div class="grade-pill ${cls} ${finalCls}">
+                ${pct ? `<span class="grade-pct">${pct}%</span>` : ''}
+                ${n.toFixed(1)}
+            </div>`;
+    }
+
+    // =========================================================
+    // MODAL NOTA RESTANTE
+    // =========================================================
+    window.abrirModalRestante = () => {
+        const year = document.getElementById('yearSelect').value;
+        const currentYear = new Date().getFullYear();
+        let targetGrade = myGradesHistory[year] || (String(year) === String(currentYear) ? studentGrade : null);
+
+        if (!targetGrade) {
+            showToast("No hay registro de grado para este año.", "warning");
+            return;
+        }
+
+        const cyc = parseInt(targetGrade) <= 3 ? "primer_ciclo" : parseInt(targetGrade) <= 6 ? "segundo_ciclo" : "tercer_ciclo";
+        const subjects = allSubs[cyc] || [];
+        const yearData = studentMetadata[year] || {};
+        
+        let html = '';
+        subjects.forEach(sub => {
+            const t1 = parseFloat(yearData['1']?.[sub]?.total) || 0;
+            const t2 = parseFloat(yearData['2']?.[sub]?.total) || 0;
+            const t3 = parseFloat(yearData['3']?.[sub]?.total) || 0;
+            
+            const sum = t1 + t2 + t3;
+            const falta = 14 - sum;
+
+            let estadoHtml = '';
+            if (falta <= 0) {
+                estadoHtml = `<span class="badge b-success">¡Aprobada!</span>`;
+            } else if (falta > 10) {
+                estadoHtml = `<span class="badge b-danger">Va a Recup.</span>`;
+            } else {
+                estadoHtml = `<span class="badge b-warning">${falta.toFixed(1)} pts</span>`;
+            }
+
+            html += `<tr>
+                <td style="text-align: left; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--bg-light); font-weight: 700; color: var(--primary-dark); font-size: 0.85rem; white-space: nowrap;">${cap(sub)}</td>
+                <td style="text-align: center; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--bg-light); font-weight: 800; font-family: monospace; font-size: 1rem;">${sum.toFixed(1)}</td>
+                <td style="text-align: center; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--bg-light);">${estadoHtml}</td>
+            </tr>`;
+        });
+
+        document.getElementById('restanteBody').innerHTML = html;
+        document.getElementById('modalRestante').classList.add('active');
+    };
+    
+    window.cerrarModalRestante = () => document.getElementById('modalRestante').classList.remove('active');
+</script>
+</body>
+</html>

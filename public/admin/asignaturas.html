@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malla Curricular - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+
+        /* BLOQUEO DE DESBORDAMIENTO Y AJUSTE EXACTO DE MÁRGENES ESTRUCTURALES */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        /* REGLAS ESTRICTAMENTE ESPECÍFICAS PARA ASIGNATURAS */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; }
+
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+        .btn-primary:hover { background: var(--primary-steel); }
+
+        #cycles-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .cycle-section { margin-bottom: 0.5rem; }
+        .cycle-title { 
+            font-size: 0.85rem; 
+            font-weight: 800; 
+            color: var(--primary-dark); 
+            text-transform: uppercase; 
+            margin-bottom: 0.8rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+        }
+        .cycle-title::after { 
+            content: ''; 
+            flex: 1; 
+            height: 2px; 
+            background: var(--border); 
+            opacity: 0.3; 
+        }
+
+        .table-container { width: 100%; border: 1px solid var(--border); border-radius: 8px; background: white; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .list-table { width: 100%; border-collapse: collapse; }
+        .list-table td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; font-weight: 700; color: var(--primary-dark); vertical-align: middle;}
+        .list-table tr:last-child td { border-bottom: none; }
+
+        .actions-cell { display: flex; gap: 0.4rem; justify-content: flex-end; }
+        .btn-sq { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-sq-edit { background: #e0f2fe; color: #0284c7; }
+        .btn-sq-edit:hover { background: #bae6fd; transform: scale(1.05); }
+        .btn-sq-delete { background: #fef2f2; color: var(--danger); }
+        .btn-sq-delete:hover { background: #fee2e2; transform: scale(1.05); }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: white; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 450px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 1.8rem;
+        }
+        
+        .modal-header { flex-shrink: 0 !important; margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center;}
+        
+        .modal-body {
+            flex: 1 1 auto !important; 
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .modal-actions {
+            flex-shrink: 0 !important; 
+            background: white !important;
+            padding-top: 1rem !important;
+            border-top: 1px solid var(--bg-light);
+            margin-top: 0 !important;
+            display: flex; 
+            gap: 0.5rem; 
+            justify-content: flex-end; 
+            align-items: center;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.7rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); background: white; outline: none; transition: 0.2s; width: 100%; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); }
+        .form-group select:disabled { background: #f8fafc; color: #64748b; cursor: not-allowed; border-color: #cbd5e1; }
+
+        .btn-save-text { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: 0.2s;}
+        .btn-save-text:hover { background: var(--primary-steel); }
+        .btn-save-text:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .empty-state { text-align: center; padding: 2rem; color: var(--accent); font-style: italic; font-size: 0.85rem;}
+
+        /* Ajustes específicos para móviles */
+        @media (max-width: 768px) {
+            .list-table td { padding: 0.6rem 0.5rem; font-size: 0.85rem; }
+            .btn-sq { width: 30px; height: 30px; font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-book-bookmark'></i> Asignaturas</h1>
+                <button class="btn-primary" onclick="openSubModal()">
+                    <i class='bx bx-plus'></i> Nueva
+                </button>
+            </div>
+
+            <div id="cycles-container">
+                <div class="cycle-section">
+                    <div class="cycle-title">Primer Ciclo <span style="font-size: 0.65rem; color: var(--accent); font-weight: 600; text-transform: none;">(1º a 3º Grado)</span></div>
+                    <div class="table-container">
+                        <table class="list-table">
+                            <tbody id="list-primer_ciclo"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="cycle-section">
+                    <div class="cycle-title">Segundo Ciclo <span style="font-size: 0.65rem; color: var(--accent); font-weight: 600; text-transform: none;">(4º a 6º Grado)</span></div>
+                    <div class="table-container">
+                        <table class="list-table">
+                            <tbody id="list-segundo_ciclo"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="cycle-section">
+                    <div class="cycle-title">Tercer Ciclo <span style="font-size: 0.65rem; color: var(--accent); font-weight: 600; text-transform: none;">(7º a 9º Grado)</span></div>
+                    <div class="table-container">
+                        <table class="list-table">
+                            <tbody id="list-tercer_ciclo"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="height: 3rem;"></div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="subModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); margin: 0;">Nueva Asignatura</h2>
+                <button class="btn-sq" style="background: transparent; color: var(--accent);" onclick="closeSubModal()"><i class='bx bx-x'></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre de la Materia</label>
+                    <input type="text" id="subName" placeholder="Ej: Ciencias Naturales" autocomplete="off">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Ciclo Correspondiente</label>
+                    <select id="subCycle">
+                        <option value="primer_ciclo">Primer Ciclo</option>
+                        <option value="segundo_ciclo">Segundo Ciclo</option>
+                        <option value="tercer_ciclo">Tercer Ciclo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border);" onclick="closeSubModal()">Cancelar</button>
+                <button class="btn-save-text" id="btnSaveSub" onclick="saveSub()"><i class='bx bx-save'></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { doc, onSnapshot, updateDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+        
+        try { await enableIndexedDbPersistence(db); } catch(e) {} 
+
+        let allSubsData = {}, editing = { cycle: null, index: -1 };
+        
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+
+        // --- SISTEMA DE TOAST ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            if (!u) { window.location.href = '../index.html'; return; }
+            onSnapshot(doc(db, "control", "asignaturas"), (s) => {
+                if(!s.exists()) return; 
+                allSubsData = s.data(); 
+                renderAll();
+            });
+        });
+
+        function renderAll() {
+            ['primer_ciclo','segundo_ciclo','tercer_ciclo'].forEach(c => {
+                const b = document.getElementById(`list-${c}`);
+                const list = allSubsData[c] || [];
+                
+                b.innerHTML = list.length ? list.map((n, i) => `
+                    <tr>
+                        <td><i class='bx bx-book' style="color: var(--primary-steel); margin-right: 0.5rem; opacity: 0.7;"></i> ${cap(n)}</td>
+                        <td style="width:100px; text-align:right;">
+                            <div class="actions-cell">
+                                <button class="btn-sq btn-sq-edit" onclick="openSubModal('${c}', ${i})" title="Editar">
+                                    <i class='bx bx-edit-alt'></i>
+                                </button>
+                                <button class="btn-sq btn-sq-delete" onclick="triggerDelete('${c}', ${i})" title="Eliminar">
+                                    <i class='bx bx-trash'></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`).join('') 
+                : '<tr><td colspan="2"><div class="empty-state" style="padding: 1.5rem;"><p>No hay materias registradas en este ciclo.</p></div></td></tr>';
+            });
+        }
+
+        window.openSubModal = (cycle = null, idx = -1) => {
+            editing = { cycle, index: idx };
+            document.getElementById('modalTitle').innerText = idx === -1 ? 'Registrar Asignatura' : 'Editar Asignatura';
+            document.getElementById('subName').value = idx === -1 ? '' : allSubsData[cycle][idx];
+            document.getElementById('subCycle').value = cycle || 'primer_ciclo';
+            document.getElementById('subCycle').disabled = idx !== -1; // No dejar cambiar ciclo si se edita
+            document.getElementById('subModalOverlay').classList.add('active');
+            setTimeout(() => document.getElementById('subName').focus(), 100);
+        };
+
+        window.closeSubModal = () => {
+            document.getElementById('subModalOverlay').classList.remove('active');
+        };
+
+        window.saveSub = async () => {
+            const name = cap(document.getElementById('subName').value.trim());
+            const cycle = document.getElementById('subCycle').value;
+            
+            if(!name) {
+                showToast("Debes ingresar un nombre para la asignatura.", "warning");
+                return;
+            }
+            
+            const btn = document.getElementById('btnSaveSub'); 
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Guardando...";
+            btn.disabled = true;
+            
+            try {
+                let newList = [...(allSubsData[cycle] || [])];
+                
+                // Evitar duplicados exactos en el mismo ciclo
+                const nameExists = newList.some((n, idx) => n.toLowerCase() === name.toLowerCase() && idx !== editing.index);
+                if (nameExists) {
+                    showToast("Esta asignatura ya existe en este ciclo.", "error");
+                    btn.innerHTML = "<i class='bx bx-save'></i> Guardar";
+                    btn.disabled = false;
+                    return;
+                }
+
+                if(editing.index === -1) {
+                    newList.push(name); 
+                } else {
+                    newList[editing.index] = name;
+                }
+                
+                // Guardar ordenado alfabéticamente
+                await updateDoc(doc(db, "control", "asignaturas"), { [cycle]: newList.sort((a, b) => a.localeCompare(b)) });
+                showToast("Asignatura guardada correctamente.");
+                closeSubModal();
+            } catch(e) { 
+                console.error(e); 
+                showToast("Error de conexión al guardar la asignatura.", "error");
+            } finally { 
+                btn.innerHTML = "<i class='bx bx-save'></i> Guardar";
+                btn.disabled = false; 
+            }
+        };
+
+        window.triggerDelete = async (cycle, idx) => {
+            const subjectName = allSubsData[cycle][idx];
+            if(!confirm(`¿Está completamente seguro de eliminar "${subjectName}" de la malla curricular?\n\nADVERTENCIA: Si elimina esta materia, desaparecerá de las tablas de calificaciones de los estudiantes de este ciclo.`)) return;
+            
+            try {
+                let newList = allSubsData[cycle].filter((_, i) => i !== idx);
+                await updateDoc(doc(db, "control", "asignaturas"), { [cycle]: newList });
+                showToast(`Asignatura "${subjectName}" eliminada permanentemente.`);
+            } catch(e) { 
+                console.error(e); 
+                showToast("No se pudo eliminar la asignatura. Revise su conexión.", "error");
+            }
+        };
+    </script>
+</body>
+</html>

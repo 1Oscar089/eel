@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calificaciones - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <!-- LIBRERÍA PARA GENERACIÓN DE PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* BLOQUEO DE DESBORDAMIENTO Y AJUSTE EXACTO DE MÁRGENES ESTRUCTURALES */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important;
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; }
+        }
+
+        /* REGLAS GLOBALES */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; flex-wrap: wrap; gap: 0.5rem;}
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; }
+        .header-actions { display: flex; gap: 0.5rem; }
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-primary:hover { background: var(--primary-steel); }
+        .btn-secondary { background: #e0f2fe; color: var(--primary-steel); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: 1px solid #bae6fd; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-secondary:hover { background: #bae6fd; color: var(--primary-dark); }
+
+        /* TARJETA DE FILTROS SUPERIORES */
+        .card { background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        
+        .form-group { display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0; min-width: 0; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.9rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; font-family: inherit; transition: 0.2s;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); }
+        .form-group select:disabled { background: #f8fafc; color: #64748b; cursor: not-allowed; border-color: #cbd5e1; }
+        .empty-state { text-align: center; padding: 2rem; color: var(--accent); font-style: italic; font-size: 0.85rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;}
+
+        /* =========================================================
+           ESTILOS ESPECÍFICOS DE LAS TABLAS DE CALIFICACIONES
+           ========================================================= */
+        
+        .student-card { background: white; border-radius: var(--border-radius-lg); border: 1px solid var(--border); overflow: hidden; margin-bottom: 1rem; box-shadow: var(--shadow-sm); flex-shrink: 0;}
+        .sc-header { padding: 0.6rem 1rem; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.8rem; font-weight: 800; color: var(--primary-dark); font-size: 0.9rem; }
+        .sc-avatar { width: 30px; height: 30px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; }
+        .sc-body { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+        
+        .grades-table { width: 100%; border-collapse: collapse; min-width: max-content; }
+        .grades-table th { background: #f8fafc; padding: 0.4rem 0.6rem; font-size: 0.65rem; font-weight: 800; color: var(--accent); text-align: center; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        .grades-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--bg-light); text-align: center; }
+        .grades-table .sticky-main { text-align: left; padding-left: 1rem; position: sticky; left: 0; z-index: 5; background: white; border-right: 1px solid var(--border); width: 160px; font-size: 0.8rem; font-weight: 700; color: var(--primary-dark); }
+        
+        .grade-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 35px; height: 24px; padding: 0 6px; border-radius: 6px; font-family: monospace; font-weight: 800; font-size: 0.8rem; }
+        .g-pass { background: #dcfce7; color: var(--success); }
+        .g-warn { background: #fef3c7; color: var(--warning); }
+        .g-fail { background: #fee2e2; color: var(--danger); }
+        .g-null { color: var(--border); font-weight: 400; background: #f8fafc;}
+
+        /* --- MODAL ESTRUCTURA Y NOTAS --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        
+        .modal { 
+            background: white; 
+            padding: 1.8rem; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 900px; 
+            display: flex; 
+            flex-direction: column; 
+            max-height: 95vh; 
+            overflow: hidden; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-shrink: 0; }
+        .modal-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem; margin: 0;}
+        .btn-close-absolute { background: transparent; border: none; font-size: 1.5rem; color: var(--accent); cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;}
+        
+        .modal-filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; margin-bottom: 0.5rem; flex-shrink: 0;}
+        
+        .mobile-summary { display: none; background: #e0f2fe; border: 1px solid #bae6fd; padding: 0.8rem; border-radius: 8px; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 1rem; flex-shrink: 0;}
+        .ms-text { font-size: 0.8rem; color: var(--primary-steel); font-weight: 700; line-height: 1.3; }
+        .ms-text strong { font-weight: 900; color: var(--primary-dark); }
+        .btn-edit-filters { background: white; border: 1px solid #7dd3fc; color: #0369a1; border-radius: 6px; padding: 0.5rem 0.8rem; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: 0.2s; white-space: nowrap; flex-shrink: 0;}
+        .btn-edit-filters:hover { background: #0369a1; color: white; border-color: #0369a1; }
+        
+        .config-main-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; margin-top: 0.5rem; }
+        .config-wrapper { flex: 1; overflow-y: auto; background: var(--bg-light); padding: 1rem; border-radius: var(--border-radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+        
+        .cfg-eval-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; box-shadow: var(--shadow-sm); }
+        .cfg-eval-header { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; margin-bottom: 0.8rem; border-bottom: 1px solid var(--bg-light); padding-bottom: 0.8rem; }
+        
+        .cfg-acts-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.8rem; }
+        
+        .matrix-container { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: white; margin-bottom: 1rem; -webkit-overflow-scrolling: touch;}
+        .matrix-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: max-content; }
+        .matrix-table th, .matrix-table td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+        .matrix-table th { background: #f8fafc; font-size: 0.65rem; text-align: center; position: sticky; top: 0; z-index: 10; padding: 0.6rem 0.5rem; color: var(--primary-dark); text-transform: uppercase; font-weight: 800; min-width: 60px;}
+        .matrix-table .sticky-col { text-align: left; padding: 0.6rem 0.8rem; position: sticky; left: 0; z-index: 15; background: white; border-right: 2px solid var(--border); width: 160px; min-width: 160px; max-width: 160px; font-weight: 800; font-size: 0.8rem; color: var(--primary-dark); white-space: normal; word-break: break-word; line-height: 1.2; }
+        
+        .val-inp { width: 100%; height: 35px; min-width: 45px; border: none; text-align: center; font-family: monospace; font-weight: 800; font-size: 0.95rem; outline: none; background: transparent; color: var(--primary-dark); }
+        .val-inp:focus { background: #e0f2fe; }
+        .val-total { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 35px; background: var(--primary-dark); font-weight: 800; font-family: monospace; color: white; font-size: 0.95rem; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; flex-shrink: 0; padding-top: 1rem; border-top: 1px solid var(--bg-light);}
+
+        /* =========================================================
+           AJUSTES ESTRICTOS PARA CELULARES
+           ========================================================= */
+        @media (max-width: 768px) {
+            .page-header { 
+                flex-direction: column !important; 
+                align-items: flex-start !important; 
+                gap: 0.8rem; 
+            }
+            .page-header h1 { font-size: 1.2rem; margin: 0; }
+            .header-actions { 
+                width: 100%; 
+                justify-content: flex-start !important; 
+                gap: 0.5rem;
+            }
+            .header-actions .btn-text { display: none; }
+            .btn-primary, .btn-secondary { padding: 0.6rem; justify-content: center;}
+            .btn-primary i, .btn-secondary i { font-size: 1.2rem; margin: 0;}
+            
+            .card { flex-direction: column; align-items: stretch; gap: 0.8rem; padding: 1rem; }
+            .card > .form-group { min-width: 100% !important; flex: auto !important; }
+            .modal-filters-grid { grid-template-columns: 1fr; }
+            
+            .form-group select, .form-group input { font-size: 0.75rem; padding: 0.5rem; }
+            .form-group label { font-size: 0.6rem; }
+            
+            .config-wrapper { padding: 0.5rem; gap: 0.5rem; margin-bottom: 0.5rem;}
+            .cfg-eval-card { padding: 0.8rem; }
+            .cfg-eval-header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+            .cfg-acts-container { grid-template-columns: 1fr; }
+            
+            .matrix-table .sticky-col { width: 100px; min-width: 100px; max-width: 100px; font-size: 0.7rem; padding: 0.4rem; }
+            .matrix-table th { padding: 0.4rem; font-size: 0.6rem; }
+            .val-inp { height: 30px; font-size: 0.85rem; }
+            .val-total { min-height: 30px; font-size: 0.85rem; }
+            
+            .mobile-summary { flex-direction: column; align-items: flex-start; }
+            .btn-edit-filters { width: 100%; justify-content: center; }
+            
+            .modal { padding: 1.2rem; border-radius: 0; max-height: 100vh;}
+            .modal-actions { flex-direction: column-reverse; gap: 0.6rem;}
+            .modal-actions .btn-primary { width: 100%; justify-content: center;}
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-task'></i> Calificaciones</h1>
+                <div class="header-actions">
+                    <!-- BOTÓN DE DESCARGA BOLETA (SOLO VISIBLE SI ES ESTUDIANTE) -->
+                    <button id="btnDescargarMiBoleta" class="btn-primary" style="display:none; background: var(--info);" onclick="generarMiBoleta()">
+                        <i class='bx bxs-file-pdf'></i> <span class="btn-text">Descargar Mi Boleta</span>
+                    </button>
+
+                    <a href="boletas.html" class="btn-secondary" id="btnAdminBoletas">
+                        <i class='bx bxs-file-pdf'></i> <span class="btn-text">Generar Boletas</span>
+                    </a>
+                    <button class="btn-primary" id="btnAgregarNotas" onclick="openControlModal()">
+                        <i class='bx bx-edit'></i> <span class="btn-text">Agregar Notas</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="form-group" style="min-width: 100px; flex: 1;">
+                    <label>1. Año Lectivo</label>
+                    <input type="number" id="vYear" onchange="checkPeriodsAndLoad()" title="Puede ingresar cualquier año">
+                </div>
+                <div class="form-group" id="vGradeContainer" style="display:none; min-width: 200px; flex: 2;">
+                    <label>2. Grado</label>
+                    <select id="vGrade" onchange="checkPeriodsAndLoad()"></select>
+                </div>
+                <div class="form-group" style="min-width: 150px; flex: 1.5;">
+                    <label>3. Periodo</label>
+                    <select id="vPeriod" onchange="renderStudentCards()">
+                        <option value="anual" selected>Anual (Promedio)</option>
+                        <option value="1">1° Trimestre</option>
+                        <option value="2">2° Trimestre</option>
+                        <option value="3">3° Trimestre</option>
+                        <option value="r1">Recuperación 1</option>
+                        <option value="r2">Recuperación 2</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="mainContainer" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="empty-state">
+                    <i class='bx bx-loader bx-spin' style="font-size: 2rem;"></i> 
+                    <p>Sincronizando base de datos...</p>
+                </div>
+            </div>
+            
+            <div style="height: 3rem;"></div>
+        </main>
+    </div>
+
+    <!-- MODAL CONTROL DE NOTAS -->
+    <div class="modal-overlay" id="controlModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class='bx bx-grid-alt'></i> Control de Notas</h2>
+                <button class="btn-close-absolute" onclick="closeControlModal()"><i class='bx bx-x'></i></button>
+            </div>
+            
+            <div class="modal-filters-grid" id="modalFiltersGrid">
+                <div class="form-group">
+                    <label>Año</label>
+                    <input type="number" id="mYear" onchange="validateAceptar()">
+                </div>
+                <div class="form-group">
+                    <label>Grado</label>
+                    <select id="mGrade" onchange="loadModalSubjects()"></select>
+                </div>
+                <div class="form-group">
+                    <label>Trimestre</label>
+                    <select id="mTrim" onchange="validateAceptar()">
+                        <option value="" disabled selected>Elegir...</option>
+                        <option value="1">1° Trimestre</option>
+                        <option value="2">2° Trimestre</option>
+                        <option value="3">3° Trimestre</option>
+                        <option value="r1">Recuperación 1</option>
+                        <option value="r2">Recuperación 2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Materia</label>
+                    <select id="mSubj" onchange="validateAceptar()">
+                        <option value="" disabled selected>Elige Grado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mobile-summary" id="mobileSummary">
+                <div class="ms-text" id="summaryText"></div>
+                <button class="btn-edit-filters" onclick="editFilters()">
+                    <i class='bx bx-edit-alt'></i> Modificar Parámetros
+                </button>
+            </div>
+            
+            <button id="btnAceptar" class="btn-primary" style="display:none; width:100%; padding: 0.8rem; justify-content: center; margin-top: 1rem;" onclick="checkConfig()">
+                <i class='bx bx-check-circle'></i> Aceptar y Cargar
+            </button>
+            
+            <div id="configPanel" class="config-main-panel" style="display:none;">
+                <div style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 1rem; flex-shrink: 0;">
+                    <label style="color: var(--primary-dark); font-size: 0.8rem; font-weight: 800;"><i class='bx bx-list-ol'></i> Cantidad de Evaluaciones</label>
+                    <input type="number" id="numEvals" min="1" max="10" value="3" onchange="buildCfgInputs()" style="width: 80px; padding: 0.4rem; border: 1px solid var(--border); border-radius: 6px; text-align: center; outline: none; font-weight: 800; font-family: monospace;">
+                </div>
+                
+                <div class="config-wrapper" id="cfgInputsArea"></div>
+
+                <div class="modal-actions">
+                    <button class="btn-primary" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border);" onclick="closeControlModal()">Cancelar</button>
+                    <button class="btn-primary" style="flex:2; justify-content: center;" onclick="generateMatrix()"><i class='bx bx-table'></i> Construir Matriz</button>
+                </div>
+            </div>
+            
+            <div id="matrixPanel" class="config-main-panel" style="display:none;">
+                <div class="matrix-container">
+                    <table class="matrix-table" id="matrixTable"></table>
+                </div>
+                
+                <div class="modal-actions" id="matrixBottomBar" style="display:none;">
+                    <button class="btn-primary" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border);" onclick="closeControlModal()">Cancelar</button>
+                    <button class="btn-primary" style="background:#e0f2fe; color:#0369a1; border: 1px solid #7dd3fc;" onclick="switchModalView('config')"><i class='bx bx-slider-alt'></i> Modificar Matriz</button>
+                    <button class="btn-primary" style="flex:2; justify-content: center;" id="btnSaveMatrix" onclick="saveMatrix()"><i class='bx bx-cloud-upload'></i> Guardar Notas</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECCIÓN OCULTA PARA GENERACIÓN DEL PDF DE LA BOLETA (USUARIO LOGUEADO) -->
+    <div id="printBoletaSection" style="position: absolute; top: -9999px; left: -9999px; display: none; background: white;">
+        <div id="boletaData" style="font-family: Arial, sans-serif; font-size: 9pt; color: #000; width: 100%; padding: 20px; line-height: 1.3;">
+            
+            <!-- ENCABEZADO MINED -->
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <div style="width: 15%;">
+                    <img src="../img/logo_mined.png" style="width: 100%; max-width: 80px;" alt="Logo" />
+                </div>
+                <div style="width: 85%; text-align: center; line-height: 1.2;">
+                    <div>MINISTERIO DE EDUCACIÓN, CIENCIA Y TECNOLOGÍA</div>
+                    <div>GERENCIA DE GESTIÓN Y REGISTRO ACADÉMICO</div>
+                    <div>DEPARTAMENTO DE REGISTRO ACADÉMICO</div>
+                    <div style="font-weight: bold; margin-top: 5px;">BOLETA DE CALIFICACIONES</div>
+                </div>
+            </div>
+
+            <!-- TABLA 1: DATOS INSTITUCIONALES Y DEL ESTUDIANTE -->
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px; font-size: 8.5pt;">
+                <tr>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold; width: 20%;">Sede Educativa</td>
+                    <td colspan="5" style="border: 1px solid #000; padding: 4px;"><span id="bolEscuela"></span></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold;">Servicio Educativo</td>
+                    <td colspan="5" style="border: 1px solid #000; padding: 4px;"><span id="bolServicio"></span></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold;">Plan de Estudio</td>
+                    <td colspan="5" style="border: 1px solid #000; padding: 4px;"><span id="bolPlan"></span></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold;">Grado</td>
+                    <td style="border: 1px solid #000; padding: 4px; width: 25%;"><span id="bolGrado"></span></td>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold; width: 10%;">Sección</td>
+                    <td style="border: 1px solid #000; padding: 4px;"><span id="bolSeccion">A - Matutino</span></td>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold; width: 5%;">Año</td>
+                    <td style="border: 1px solid #000; padding: 4px; width: 10%;"><span id="bolAnio"></span></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold;">Estudiante</td>
+                    <td colspan="5" style="border: 1px solid #000; padding: 4px;"><span id="bolEstudiante"></span></td>
+                </tr>
+            </table>
+
+            <!-- TABLA 2: ASISTENCIA -->
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px; font-size: 8.5pt;">
+                <tr>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold; width: 30%;">Cuadro de asistencias al <span id="bolFechaAsist"></span></td>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold; width: 15%;">Asistencias</td>
+                    <td style="border: 1px solid #000; padding: 4px; width: 10%;"><span id="bolAsist">0</span></td>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold; width: 20%;">Inasistencias justificadas</td>
+                    <td style="border: 1px solid #000; padding: 4px; width: 10%;"><span id="bolInasistJ">0</span></td>
+                    <td style="border: 1px solid #000; padding: 4px; font-weight: bold; width: 20%;">Inasistencias sin justificar</td>
+                    <td style="border: 1px solid #000; padding: 4px; width: 10%;"><span id="bolInasistS">0</span></td>
+                </tr>
+            </table>
+
+            <!-- LEYENDA -->
+            <div style="font-size: 7pt; text-align: center; margin-bottom: 5px;">
+                NI=Nota institucional, PP=Primera prueba recuperación, PPS=PP por suficiencia, SP=Segunda prueba recuperación, SPS=SP por suficiencia, NF=Nota final
+            </div>
+
+            <!-- TABLA 3: CALIFICACIONES -->
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 40px; font-size: 8.5pt; text-align: center;">
+                <thead style="background: #e5e7eb; font-weight: bold;">
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 4px; text-align: left;">Componente plan estudio</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">P1</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">P2</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">P3</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">NI</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">PP</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">PPS</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">SP</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">SPS</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 5%;">NF</td>
+                        <td style="border: 1px solid #000; padding: 4px; width: 15%;">Resultado</td>
+                    </tr>
+                </thead>
+                <tbody id="bolGradesBody"></tbody>
+            </table>
+
+            <!-- FIRMAS -->
+            <div style="display: flex; justify-content: space-around; text-align: center; margin-top: 50px;">
+                <div style="width: 40%;">
+                    <div id="bolDirectorName" style="font-weight: normal; margin-bottom: 5px; text-transform: uppercase;"></div>
+                    <div style="font-weight: bold;">Director(a) del Centro Educativo</div>
+                </div>
+                <div style="width: 40%;">
+                    <div id="bolTeacherName" style="font-weight: normal; margin-bottom: 5px; text-transform: uppercase;">&nbsp;</div>
+                    <div style="font-weight: bold;">Responsable de Sección</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, onSnapshot, doc, getDoc, getDocs, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        // Variables de Memoria Global
+        let allStudents = [];
+        let allGrades = {};
+        let allSubs = {};
+        let userRole = null;
+        let userGrades = [];
+        let isAdmin = false;
+        
+        let currentLoadedCohort = ""; 
+        let cachedGradeData = {}; 
+        let currentConfig = [];
+        let dataLoaded = { doc: false, sub: false, grd: false, usr: false };
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+        const getKeys = (fn) => { 
+            const w = fn.toLowerCase().split(/\s+/).filter(x => !['de','del','la','las','los','y'].includes(x)); 
+            return { a1: w[w.length-2] || w[0], a2: w[w.length-1] || '', n1: w[0] }; 
+        };
+
+        const initYears = () => { 
+            const cur = new Date().getFullYear(); 
+            document.getElementById('vYear').value = cur; 
+            document.getElementById('mYear').value = cur; 
+        };
+        initYears();
+
+        const checkAndLoadInitial = () => {
+            if (dataLoaded.doc && dataLoaded.sub && dataLoaded.grd && dataLoaded.usr) {
+                if (!window.dropdownsBuilt) {
+                    const allowed = isAdmin ? Object.keys(allGrades) : userGrades;
+                    const sorted = allowed.sort((a,b) => parseInt(a) - parseInt(b));
+                    const gHtml = sorted.map(id => `<option value="${id}">${cap(allGrades[id]?.nombre || allGrades[id] || `Grado ${id}`)}</option>`).join('');
+                    
+                    document.getElementById('vGradeContainer').style.display = 'flex';
+                    document.getElementById('vGrade').innerHTML = (isAdmin ? '<option value="" disabled selected>Elegir grado...</option>' : '') + gHtml;
+                    if (!isAdmin && sorted.length > 0) document.getElementById('vGrade').value = sorted[0];
+                    
+                    document.getElementById('mGrade').innerHTML = '<option value="" disabled selected>Elegir grado...</option>' + gHtml;
+                    window.dropdownsBuilt = true;
+                }
+                
+                const g = document.getElementById('vGrade').value;
+                if(!g) {
+                    document.getElementById('mainContainer').innerHTML = `
+                        <div class="empty-state">
+                            <i class='bx bx-list-ul' style="font-size: 3rem; color: var(--border);"></i> 
+                            <p>Seleccione un grado para ver las calificaciones.</p>
+                        </div>`;
+                } else {
+                    window.checkPeriodsAndLoad();
+                }
+            }
+        };
+
+        onAuthStateChanged(auth, async (u) => {
+            if (!u) { window.location.href = '../index.html'; return; }
+            
+            // Verificación si es estudiante para habilitar Boleta
+            const qEstudiante = query(collection(db, "users"), where("correo", "==", u.email));
+            getDocs(qEstudiante).then(snapEst => {
+                if(!snapEst.empty) {
+                    document.getElementById('btnDescargarMiBoleta').style.display = 'flex';
+                }
+            });
+
+            onSnapshot(query(collection(db, 'docentes'), where('correo', '==', u.email)), (s) => {
+                if(!s.empty){ 
+                    const ud = s.docs[0].data(); 
+                    userRole = (ud.cargo || '').toLowerCase(); 
+                    userGrades = (ud.grados || []).map(String); 
+                    isAdmin = ['director', 'subdirector'].includes(userRole); 
+                } else {
+                    // Si no es docente, ocultar botones de administración
+                    document.getElementById('btnAdminBoletas').style.display = 'none';
+                    document.getElementById('btnAgregarNotas').style.display = 'none';
+                }
+                dataLoaded.doc = true; checkAndLoadInitial();
+            });
+
+            onSnapshot(doc(db, "control", "asignaturas"), (s) => { 
+                if(s.exists()) allSubs = s.data(); 
+                dataLoaded.sub = true; checkAndLoadInitial(); 
+            });
+
+            onSnapshot(doc(db, "control", "grados"), (s) => { 
+                if(s.exists()) allGrades = s.data(); 
+                dataLoaded.grd = true; checkAndLoadInitial(); 
+            });
+
+            onSnapshot(collection(db, "users"), (snap) => {
+                allStudents = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(s => s.nombreCompleto && !s.archivado);
+                dataLoaded.usr = true; checkAndLoadInitial();
+            });
+        });
+
+        // ----------------------------------------------------------------
+        // LÓGICA DE GENERACIÓN DE BOLETA PARA USUARIO LOGUEADO
+        // ----------------------------------------------------------------
+        window.generarMiBoleta = async () => {
+            showToast("Generando boleta, por favor espere...", "info");
+            try {
+                const user = auth.currentUser;
+                if(!user) return;
+                
+                // 1. Obtener datos del estudiante logueado
+                const qUser = query(collection(db, "users"), where("correo", "==", user.email));
+                const snapUser = await getDocs(qUser);
+                if(snapUser.empty) { showToast("No se encontraron datos de estudiante.", "error"); return; }
+                
+                const studentDoc = snapUser.docs[0];
+                const studentData = studentDoc.data();
+                const studentId = studentDoc.id;
+                
+                // 2. Obtener datos de la escuela
+                const escSnap = await getDoc(doc(db, "control", "escuela"));
+                const escData = escSnap.exists() ? escSnap.data() : {};
+                
+                // 3. Obtener materias y plan de estudio
+                const gradeCode = String(studentData.grade);
+                let gNum = 99;
+                const gradeLabel = allGrades[gradeCode]?.nombre || allGrades[gradeCode] || gradeCode;
+                const sLower = gradeLabel.toLowerCase();
+                
+                if (sLower.includes('maternal')) gNum = -4;
+                else if (sLower.includes('kinder') || sLower.includes('kínder')) gNum = -3;
+                else if (sLower.includes('parvularia')) gNum = sLower.includes('4') ? -2 : (sLower.includes('5') ? -1 : 0);
+                else if (sLower.includes('primer')) gNum = 1;
+                else if (sLower.includes('segund')) gNum = 2;
+                else if (sLower.includes('tercer')) gNum = 3;
+                else if (sLower.includes('cuart')) gNum = 4;
+                else if (sLower.includes('quint')) gNum = 5;
+                else if (sLower.includes('sext')) gNum = 6;
+                else if (sLower.includes('septim') || sLower.includes('séptim')) gNum = 7;
+                else if (sLower.includes('octav')) gNum = 8;
+                else if (sLower.includes('noven')) gNum = 9;
+                else gNum = parseInt(gradeCode) || 99;
+
+                let cicloText = `Educación Básica - Ciclo III - de - ${gradeLabel} - Regular`;
+                let planText = "PL2025 - Educación Básica CICLO III";
+                let cyc = "tercer_ciclo";
+                
+                if (gNum <= 0) {
+                    cicloText = `Educación Parvularia - de - ${gradeLabel} - Regular`;
+                    planText = "PL2025 - Educación Parvularia";
+                    cyc = "parvularia";
+                } else if (gNum <= 3) {
+                    cicloText = `Educación Básica - Ciclo I - de - ${gradeLabel} - Regular`;
+                    planText = "PL2025 - Educación Básica CICLO I";
+                    cyc = "primer_ciclo";
+                } else if (gNum <= 6) {
+                    cicloText = `Educación Básica - Ciclo II - de - ${gradeLabel} - Regular`;
+                    planText = "PL2025 - Educación Básica CICLO II";
+                    cyc = "segundo_ciclo";
+                }
+
+                const subjects = allSubs[cyc] || [];
+
+                // 4. Obtener calificaciones y asistencia
+                const currentYear = document.getElementById('vYear').value || new Date().getFullYear().toString();
+                const califSnap = await getDoc(doc(db, "users", studentId, "metadata", "calificaciones"));
+                const califData = califSnap.exists() ? califSnap.data()[currentYear] : {};
+                
+                const asistSnap = await getDoc(doc(db, "users", studentId, "metadata", "asistencia"));
+                const asistData = asistSnap.exists() ? asistSnap.data()[currentYear] : {};
+
+                // Calcular asistencias
+                let asis=0, inasJ=0, inasS=0;
+                if(asistData) {
+                    for(let mes in asistData) {
+                        for(let dia in asistData[mes]) {
+                            const val = asistData[mes][dia];
+                            if(val === 'A') asis++;
+                            else if(val === 'J') inasJ++;
+                            else if(val === 'F') inasS++;
+                        }
+                    }
+                }
+
+                // 5. Director y Responsable de sección
+                let directorName = "";
+                let teacherName = "";
+                const docSnap = await getDocs(collection(db, "docentes"));
+                docSnap.forEach(d => {
+                    const docData = d.data();
+                    if(docData.cargo === 'director') directorName = docData.nombre;
+                    if(docData.grados && docData.grados.includes(gradeCode) && docData.cargo !== 'director') {
+                        teacherName = docData.nombre;
+                    }
+                });
+
+                // --- LLENAR EL HTML ---
+                document.getElementById('bolEscuela').innerText = `${escData.code || ''} - ${escData.name?.toUpperCase() || ''}`;
+                document.getElementById('bolServicio').innerText = cicloText;
+                document.getElementById('bolPlan').innerText = planText;
+                document.getElementById('bolGrado').innerText = gradeLabel.toUpperCase();
+                document.getElementById('bolAnio').innerText = currentYear;
+                document.getElementById('bolEstudiante').innerText = `${studentData.NIE || studentData.nie || '0000000'} - ${studentData.nombreCompleto?.toUpperCase() || ''}`;
+                
+                const hoy = new Date();
+                const dStr = String(hoy.getDate()).padStart(2, '0');
+                const mStr = String(hoy.getMonth() + 1).padStart(2, '0');
+                const yStr = hoy.getFullYear();
+                document.getElementById('bolFechaAsist').innerText = `${dStr}-${mStr}-${yStr}`;
+                
+                document.getElementById('bolAsist').innerText = asis;
+                document.getElementById('bolInasistJ').innerText = inasJ;
+                document.getElementById('bolInasistS').innerText = inasS;
+                
+                document.getElementById('bolDirectorName').innerText = directorName.toUpperCase();
+                document.getElementById('bolTeacherName').innerText = teacherName.toUpperCase();
+
+                // Tabla de notas
+                let tbodyHtml = '';
+                subjects.forEach(sub => {
+                    const p1 = califData?.['1']?.[sub]?.total;
+                    const p2 = califData?.['2']?.[sub]?.total;
+                    const p3 = califData?.['3']?.[sub]?.total;
+                    const r1 = califData?.['r1']?.[sub]?.total;
+                    const r2 = califData?.['r2']?.[sub]?.total;
+                    
+                    let ni = null;
+                    if(p1!==undefined || p2!==undefined || p3!==undefined) {
+                        ni = ((parseFloat(p1)||0) + (parseFloat(p2)||0) + (parseFloat(p3)||0)) / 3;
+                    }
+                    
+                    let nf = ni;
+                    if(r1 !== undefined && parseFloat(r1) > nf) nf = parseFloat(r1);
+                    if(r2 !== undefined && parseFloat(r2) > nf) nf = parseFloat(r2);
+
+                    const fmt = (v) => v !== undefined && v !== null && !isNaN(v) ? parseFloat(v).toFixed(1) : '';
+                    
+                    let resultado = "";
+                    if(nf !== null) {
+                        resultado = nf >= 5.0 ? "APROBADO" : "REPROBADO";
+                    }
+
+                    tbodyHtml += `
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 4px; text-align: left;">${sub.toUpperCase()}</td>
+                            <td style="border: 1px solid #000; padding: 4px;">${fmt(p1)}</td>
+                            <td style="border: 1px solid #000; padding: 4px;">${fmt(p2)}</td>
+                            <td style="border: 1px solid #000; padding: 4px;">${fmt(p3)}</td>
+                            <td style="border: 1px solid #000; padding: 4px;">${fmt(ni)}</td>
+                            <td style="border: 1px solid #000; padding: 4px;">${fmt(r1)}</td>
+                            <td style="border: 1px solid #000; padding: 4px;"></td> <!-- PPS -->
+                            <td style="border: 1px solid #000; padding: 4px;">${fmt(r2)}</td>
+                            <td style="border: 1px solid #000; padding: 4px;"></td> <!-- SPS -->
+                            <td style="border: 1px solid #000; padding: 4px; font-weight: bold;">${fmt(nf)}</td>
+                            <td style="border: 1px solid #000; padding: 4px; font-weight: bold;">${resultado}</td>
+                        </tr>
+                    `;
+                });
+                
+                document.getElementById('bolGradesBody').innerHTML = tbodyHtml;
+
+                // --- GENERAR PDF ---
+                const printSec = document.getElementById('printBoletaSection');
+                printSec.style.display = 'block';
+
+                const opt = {
+                    margin:       0.5,
+                    filename:     `Boleta_Calificaciones_${studentData.nombreCompleto.replace(/\s+/g, '_')}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true },
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                setTimeout(() => {
+                    html2pdf().set(opt).from(document.getElementById('boletaData')).save().then(() => {
+                        printSec.style.display = 'none';
+                        showToast("Boleta descargada exitosamente.");
+                    }).catch(err => {
+                        console.error(err);
+                        printSec.style.display = 'none';
+                        showToast("Error al generar PDF", "error");
+                    });
+                }, 300);
+
+            } catch(e) {
+                console.error(e);
+                showToast("Error al procesar la boleta.", "error");
+            }
+        };
+
+        // ----------------------------------------------------------------
+        // VISTA PRINCIPAL (Tarjetas de Visualización)
+        // ----------------------------------------------------------------
+        window.checkPeriodsAndLoad = async () => {
+            const y = document.getElementById('vYear').value;
+            const g = document.getElementById('vGrade').value;
+            
+            if(!y || String(y).length !== 4) return;
+            if(!g) {
+                document.getElementById('mainContainer').innerHTML = `
+                    <div class="empty-state">
+                        <i class='bx bx-list-ul' style="font-size: 3rem;"></i> 
+                        <p>Seleccione un grado para ver las calificaciones.</p>
+                    </div>`;
+                return;
+            }
+
+            const cohortKey = `${y}_${g}`;
+            if(currentLoadedCohort !== cohortKey) {
+                document.getElementById('mainContainer').innerHTML = `
+                    <div class="empty-state">
+                        <i class="bx bx-loader bx-spin" style="font-size: 3rem; color: var(--primary-steel);"></i> 
+                        <p>Descargando calificaciones del servidor...</p>
+                    </div>`;
+                
+                const cohort = allStudents.filter(s => 
+                    (y === String(new Date().getFullYear()) && String(s.grade) === String(g)) || 
+                    s.calificaciones_history?.[y] === g
+                );
+                
+                cachedGradeData = {};
+                await Promise.all(cohort.map(async (s) => { 
+                    try { 
+                        const snap = await getDoc(doc(db, "users", s.id, "metadata", "calificaciones")); 
+                        if(snap.exists()) cachedGradeData[s.id] = snap.data(); 
+                    } catch(e) {} 
+                }));
+                
+                currentLoadedCohort = cohortKey;
+            }
+
+            renderStudentCards();
+        };
+
+        window.renderStudentCards = () => {
+            const y = document.getElementById('vYear').value;
+            const g = document.getElementById('vGrade').value;
+            const period = document.getElementById('vPeriod').value;
+            
+            if(!y || String(y).length !== 4) return;
+            if(!g) return;
+
+            const cohort = allStudents.filter(s => 
+                (y === String(new Date().getFullYear()) && String(s.grade) === String(g)) || 
+                s.calificaciones_history?.[y] === g
+            ).sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto); 
+                const kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); 
+            });
+            
+            const container = document.getElementById('mainContainer');
+            if(!cohort.length) { 
+                container.innerHTML = '<div class="empty-state"><i class="bx bx-user-x" style="font-size: 3rem; color: var(--border);"></i> <p>Sin estudiantes registrados en este grado.</p></div>'; 
+                return; 
+            }
+
+            const cyc = parseInt(g) <= 3 ? "primer_ciclo" : parseInt(g) <= 6 ? "segundo_ciclo" : "tercer_ciclo";
+            const subjects = allSubs[cyc] || [];
+
+            container.innerHTML = cohort.map(s => {
+                const sD = cachedGradeData[s.id]?.[y] || {};
+                const cfgD = cachedGradeData[s.id]?.config || {};
+                
+                let thead = '';
+                let rows = '';
+                
+                if(period === 'anual') {
+                    thead = `<tr>
+                        <th class="sticky-main">Materia</th>
+                        <th>T1</th><th>T2</th><th>T3</th>
+                        <th>R1</th><th>R2</th>
+                        <th>NF</th>
+                    </tr>`;
+                    
+                    rows = subjects.map(sub => { 
+                        const t1 = sD['1']?.[sub]?.total;
+                        const t2 = sD['2']?.[sub]?.total;
+                        const t3 = sD['3']?.[sub]?.total;
+                        const r1 = sD['r1']?.[sub]?.total;
+                        const r2 = sD['r2']?.[sub]?.total;
+                        
+                        let nf = null;
+                        if (t1 !== undefined || t2 !== undefined || t3 !== undefined) {
+                            nf = ((parseFloat(t1)||0) + (parseFloat(t2)||0) + (parseFloat(t3)||0)) / 3;
+                            if (r1 !== undefined && parseFloat(r1) > nf) nf = parseFloat(r1);
+                            if (r2 !== undefined && parseFloat(r2) > nf) nf = parseFloat(r2);
+                        }
+
+                        return `<tr>
+                            <td class="sticky-main">${cap(sub)}</td>
+                            <td>${formatCell(t1)}</td>
+                            <td>${formatCell(t2)}</td>
+                            <td>${formatCell(t3)}</td>
+                            <td>${formatCell(r1)}</td>
+                            <td>${formatCell(r2)}</td>
+                            <td>${formatCell(nf, true)}</td>
+                        </tr>`; 
+                    }).join('');
+                } else {
+                    let maxE = 0; 
+                    subjects.forEach(sub => { 
+                        const len = (cfgD[`${period}_${sub}`] || []).length; 
+                        if(len > maxE) maxE = len; 
+                    });
+                    
+                    let headers = `<th class="sticky-main">Materia</th>`; 
+                    for(let i=0; i<maxE; i++) {
+                        headers += `<th>Ev ${i+1}</th>`;
+                    }
+                    headers += `<th>Total</th>`;
+                    thead = `<tr>${headers}</tr>`;
+                    
+                    rows = subjects.map(sub => {
+                        const cfg = cfgD[`${period}_${sub}`] || []; 
+                        let subRow = `<tr><td class="sticky-main">${cap(sub)}</td>`;
+                        
+                        for(let i=0; i<maxE; i++) { 
+                            if (i < cfg.length) {
+                                const ev = cfg[i];
+                                let evGrade = 0;
+
+                                if(ev.acts && ev.acts.length > 0) {
+                                    let evPoints = 0;
+                                    ev.acts.forEach((act, a) => { 
+                                        const pct = typeof act === 'object' && act.pct !== undefined ? act.pct : (ev.pct / ev.acts.length);
+                                        const val = parseFloat(sD[period]?.[sub]?.[`ev${i}_a${a}`]); 
+                                        if(!isNaN(val)) {
+                                            evPoints += val * (pct / 100);
+                                        } 
+                                    }); 
+                                    evGrade = ev.pct > 0 ? (evPoints / (ev.pct / 100)) : 0;
+                                }
+
+                                subRow += `<td><div style="display:flex;flex-direction:column;align-items:center;">
+                                    <span style="font-size:0.55rem;color:var(--accent);font-weight:700;">${ev.pct || 0}%</span>
+                                    ${formatCell(evGrade)}
+                                </div></td>`; 
+                            } else {
+                                subRow += `<td></td>`;
+                            } 
+                        }
+                        
+                        return subRow + `<td style="background:var(--bg-light);">${formatCell(sD[period]?.[sub]?.total, true)}</td></tr>`;
+                    }).join('');
+                }
+
+                const initials = (cap(s.nombreCompleto).split(' ')[0][0] + (cap(s.nombreCompleto).split(' ')[1]?.[0] || '')).toUpperCase();
+                
+                return `
+                    <div class="student-card">
+                        <div class="sc-header">
+                            <div class="sc-avatar" style="background:${s.color || 'var(--primary-steel)'}">${initials}</div>
+                            <div>${cap(s.nombreCompleto)}</div>
+                        </div>
+                        <div class="sc-body">
+                            <table class="grades-table">
+                                <thead>${thead}</thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>`;
+            }).join('');
+        };
+
+        const formatCell = (v, res=false) => { 
+            if(v === undefined || v === null || v === '' || v === 0) return '<span class="grade-pill g-null">-</span>'; 
+            const n = parseFloat(v).toFixed(1); 
+            // Aprobación a partir de 5.0
+            return `<div class="grade-pill ${n >= 5.0 ? 'g-pass' : 'g-fail'}" style="${res ? 'border:1px solid currentColor;' : ''}">${n}</div>`; 
+        };
+
+        // ----------------------------------------------------------------
+        // GESTIÓN DEL MODAL Y CONSTRUCCIÓN DE MATRICES
+        // ----------------------------------------------------------------
+        
+        // Guarda el estado del DOM antes de re-renderizar
+        window.syncConfigFromDOM = () => {
+            for(let i=0; i<currentConfig.length; i++) {
+                const nameEl = document.getElementById(`evName_${i}`);
+                const pctEl = document.getElementById(`evPct_${i}`);
+                if(nameEl) currentConfig[i].name = nameEl.value;
+                if(pctEl) currentConfig[i].pct = parseFloat(pctEl.value) || 0;
+                
+                for(let a=0; a<currentConfig[i].acts.length; a++) {
+                    const actNameEl = document.getElementById(`actName_${i}_${a}`);
+                    const actPctEl = document.getElementById(`actPct_${i}_${a}`);
+                    if(actNameEl) currentConfig[i].acts[a].name = actNameEl.value;
+                    if(actPctEl) currentConfig[i].acts[a].pct = parseFloat(actPctEl.value) || 0;
+                }
+            }
+        };
+
+        window.openControlModal = () => { 
+            resetControlModal(); 
+            document.getElementById('controlModal').classList.add('active'); 
+        };
+        
+        window.closeControlModal = () => { 
+            document.getElementById('controlModal').classList.remove('active'); 
+            resetControlModal(); 
+            window.renderStudentCards(); 
+        };
+        
+        window.resetControlModal = () => { 
+            document.getElementById('mYear').value = document.getElementById('vYear').value;
+            document.getElementById('mGrade').value = ''; 
+            document.getElementById('mTrim').value = ''; 
+            document.getElementById('mSubj').innerHTML = '<option value="" disabled selected>Elige Grado Primero</option>';
+            
+            document.getElementById('btnAceptar').style.display = 'none'; 
+            document.getElementById('configPanel').style.display = 'none'; 
+            document.getElementById('matrixPanel').style.display = 'none'; 
+            document.getElementById('matrixBottomBar').style.display = 'none';
+            
+            document.getElementById('modalFiltersGrid').style.display = 'grid';
+            document.getElementById('mobileSummary').style.display = 'none';
+            
+            currentConfig = []; 
+        };
+        
+        window.loadModalSubjects = () => { 
+            const g = document.getElementById('mGrade').value; 
+            if(!g) return;
+            
+            const cyc = parseInt(g) <= 3 ? "primer_ciclo" : parseInt(g) <= 6 ? "segundo_ciclo" : "tercer_ciclo"; 
+            document.getElementById('mSubj').innerHTML = '<option value="" disabled selected>Elegir materia...</option>' + (allSubs[cyc] || []).map(s => `<option value="${s}">${cap(s)}</option>`).join(''); 
+            validateAceptar(); 
+        };
+        
+        window.validateAceptar = () => { 
+            const y = document.getElementById('mYear').value;
+            const g = document.getElementById('mGrade').value;
+            const t = document.getElementById('mTrim').value;
+            const s = document.getElementById('mSubj').value;
+            
+            document.getElementById('configPanel').style.display = 'none';
+            document.getElementById('matrixPanel').style.display = 'none';
+            document.getElementById('matrixBottomBar').style.display = 'none';
+
+            document.getElementById('btnAceptar').style.display = (y && String(y).length === 4 && g && t && s) ? 'flex' : 'none'; 
+
+            if(t === 'r1' || t === 'r2') {
+                document.getElementById('numEvals').value = 1;
+            }
+        };
+
+        window.editFilters = () => {
+            document.getElementById('modalFiltersGrid').style.display = 'grid';
+            document.getElementById('mobileSummary').style.display = 'none';
+            validateAceptar();
+        };
+
+        window.checkConfig = async () => {
+            const y = document.getElementById('mYear').value;
+            const g = document.getElementById('mGrade').value;
+            const t = document.getElementById('mTrim').value;
+            const s = document.getElementById('mSubj').value;
+
+            const gTxt = document.getElementById('mGrade').options[document.getElementById('mGrade').selectedIndex].text;
+            const tTxt = document.getElementById('mTrim').options[document.getElementById('mTrim').selectedIndex].text;
+            const sTxt = document.getElementById('mSubj').options[document.getElementById('mSubj').selectedIndex].text;
+            
+            document.getElementById('summaryText').innerHTML = `<strong>${sTxt}</strong><br>${gTxt} | ${tTxt} (${y})`;
+
+            const btn = document.getElementById('btnAceptar');
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Accediendo a Matriz...";
+            btn.disabled = true;
+
+            try {
+                const docRef = doc(db, "calificaciones", g);
+                const snap = await getDoc(docRef);
+                
+                let cfgFound = null;
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data[s] && data[s][t]) {
+                        cfgFound = data[s][t];
+                    }
+                }
+
+                btn.style.display = 'none';
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bx-check-circle'></i> Aceptar y Cargar";
+
+                document.getElementById('modalFiltersGrid').style.display = 'none';
+                document.getElementById('mobileSummary').style.display = 'flex';
+
+                if (cfgFound) {
+                    currentConfig = cfgFound.map(ev => {
+                        let actsFormateados = [];
+                        if (ev.acts && ev.acts.length > 0) {
+                            actsFormateados = ev.acts.map((act, idx) => {
+                                if (typeof act === 'string') return { name: act, pct: parseFloat((ev.pct / ev.acts.length).toFixed(1)) };
+                                if (typeof act === 'object' && act.pct === undefined) return { name: act.name || `Actividad ${idx+1}`, pct: parseFloat((ev.pct / ev.acts.length).toFixed(1)) };
+                                return act; 
+                            });
+                        } else {
+                            actsFormateados = [{ name: "Nota Única", pct: ev.pct }];
+                        }
+                        
+                        return { 
+                            name: ev.name || 'Evaluación', 
+                            pct: ev.pct !== undefined ? ev.pct : parseFloat((100 / cfgFound.length).toFixed(1)),
+                            acts: actsFormateados 
+                        };
+                    });
+                    switchModalView('matrix');
+                    renderMatrix();
+                } else {
+                    currentConfig = [];
+                    switchModalView('config');
+                }
+            } catch (error) {
+                showToast("Error de conexión al obtener la matriz.", "error");
+                btn.disabled = false;
+            }
+        };
+
+        window.switchModalView = (view) => { 
+            document.getElementById('configPanel').style.display = (view === 'config' ? 'flex' : 'none'); 
+            document.getElementById('matrixPanel').style.display = (view === 'matrix' ? 'flex' : 'none'); 
+            document.getElementById('matrixBottomBar').style.display = (view === 'matrix' ? 'flex' : 'none'); 
+            
+            if (view === 'config') buildCfgInputs(); 
+        };
+
+        window.buildCfgInputs = () => {
+            syncConfigFromDOM(); 
+            
+            const n = parseInt(document.getElementById('numEvals').value) || 3; 
+            const isRecup = ['r1', 'r2'].includes(document.getElementById('mTrim').value);
+            
+            if(currentConfig.length !== n) {
+                if (n > currentConfig.length) {
+                    const diff = n - currentConfig.length;
+                    for(let i = 0; i < diff; i++) {
+                        const defName = isRecup ? "Examen de Recuperación" : `Evaluación ${currentConfig.length + 1}`;
+                        currentConfig.push({
+                            name: defName,
+                            pct: 0,
+                            acts: [{ name: "Nota Única", pct: 0 }]
+                        });
+                    }
+                } else if (n < currentConfig.length) {
+                    currentConfig = currentConfig.slice(0, n);
+                }
+            }
+            renderDynamicBuilder();
+        };
+
+        window.renderDynamicBuilder = () => {
+            let html = '';
+            currentConfig.forEach((ev, i) => {
+                html += `
+                <div class="cfg-eval-card">
+                    <div class="cfg-eval-header">
+                        <div class="form-group" style="flex: 2; min-width: 150px; margin-bottom:0;">
+                            <label style="font-size: 0.65rem;">Nombre Evaluación Principal</label>
+                            <input type="text" id="evName_${i}" style="margin-bottom:0; font-size: 0.85rem; padding: 0.6rem;" value="${ev.name}">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 80px; margin-bottom:0;">
+                            <label style="font-size: 0.65rem;">Valor Global (%)</label>
+                            <input type="number" id="evPct_${i}" style="background:#e0f2fe; color:#0369a1; margin-bottom:0; font-size: 0.85rem; padding: 0.6rem;" value="${ev.pct}">
+                        </div>
+                    </div>
+
+                    <div class="cfg-acts-container">
+                        ${ev.acts.map((act, a) => `
+                            <div style="display:flex; align-items:center; gap:0.5rem; background:var(--bg-light); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid var(--border);">
+                                <i class='bx bx-subdirectory-right' style="color:var(--border); font-size: 1.4rem;"></i>
+                                <div style="display:flex; flex-direction:column; gap:0.2rem; flex: 2; min-width: 0;">
+                                    <label style="font-size: 0.6rem; font-weight:800; color:var(--primary-steel); text-transform:uppercase;">Nombre Actividad</label>
+                                    <input type="text" id="actName_${i}_${a}" style="padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; width: 100%; outline:none;" value="${act.name}">
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:0.2rem; flex: 1; min-width: 0;">
+                                    <label style="font-size: 0.6rem; font-weight:800; color:var(--primary-steel); text-transform:uppercase;">Valor Interno (%)</label>
+                                    <input type="number" id="actPct_${i}_${a}" style="background:#f0fdf4; color:#15803d; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; width: 100%; outline:none;" value="${act.pct}">
+                                </div>
+                                <button style="margin-top:0.8rem; background:transparent; border:none; font-size:1.5rem; cursor:pointer; color: var(--accent); display:flex; align-items:center;" onclick="removeAct(${i}, ${a})"><i class='bx bx-x'></i></button>
+                            </div>
+                        `).join('')}
+                        
+                        <button style="margin-top:0.5rem; background:transparent; border:1px dashed var(--accent); padding:0.5rem; border-radius:6px; cursor:pointer; color:var(--accent); font-weight:700; width:100%; transition:0.2s; align-self: center;" onclick="addAct(${i})" onmouseover="this.style.borderColor='var(--primary-steel)'; this.style.color='var(--primary-steel)';" onmouseout="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)';">+ Agregar Actividad Interna</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('cfgInputsArea').innerHTML = html;
+        };
+
+        window.addAct = (evIndex) => {
+            syncConfigFromDOM(); 
+            currentConfig[evIndex].acts.push({ name: "Nueva Actividad", pct: 0 });
+            renderDynamicBuilder();
+        };
+
+        window.removeAct = (evIndex, actIndex) => {
+            syncConfigFromDOM(); 
+            if(currentConfig[evIndex].acts.length === 1) {
+                showToast("Cada evaluación debe tener al menos una actividad.", "error");
+                return;
+            }
+            currentConfig[evIndex].acts.splice(actIndex, 1);
+            renderDynamicBuilder();
+        };
+
+        window.generateMatrix = () => {
+            syncConfigFromDOM(); 
+
+            let totalEval = 0;
+            for(let i=0; i<currentConfig.length; i++) { 
+                let ev = currentConfig[i];
+                if (!ev.name.trim()) { showToast("Falta el nombre de una evaluación.", "error"); return; }
+                totalEval += ev.pct;
+                
+                let totalActs = 0;
+                for(let a=0; a<ev.acts.length; a++) {
+                    let act = ev.acts[a];
+                    if (!act.name.trim()) { showToast(`Falta el nombre de una actividad en ${ev.name}.`, "error"); return; }
+                    totalActs += act.pct;
+                }
+                
+                if(Math.abs(totalActs - ev.pct) > 0.5) {
+                    showToast(`Las actividades de la "${ev.name}" suman ${totalActs}%. Deben sumar exactamente el valor de la evaluación (${ev.pct}%).`, "error");
+                    return;
+                }
+            }
+            
+            if(Math.abs(totalEval - 100) > 0.5) { 
+                showToast(`El total de los porcentajes de las Evaluaciones Principales es ${totalEval}%. Debe sumar exactamente 100%.`, "error"); 
+                return; 
+            }
+
+            switchModalView('matrix'); 
+            renderMatrix();
+        };
+
+        // --- RENDERIZADO ESTELAR DE MATRIZ Y FILTROS DE RECUPERACIÓN ---
+        async function renderMatrix() {
+            const y = document.getElementById('mYear').value;
+            const g = document.getElementById('mGrade').value;
+            const t = document.getElementById('mTrim').value;
+            const s = document.getElementById('mSubj').value;
+            
+            const cohort = allStudents.filter(st => 
+                (y === String(new Date().getFullYear()) && String(st.grade) === String(g)) || 
+                st.calificaciones_history?.[y] === g
+            ).sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto); 
+                const kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2); 
+            });
+            
+            await Promise.all(cohort.map(async st => { 
+                const sn = await getDoc(doc(db, "users", st.id, "metadata", "calificaciones")); 
+                if(sn.exists()) cachedGradeData[st.id] = sn.data(); 
+            }));
+
+            let filteredCohort = [];
+            cohort.forEach(st => {
+                if (t === 'r1' || t === 'r2') {
+                    const sD = cachedGradeData[st.id]?.[y] || {};
+                    const t1 = parseFloat(sD['1']?.[s]?.total) || 0;
+                    const t2 = parseFloat(sD['2']?.[s]?.total) || 0;
+                    const t3 = parseFloat(sD['3']?.[s]?.total) || 0;
+                    const r1 = parseFloat(sD['r1']?.[s]?.total) || 0;
+                    
+                    const prom = (t1 + t2 + t3) / 3;
+                    
+                    if (t === 'r1') {
+                        if (prom < 4.95) filteredCohort.push(st);
+                    } else if (t === 'r2') {
+                        const maxVal = Math.max(prom, r1);
+                        if (maxVal < 4.95) filteredCohort.push(st);
+                    }
+                } else {
+                    filteredCohort.push(st);
+                }
+            });
+
+            if (filteredCohort.length === 0) {
+                document.getElementById('matrixTable').innerHTML = `
+                <tr><td style="border:none; padding: 3rem;">
+                    <div class="empty-state">
+                        <i class='bx bx-check-shield' style='font-size:3.5rem; color:var(--success); margin-bottom:1rem;'></i>
+                        <br>Ningún estudiante requiere ${t === 'r1' ? 'Recuperación 1' : 'Recuperación 2'} en esta materia. Todos aprobaron.
+                    </div>
+                </td></tr>`;
+                document.getElementById('btnSaveMatrix').style.display = 'none';
+                return;
+            } else {
+                document.getElementById('btnSaveMatrix').style.display = 'flex';
+            }
+
+            // Construcción del Encabezado
+            let h1 = `<tr><th rowspan="2" class="sticky-col" style="background:#f8fafc; z-index:20;">Estudiante</th>`;
+            let h2 = `<tr>`;
+            
+            currentConfig.forEach((ev, i) => { 
+                h1 += `<th colspan="${ev.acts.length}" style="background:#e0f2fe; color:#0369a1;">${ev.name}<br>(${ev.pct}%)</th>`; 
+                ev.acts.forEach(a => h2 += `<th style="background:#f0fdf4; color:#15803d; font-size:0.65rem;">${a.name}<br>(${a.pct}%)</th>`); 
+            });
+
+            h1 += `<th rowspan="2" style="background:#243C4C; color:white; z-index:12;">NOTA FINAL</th></tr>`;
+            
+            let rows = filteredCohort.map(st => {
+                const sD = cachedGradeData[st.id]?.[y]?.[t]?.[s] || {};
+                
+                let cells = currentConfig.map((ev, i) => ev.acts.map((_, a) => {
+                    const val = sD[`ev${i}_a${a}`] ?? '';
+                    return `<td><input type="number" step="0.1" min="0" max="10" class="val-inp inp-${st.id}" data-ev="${i}" data-act="${a}" value="${val}" oninput="calcRow('${st.id}')"></td>`;
+                }).join('')).join('');
+                
+                return `
+                <tr>
+                    <td class="sticky-col">${cap(st.nombreCompleto).split(' ')[0]} ${cap(st.nombreCompleto).split(' ')[1] || ''}</td>
+                    ${cells}
+                    <td><div class="val-total" id="tot-${st.id}">${sD.total?.toFixed(1) || '0.0'}</div></td>
+                </tr>`;
+            }).join('');
+            
+            document.getElementById('matrixTable').innerHTML = `<thead>${h1}${h2}</thead><tbody>${rows}</tbody>`;
+            
+            filteredCohort.forEach(st => window.calcRow(st.id));
+        }
+
+        window.calcRow = (id) => { 
+            let finalGrade = 0; 
+            
+            currentConfig.forEach((ev, i) => { 
+                ev.acts.forEach((act, a) => { 
+                    const input = document.querySelector(`.inp-${id}[data-ev="${i}"][data-act="${a}"]`);
+                    if (input.value > 10) input.value = 10;
+                    if (input.value < 0) input.value = 0;
+                    const v = parseFloat(input.value); 
+                    if(!isNaN(v)) { 
+                        finalGrade += v * ((act.pct || 0) / 100); 
+                    } 
+                }); 
+            }); 
+            
+            document.getElementById(`tot-${id}`).innerText = finalGrade.toFixed(1); 
+        };
+
+        window.saveMatrix = async () => {
+            const y = document.getElementById('mYear').value;
+            const g = document.getElementById('mGrade').value;
+            const t = document.getElementById('mTrim').value;
+            const s = document.getElementById('mSubj').value;
+            
+            const btn = document.getElementById('btnSaveMatrix'); 
+            btn.disabled = true; 
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Guardando Todo...";
+            
+            try {
+                const batch = writeBatch(db);
+                
+                const masterDocRef = doc(db, "calificaciones", g);
+                const masterPayload = { [s]: { [t]: currentConfig } };
+                batch.set(masterDocRef, masterPayload, { merge: true });
+
+                const cohort = allStudents.filter(st => 
+                    (y === String(new Date().getFullYear()) && String(st.grade) === String(g)) || 
+                    st.calificaciones_history?.[y] === g
+                );
+                
+                cohort.forEach(st => {
+                    const checkInput = document.querySelector(`.inp-${st.id}[data-ev="0"][data-act="0"]`);
+                    if (!checkInput) return;
+
+                    let sD = { total: parseFloat(document.getElementById(`tot-${st.id}`).innerText) || 0 };
+                    
+                    currentConfig.forEach((ev, i) => {
+                        ev.acts.forEach((_, a) => { 
+                            const v = document.querySelector(`.inp-${st.id}[data-ev="${i}"][data-act="${a}"]`).value; 
+                            if(v !== '') sD[`ev${i}_a${a}`] = parseFloat(v); 
+                        });
+                    });
+                    
+                    const studentPayload = {
+                        config: { [`${t}_${s}`]: currentConfig },
+                        [y]: { [t]: { [s]: sD } }
+                    };
+
+                    batch.set(doc(db, "users", st.id, "metadata", "calificaciones"), studentPayload, { merge: true });
+                    batch.update(doc(db, "users", st.id), { [`calificaciones_history.${y}`]: g });
+                });
+                
+                await batch.commit(); 
+                
+                currentLoadedCohort = ""; 
+                closeControlModal();
+                showToast("Notas guardadas exitosamente.");
+            
+            } catch(e) { 
+                showToast("Error al sincronizar datos con el servidor.", "error"); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerHTML = "<i class='bx bx-cloud-upload'></i> Guardar Notas"; 
+            }
+        };
+    </script>
+</body>
+</html>

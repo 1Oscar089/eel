@@ -1,0 +1,257 @@
+/* =============================================
+   USERBAR - CE Cantón Los Prados
+   ============================================= */
+* {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+:root {
+    --primary-dark: #243C4C;
+    --primary-steel: #5289AD;
+    --accent: #698696;
+    --border: #ACBCBF;
+    --bg-light: #F4FCFB;
+}
+
+.userbar {
+    background-color: var(--primary-dark);
+    color: white;
+    padding: 0 1.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(36, 60, 76, 0.3);
+}
+
+.userbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+}
+
+.userbar-brand-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.userbar-brand-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+.userbar-brand-text {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .userbar-brand-text {
+        display: block;
+    }
+}
+
+.userbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.userbar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.userbar-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--primary-steel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: white;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.25);
+    letter-spacing: 0.5px;
+}
+
+.userbar-info {
+    display: none;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+@media (min-width: 480px) {
+    .userbar-info {
+        display: flex;
+    }
+}
+
+.userbar-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.userbar-email {
+    font-size: 0.72rem;
+    color: var(--border);
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.userbar-chevron {
+    width: 16px;
+    height: 16px;
+    stroke: var(--border);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    display: none;
+}
+
+@media (min-width: 480px) {
+    .userbar-chevron {
+        display: block;
+    }
+}
+
+.userbar-user.open .userbar-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dropdown */
+.userbar-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(36, 60, 76, 0.18);
+    border: 1px solid var(--border);
+    min-width: 220px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 999;
+}
+
+.userbar-user.open .userbar-dropdown {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+}
+
+.userbar-dropdown-header {
+    padding: 1rem;
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border);
+}
+
+.userbar-dropdown-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--primary-dark);
+    margin-bottom: 2px;
+}
+
+.userbar-dropdown-email {
+    font-size: 0.78rem;
+    color: var(--accent);
+}
+
+.userbar-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: var(--primary-dark);
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+}
+
+.userbar-dropdown-item svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--accent);
+    flex-shrink: 0;
+}
+
+.userbar-dropdown-item:hover {
+    background: var(--bg-light);
+}
+
+.userbar-dropdown-item.danger {
+    color: #dc2626;
+    border-top: 1px solid var(--border);
+}
+
+.userbar-dropdown-item.danger svg {
+    stroke: #dc2626;
+}
+
+.userbar-dropdown-item.danger:hover {
+    background: #fee2e2;
+}
+
+/* Loading skeleton */
+.userbar-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.skeleton-line {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line.w-full { width: 140px; }
+.skeleton-line.w-sm { width: 90px; }
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

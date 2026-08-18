@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Compras - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTE MÓDULO */
+        body { padding: var(--gap); overflow-y: auto;}
+        .container { max-width: 1400px; margin: 0 auto; min-height: 95vh; }
+
+        /* HEADER INTERNO */
+        .module-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: var(--gap); 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 1rem; 
+            flex-wrap: wrap; 
+            gap: var(--gap); 
+        }
+        .module-header h1 { 
+            font-size: 1.6rem; 
+            font-weight: 800; 
+            letter-spacing: -1px; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.8rem; 
+            margin: 0;
+        }
+        .header-actions { 
+            display: flex; 
+            gap: 0.8rem; 
+            align-items: center; 
+            flex-wrap: wrap;
+        }
+        .btn-header { 
+            background: white; 
+            color: var(--primary-dark); 
+            border: 1px solid var(--border); 
+            padding: 0.6rem 1rem; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            cursor: pointer; 
+        }
+        .btn-header:hover { background: var(--bg-light); border-color: var(--primary-steel); }
+        .btn-back { color: var(--danger); border-color: #fecaca;}
+        .btn-back:hover { background: #fee2e2; }
+        .btn-cde { background: #e0f2fe; color: #0284c7; border-color: #bae6fd; }
+        .btn-cde:hover { background: #0284c7; color: white; }
+        .btn-hist { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+        .btn-hist:hover { background: #f59e0b; color: white; border-color: #f59e0b; }
+
+        /* TABLA DE PRODUCTOS (Adaptada al maestro pero con anchos fijos mínimos) */
+        .table-wrapper { border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; margin-bottom: var(--gap); background: white;}
+        .table-compras { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 800px; }
+        .table-compras th, .table-compras td { padding: 0.3rem 0.6rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .table-compras th { background: #f8fafc; font-weight: 800; color: var(--primary-dark); text-transform: uppercase; font-size: 0.7rem; padding: 0.6rem; }
+        .table-compras td input, .table-compras td select { 
+            width: 100%; 
+            padding: 0.4rem 0.5rem; 
+            border: 1px solid var(--border); 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            outline: none; 
+            font-weight: 600; 
+            color: var(--primary-dark);
+            transition: 0.2s;
+        }
+        .table-compras td input:focus, .table-compras td select:focus { border-color: var(--primary-steel); background: #f0f8ff;}
+        .input-error { border-color: var(--danger) !important; background-color: #fef2f2 !important; }
+
+        .btn-add-row { 
+            background: #e0f2fe; 
+            color: #0284c7; 
+            border: 1px dashed #bae6fd; 
+            padding: 0.6rem 1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 0.8rem; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            width: 100%; 
+            justify-content: center; 
+        }
+        .btn-add-row:hover { background: #0284c7; color: white; }
+
+        /* AUTOCOMPLETADO INTERNO */
+        .autocomplete-wrapper { position: relative; width: 100%; }
+        .sugg-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--primary-steel); border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: var(--shadow-md); }
+        .sugg-item { padding: 0.6rem 0.8rem; font-size: 0.75rem; font-weight: 700; color: var(--primary-dark); cursor: pointer; border-bottom: 1px solid var(--bg-light); }
+        .sugg-item:hover { background: #f0f8ff; color: var(--primary-steel); }
+
+        /* BOTONES DE ACCIÓN INFERIORES */
+        .action-bar { display: flex; justify-content: flex-end; gap: var(--gap); margin-top: 1.5rem; flex-wrap: wrap;}
+        .btn-action-test { background: #fffbeb; color: var(--warning); border: 1px solid #fde68a; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s;}
+        .btn-action-test:hover { background: #fde68a; color: #b45309; }
+
+        /* MODALES (Ajustes para que no se desborden en móvil) */
+        .modal {
+            display: flex !important;
+            flex-direction: column !important;
+            max-height: 90vh !important;
+            overflow: hidden !important;
+            padding-bottom: 1.2rem !important;
+            box-shadow: var(--shadow-modal) !important;
+        }
+        .modal-header { flex-shrink: 0 !important; margin-bottom: 0.5rem; }
+        .modal-body {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            padding-right: 0.5rem !important;
+        }
+        .modal-actions {
+            flex-shrink: 0 !important;
+            background: white !important;
+            padding-top: 1rem !important;
+            margin-top: 0 !important;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        
+        .cde-item { display: grid; grid-template-columns: 2fr 1.2fr 1.5fr 1.5fr 40px; gap: 0.5rem; padding: 0.6rem; border-bottom: 1px solid var(--bg-light); align-items: center; background: #f8fafc; }
+        .cde-item input, .cde-item select { padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; font-weight: 600; width: 100%; outline: none; }
+        .cde-item-header { background: var(--primary-dark); color: white; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; padding: 0.5rem 0.6rem; }
+        
+        .btn-restore-action { background: #e0f2fe; color: #0284c7; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem; transition: 0.2s; width: 100%; justify-content: center;}
+        .btn-restore-action:hover { background: #0284c7; color: white; }
+
+        @media (max-width: 768px) {
+            .header-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+            .btn-header { justify-content: center; font-size: 0.75rem; padding: 0.6rem 0.2rem; text-align: center;}
+            .btn-back { grid-column: 1 / -1; }
+            
+            .action-bar { flex-direction: column-reverse; }
+            .action-bar button { width: 100%; justify-content: center; }
+
+            .cde-item { 
+                grid-template-columns: 1fr; 
+                gap: 0.4rem; 
+                padding: 1rem; 
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                margin-bottom: 0.5rem;
+            }
+            .cde-item-header { display: none; }
+            .cde-item button { margin-top: 0.5rem; width: 100%; justify-content: center;}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+        <header class="module-header">
+            <h1><i class='bx bx-cart-download'></i> Generador de Compras</h1>
+            <div class="header-actions">
+                <button class="btn-header btn-hist" onclick="abrirModalRestaurar()"><i class='bx bx-history'></i> Historial</button>
+                <button class="btn-header btn-cde" onclick="abrirModalCDE()"><i class='bx bx-group'></i> Gestionar CDE</button>
+                <a href="fondos_presupuesto.html" class="btn-header btn-back"><i class='bx bx-chevron-left'></i> Volver a Presupuesto</a>
+            </div>
+        </header>
+
+        <form id="formCompras">
+            <div class="card">
+                <h2><i class='bx bx-store-alt'></i> Datos del Proveedor</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nombre del Proveedor</label>
+                        <input type="text" id="provNombre" class="req-field" placeholder="Ej: LIBRERÍA EL ESTUDIANTE" autocomplete="off" oninput="this.value = limpiarTextoInput(this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección del Proveedor</label>
+                        <input type="text" id="provDireccion" class="req-field" placeholder="Ej: BARRIO EL CENTRO, CHALATENANGO" autocomplete="off" oninput="this.value = limpiarTextoInput(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class='bx bx-calendar'></i> Fechas del Proceso</h2>
+                <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+                    <div class="form-group"><label>Solicitud Cotización</label><input type="date" id="dateSolicitud" class="req-field"></div>
+                    <div class="form-group"><label>Cotización Proveedor</label><input type="date" id="dateCotizacion" class="req-field"></div>
+                    <div class="form-group"><label>Plan de Compras</label><input type="date" id="datePlan" class="req-field"></div>
+                    <div class="form-group"><label>Orden de Compra</label><input type="date" id="dateOrden" class="req-field"></div>
+                    <div class="form-group"><label>Acta de Recepción</label><input type="date" id="dateActa" class="req-field"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class='bx bx-list-check'></i> Detalle de Bienes y Servicios</h2>
+                <div class="table-wrapper">
+                    <table class="table-compras">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">Cant.</th>
+                                <th style="width: 15%;">Unidad</th>
+                                <th style="width: 40%;">Descripción del Producto</th>
+                                <th style="width: 12%;">P. Unit ($)</th>
+                                <th style="width: 20%;">Rubro (Plan)</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn-add-row" onclick="agregarFila()"><i class='bx bx-plus'></i> Agregar Fila de Producto</button>
+            </div>
+
+            <div class="action-bar">
+                <button type="button" class="btn-action-test" onclick="ejecutarGeneracion(true)">
+                    <i class='bx bx-test-tube'></i> Generar Prueba (Sin validar)
+                </button>
+                <button type="button" class="btn-primary" style="width: auto;" onclick="ejecutarGeneracion(false)">
+                    <i class='bx bxs-file-pdf'></i> Validar y Generar Oficial
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" id="modalRestaurar">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin: 0;"><i class='bx bx-history'></i> Historial de Compras</h2>
+                <p style="font-size: 0.8rem; color: var(--accent); margin-top: 0.2rem;">Selecciona una compra generada anteriormente para cargar sus datos y editarla.</p>
+            </div>
+            
+            <div class="modal-body">
+                <div class="table-wrapper">
+                    <table class="table-compras">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Fecha Acta</th>
+                                <th style="width: 45%;">Proveedor</th>
+                                <th style="width: 20%; text-align: right;">Monto Total</th>
+                                <th style="width: 15%; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaHistorial">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border); display: block;" onclick="cerrarModalRestaurar()">Cerrar Historial</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalCDE">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin: 0;"><i class='bx bx-group'></i> Miembros del CDE</h2>
+                <p style="font-size: 0.8rem; color: var(--accent); margin-top: 0.2rem;">Actualiza las firmas y documentos de los responsables.</p>
+            </div>
+            
+            <div class="modal-body">
+                <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 1rem;">
+                    <div class="cde-item cde-item-header">
+                        <span>Nombre Completo</span>
+                        <span>N° de DUI</span>
+                        <span>Cargo Principal</span>
+                        <span>Cargo Secundario</span>
+                        <span></span>
+                    </div>
+                    <div id="cdeContainer">
+                    </div>
+                </div>
+                <button type="button" class="btn-add-row" onclick="agregarFilaCDE()"><i class='bx bx-user-plus'></i> Agregar Miembro</button>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border); display: block;" onclick="cerrarModalCDE()">Cancelar</button>
+                <button class="btn-primary" style="width: auto; padding: 0.6rem 1.5rem;" onclick="guardarCDE()"><i class='bx bx-save'></i> Guardar Firmas</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from '../js/initFirebase.js';
+        import { collection, doc, getDoc, setDoc, getDocs, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        // ==========================================
+        // VARIABLES GLOBALES
+        // ==========================================
+        const UNITS = ["UNIDAD", "CAJA", "PAQUETE", "GALÓN", "LITRO", "DOCENA", "PLIEGO", "RESMA", "YARDA", "SERVICIO"];
+        const RUBROS = [
+            "Material educativo", "Logística del centro educativo", "Alimentación y salud escolar",
+            "Remuneraciones", "Adquisición de mobiliario", "Adquisición de equipo"
+        ];
+        const CARGOS_CDE = [
+            "Presidente propietario", "Presidente suplente",
+            "Tesorero/a propietario", "Tesorero/a suplente",
+            "Secretario/a propietario", "Secretario/a suplente",
+            "Consejal propietario docente", "Consejal suplente docente",
+            "Consejal propietario padre de familia", "Consejal suplente padre de familia",
+            "Consejal propietario alumno", "Consejal suplente alumno",
+            "Encargado de Compras", "Sin cargo"
+        ];
+        
+        let cdeData = { miembros: [] };
+        let catalogoProductos = [];
+
+        // ==========================================
+        // SISTEMA UI Y MÁSCARAS
+        // ==========================================
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : type === 'error' ? 'bx-error-circle' : 'bx-info-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        window.limpiarTextoInput = (str) => {
+            return str.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s{2,}/g, ' ').trimStart();
+        };
+
+        const formatearTextoFinal = (str) => window.limpiarTextoInput(str).trim();
+
+        window.mascaraDuiLocal = (val) => {
+            let v = val.replace(/\D/g, '').substring(0, 9);
+            if (v.length > 8) v = v.replace(/^(\d{8})(\d)/, '$1-$2');
+            return v;
+        };
+
+        // ==========================================
+        // INICIALIZACIÓN
+        // ==========================================
+        window.addEventListener('load', async () => {
+            agregarFila(); 
+            // Inicializar fechas con la hora local SV de forma simple
+            const hoy = new Date();
+            const dateStr = hoy.toLocaleDateString('es-SV').split('/').reverse().join('-');
+            document.querySelectorAll('input[type="date"]').forEach(inp => inp.value = dateStr);
+
+            await cargarCDE();
+            await cargarCatalogo();
+        });
+
+        async function cargarCDE() {
+            try {
+                const snap = await getDoc(doc(db, "centroescolar", "cde"));
+                if(snap.exists()) cdeData = snap.data();
+            } catch(e) { console.error("No se pudo cargar CDE"); }
+        }
+
+        // ==========================================
+        // GESTIÓN DE FILAS (TABLA DE COMPRAS)
+        // ==========================================
+        window.agregarFila = (datos = null) => {
+            const tbody = document.getElementById('itemsBody');
+            const tr = document.createElement('tr');
+            
+            // Si vienen datos de restauración, los usamos. Si no, valores por defecto.
+            const qty = datos ? datos.qty : 1;
+            const unit = datos ? datos.unit : UNITS[0];
+            const desc = datos ? datos.desc : "";
+            const price = datos ? datos.price : "";
+            const rubro = datos ? datos.rubro : RUBROS[0];
+
+            const unitOpts = UNITS.map(u => `<option value="${u}" ${u === unit ? 'selected' : ''}>${u}</option>`).join("");
+            const rubroOpts = RUBROS.map(r => `<option value="${r}" ${r === rubro ? 'selected' : ''}>${r}</option>`).join("");
+
+            tr.innerHTML = `
+                <td><input type="number" class="it-qty req-field" min="0.01" step="0.01" value="${qty}"></td>
+                <td><select class="it-unit req-field">${unitOpts}</select></td>
+                <td>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" class="it-desc req-field" placeholder="Ej: RESMA DE PAPEL BOND" autocomplete="off" oninput="buscarSugerencia(this)" value="${desc}">
+                        <div class="sugg-box"></div>
+                    </div>
+                </td>
+                <td><input type="number" class="it-price req-field" min="0" step="0.01" placeholder="0.00" value="${price}"></td>
+                <td><select class="it-rubro req-field">${rubroOpts}</select></td>
+                <td style="text-align:center;"><button type="button" class="btn-sq btn-sq-del" onclick="this.closest('tr').remove()"><i class='bx bx-trash'></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        };
+
+        // ==========================================
+        // AUTOCOMPLETADO INTELIGENTE
+        // ==========================================
+        async function cargarCatalogo() {
+            try {
+                const snap = await getDocs(collection(db, "catalogo_compras"));
+                catalogoProductos = snap.docs.map(d => d.data().nombre);
+            } catch(e) { console.error("No se pudo cargar el catálogo."); }
+        }
+
+        window.buscarSugerencia = (inputElement) => {
+            inputElement.value = window.limpiarTextoInput(inputElement.value);
+            const query = inputElement.value.trim(); 
+            const box = inputElement.nextElementSibling;
+            
+            if (query.length < 3) { box.style.display = 'none'; return; }
+
+            const matches = catalogoProductos.filter(p => p.includes(query)).slice(0, 5);
+
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(m => `<div class="sugg-item" onclick="seleccionarSugerencia(this, '${m}')">${m}</div>`).join('');
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        };
+
+        window.seleccionarSugerencia = (itemElement, valor) => {
+            const input = itemElement.closest('.autocomplete-wrapper').querySelector('.it-desc');
+            input.value = valor;
+            itemElement.closest('.sugg-box').style.display = 'none';
+        };
+
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.autocomplete-wrapper')) {
+                document.querySelectorAll('.sugg-box').forEach(b => b.style.display = 'none');
+            }
+        });
+
+        // ==========================================
+        // HISTORIAL Y RESTAURACIÓN DE COMPRAS
+        // ==========================================
+        window.abrirModalRestaurar = async () => {
+            document.getElementById('modalRestaurar').classList.add('active');
+            const tbody = document.getElementById('listaHistorial');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;"><i class="bx bx-loader-alt bx-spin"></i> Cargando historial...</td></tr>';
+
+            try {
+                const q = query(collection(db, "compras_guardadas"), orderBy("timestamp", "desc"));
+                const snap = await getDocs(q);
+
+                if(snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--accent); font-style:italic; padding: 2rem;">No hay compras registradas.</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const jsonStr = encodeURIComponent(JSON.stringify(data));
+                    
+                    // Formatear Fecha visualmente sin romper la data original
+                    let fechaVisual = 'Sin fecha';
+                    if (data.fechas?.acta) {
+                        const [y, m, d] = data.fechas.acta.split('-');
+                        fechaVisual = `${d}/${m}/${y}`;
+                    }
+
+                    const prov = data.proveedor?.nombre || 'Proveedor Desconocido';
+                    const total = data.total ? `$${parseFloat(data.total).toFixed(2)}` : '$0.00';
+
+                    html += `
+                        <tr>
+                            <td style="font-weight: bold; color: var(--primary-steel);">${fechaVisual}</td>
+                            <td>${prov}</td>
+                            <td style="font-family: monospace; font-weight: 800; text-align: right;">${total}</td>
+                            <td style="text-align:center;">
+                                <button class="btn-restore-action" onclick="restaurarCompraFormulario('${jsonStr}')">
+                                    <i class='bx bx-upload'></i> Cargar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+
+            } catch (error) {
+                console.error("Error cargando historial:", error);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--danger);">Error al cargar historial. Revise permisos.</td></tr>';
+            }
+        };
+
+        window.cerrarModalRestaurar = () => document.getElementById('modalRestaurar').classList.remove('active');
+
+        window.restaurarCompraFormulario = (jsonEncoded) => {
+            const data = JSON.parse(decodeURIComponent(jsonEncoded));
+
+            // Llenar Datos Principales
+            document.getElementById('provNombre').value = data.proveedor?.nombre || "";
+            document.getElementById('provDireccion').value = data.proveedor?.direccion || "";
+            
+            if(data.fechas) {
+                document.getElementById('dateSolicitud').value = data.fechas.solicitud || "";
+                document.getElementById('dateCotizacion').value = data.fechas.cotizacion || "";
+                document.getElementById('datePlan').value = data.fechas.plan || "";
+                document.getElementById('dateOrden').value = data.fechas.orden || "";
+                document.getElementById('dateActa').value = data.fechas.acta || "";
+            }
+
+            // Llenar Tabla de Productos
+            const tbody = document.getElementById('itemsBody');
+            tbody.innerHTML = ''; 
+            
+            if(data.items && Array.isArray(data.items)) {
+                data.items.forEach(it => agregarFila(it));
+            } else {
+                agregarFila(); 
+            }
+
+            cerrarModalRestaurar();
+            showToast("Datos de la compra restaurados con éxito.", "info");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+
+        // ==========================================
+        // GESTIÓN DEL CDE
+        // ==========================================
+        window.abrirModalCDE = () => {
+            const container = document.getElementById('cdeContainer');
+            container.innerHTML = "";
+            
+            if(cdeData.miembros.length === 0) window.agregarFilaCDE();
+            else cdeData.miembros.forEach(m => window.agregarFilaCDE(m.nombre, m.dui || "", m.cargo, m.cargo2));
+            
+            document.getElementById('modalCDE').classList.add('active');
+        };
+
+        window.cerrarModalCDE = () => document.getElementById('modalCDE').classList.remove('active');
+
+        window.agregarFilaCDE = (nombre = "", dui = "", cargo = "Sin cargo", cargo2 = "Sin cargo") => {
+            const container = document.getElementById('cdeContainer');
+            const div = document.createElement('div');
+            div.className = 'cde-item';
+            
+            const options = CARGOS_CDE.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            div.innerHTML = `
+                <input type="text" class="cde-nombre" placeholder="Nombre completo" value="${nombre}" oninput="this.value = limpiarTextoInput(this.value)">
+                <input type="text" class="cde-dui" placeholder="00000000-0" value="${dui}" maxlength="10" oninput="this.value = mascaraDuiLocal(this.value)">
+                <select class="cde-cargo">${options}</select>
+                <select class="cde-cargo2">${options}</select>
+                <button type="button" class="btn-sq btn-sq-del" onclick="this.parentElement.remove()"><i class='bx bx-x'></i></button>
+            `;
+            
+            div.querySelector('.cde-cargo').value = CARGOS_CDE.includes(cargo) ? cargo : "Sin cargo";
+            div.querySelector('.cde-cargo2').value = CARGOS_CDE.includes(cargo2) ? cargo2 : "Sin cargo";
+            
+            container.appendChild(div);
+        };
+
+        window.guardarCDE = async () => {
+            const items = document.querySelectorAll('.cde-item:not(.cde-item-header)');
+            let nuevosMiembros = [];
+            
+            items.forEach(it => {
+                const n = formatearTextoFinal(it.querySelector('.cde-nombre').value);
+                const d = it.querySelector('.cde-dui').value.trim();
+                const c1 = it.querySelector('.cde-cargo').value;
+                const c2 = it.querySelector('.cde-cargo2').value;
+                if(n) nuevosMiembros.push({ nombre: n, dui: d, cargo: c1, cargo2: c2 });
+            });
+
+            try {
+                cdeData.miembros = nuevosMiembros;
+                await setDoc(doc(db, "centroescolar", "cde"), { miembros: nuevosMiembros }, { merge: true });
+                showToast("Firmas del CDE actualizadas.", "success");
+                cerrarModalCDE();
+            } catch(e) { showToast("Error al guardar CDE", "error"); }
+        };
+
+        // ==========================================
+        // GENERACIÓN DE PDF Y GUARDADO MAESTRO
+        // ==========================================
+        window.ejecutarGeneracion = async (esPrueba) => {
+            let isValid = true;
+            if(!esPrueba) {
+                document.querySelectorAll('.req-field').forEach(inp => {
+                    if (!inp.value.trim()) {
+                        inp.classList.add('input-error');
+                        inp.addEventListener('input', () => inp.classList.remove('input-error'), {once:true});
+                        isValid = false;
+                    }
+                });
+            }
+
+            if (!isValid) {
+                showToast("Completa los campos marcados en rojo.", "warning");
+                return;
+            }
+
+            const items = getTableData();
+            if(items.length === 0 && !esPrueba) {
+                showToast("Debe agregar al menos un producto válido.", "warning");
+                return;
+            }
+
+            try {
+                showToast("Estructurando PDF...", "info");
+                await generatePDF(items, esPrueba);
+
+                if(!esPrueba) {
+                    const batch = writeBatch(db);
+                    
+                    // 1. Guardar la compra entera en el historial
+                    const nuevaCompraRef = doc(collection(db, "compras_guardadas"));
+                    const compraData = {
+                        proveedor: {
+                            nombre: formatearTextoFinal(document.getElementById('provNombre').value),
+                            direccion: formatearTextoFinal(document.getElementById('provDireccion').value)
+                        },
+                        fechas: {
+                            solicitud: document.getElementById('dateSolicitud').value,
+                            cotizacion: document.getElementById('dateCotizacion').value,
+                            plan: document.getElementById('datePlan').value,
+                            orden: document.getElementById('dateOrden').value,
+                            acta: document.getElementById('dateActa').value
+                        },
+                        items: items,
+                        total: items.reduce((s, i) => s + i.total, 0),
+                        timestamp: Date.now()
+                    };
+                    batch.set(nuevaCompraRef, compraData);
+
+                    // 2. Aprendizaje de catálogo de productos
+                    items.forEach(it => {
+                        if(it.desc && !catalogoProductos.includes(it.desc)) {
+                            const newProdRef = doc(collection(db, "catalogo_compras"));
+                            batch.set(newProdRef, { nombre: it.desc });
+                            catalogoProductos.push(it.desc);
+                        }
+                    });
+
+                    await batch.commit();
+
+                    // 3. Limpiar todo para la siguiente compra
+                    document.getElementById('formCompras').reset();
+                    document.getElementById('itemsBody').innerHTML = '';
+                    agregarFila(); 
+                    
+                    const d = new Date();
+                    const localDateStr = d.toLocaleDateString('es-SV', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+                    document.querySelectorAll('input[type="date"]').forEach(inp => inp.value = localDateStr);
+
+                    showToast("¡Documentos generados y compra guardada!", "success");
+                } else {
+                    showToast("¡PDF de prueba generado con éxito!", "info");
+                }
+
+            } catch(e) {
+                console.error(e);
+                showToast("Error crítico al generar el documento PDF.", "error");
+            }
+        };
+
+        function getTableData() {
+            const rows = Array.from(document.querySelectorAll('#itemsBody tr'));
+            return rows.map((tr, idx) => ({
+                no: idx + 1,
+                qty: parseFloat(tr.querySelector('.it-qty').value) || 0,
+                unit: tr.querySelector('.it-unit').value,
+                desc: formatearTextoFinal(tr.querySelector('.it-desc').value),
+                price: parseFloat(tr.querySelector('.it-price').value) || 0,
+                rubro: tr.querySelector('.it-rubro').value,
+                total: (parseFloat(tr.querySelector('.it-qty').value)||0) * (parseFloat(tr.querySelector('.it-price').value)||0)
+            })).filter(x => x.qty > 0 && x.desc !== "");
+        }
+
+        // ==========================================
+        // MOTOR JSPDF
+        // ==========================================
+        async function generatePDF(items, esPrueba) {
+            const { jsPDF } = window.jspdf;
+            const docPDF = new jsPDF();
+            
+            const provName = formatearTextoFinal(document.getElementById('provNombre').value) || (esPrueba ? "PROVEEDOR DE PRUEBA" : "");
+            const provDir = formatearTextoFinal(document.getElementById('provDireccion').value) || (esPrueba ? "DIRECCIÓN DE PRUEBA" : "");
+            
+            const dSol = formatDateLong(document.getElementById('dateSolicitud').value);
+            const rawCot = document.getElementById('dateCotizacion').value;
+            const dCot = formatDateLong(rawCot);
+            const dLim = formatDateLong(addDays(rawCot, 1));
+            const dPlan = formatDateLong(document.getElementById('datePlan').value);
+            const dOrd = formatDateLong(document.getElementById('dateOrden').value);
+            const rawActa = document.getElementById('dateActa').value;
+            const dActa = formatDateLong(rawActa);
+            const dActaShort = formatDateShort(rawActa);
+
+            const grandTotal = items.reduce((s, i) => s + i.total, 0);
+            const grandTotalStr = `$ ${grandTotal.toFixed(2)}`;
+
+            const presidente = getMember("Presidente propietario");
+            const encargado = getEncargado();
+
+            const fontName = "times";
+            docPDF.setFont(fontName, "normal");
+            docPDF.setFontSize(11);
+            const margin = 20;
+
+            const styleCompact = { lineWidth: 0.1, lineColor: 0, fontSize: 10, cellPadding: {top: 1, bottom: 1, left: 2, right: 2}, textColor: 0, font: fontName };
+
+            // --- TABLA 1: SOLICITUD ---
+            addHeaderCenter(docPDF, "SOLICITUD DE COTIZACIÓN"); let y = 35;
+            addRightAligned(docPDF, `Lugar y fecha: La Laguna, Chalatenango Sur, ${dSol}`, y); y += 10;
+            docPDF.text("Señores:", margin, y); y += 6; docPDF.text(provName, margin, y); y += 10;
+
+            y = addJustified(docPDF, `El suscrito presidente del Organismo de Administración Escolar: CDE CENTRO ESCOLAR CANTÓN LOS PRADOS, ubicado en el Distrito de La Laguna, Municipio de Chalatenango Sur, Departamento de Chalatenango, por este medio solicito cotización y especificación técnica por escrito del material o servicio abajo detallados, la cual deberá ser enviada a nuestro centro educativo a más tardar el ${dLim}; las cotizaciones que se reciban posterior a esta fecha no serán consideradas para decidir la compra.`, y); y += 5;
+            y = addJustified(docPDF, "Deberá presentarse las ofertas en original a nombre de CDE del centro educativo, indicándose la vigencia de la cotización, así como especificar las siguientes condiciones de compra:", y); y += 10;
+
+            docPDF.text("1. PLAZO DE ENTREGA: inmediata", 25, y); y+=6;
+            docPDF.text("2. LUGAR DE ENTREGA: Centro Escolar", 25, y); y+=6;
+            docPDF.text("3. VIGENCIA DE LA COTIZACIÓN: 8 días", 25, y); y+=6;
+            docPDF.text("4. TIEMPO DE GARANTÍA (SI APLICA):__________________", 25, y); y+=10;
+
+            let body1 = items.map(x => [x.no, x.qty, x.unit, x.desc]);
+            while (body1.length < 10) body1.push(['', '', '', '']);
+
+            docPDF.autoTable({
+                startY: y, head: [['No.', 'Cantidad', 'Unidad de medida', 'Descripción']],
+                body: body1, theme: 'plain', styles: styleCompact, headStyles: { fontStyle: 'bold' }, columnStyles: { 3: {cellWidth: 'auto'} }
+            });
+            y = docPDF.lastAutoTable.finalY + 15;
+            docPDF.text("ENTREGA:", 40, y); docPDF.text("RECIBE:", 130, y); y+=15;
+            drawSignatures(docPDF, y, encargado.nombre, encargado.cargo, provName, "Proveedor");
+
+            // --- TABLA 2: COTIZACIÓN ---
+            docPDF.addPage();
+            addHeaderCenter(docPDF, "COTIZACIÓN"); y = 35;
+            addRightAligned(docPDF, `Lugar y fecha: ${provDir}, ${dCot}`, y); y += 10;
+            docPDF.text("Señores miembros del CDE Centro Escolar Cantón Los Prados", margin, y); y += 6; docPDF.text("Presente", margin, y); y += 10;
+
+            y = addJustified(docPDF, `Atendiendo la solicitud de cotización de fecha ${dSol}, suscrita por el CDE que administra el Centro Escolar ubicado en el distrito de La Laguna, Municipio de Chalatenango Sur, departamento de Chalatenango, atentamente remito la oferta en original apegada a las condiciones y especificaciones de compras detalladas:`, y); y += 10;
+
+            let body2 = items.map(x=>[x.no, x.qty, x.unit, x.desc, `$${x.price.toFixed(2)}`, `$${x.total.toFixed(2)}`]);
+            while(body2.length < 10) body2.push(['', '', '', '', '', '']);
+            body2.push(['', '', '', 'Total', '', grandTotalStr]);
+
+            docPDF.autoTable({
+                startY: y, head: [['No.', 'Cant.', 'Unidad', 'Descripción', 'Precio U.', 'Total']],
+                body: body2, theme: 'plain', styles: styleCompact,
+                columnStyles: { 3: {cellWidth: 'auto'}, 4: {cellWidth: 25, halign: 'right'}, 5: {cellWidth: 25, halign: 'right'} }
+            });
+            y = docPDF.lastAutoTable.finalY + 10;
+            docPDF.text("CONDICIONES:", margin, y); y+=6; docPDF.text("1. PLAZO DE ENTREGA: inmediata", 25, y); y+=6;
+            docPDF.text("2. LUGAR DE ENTREGA: Centro Escolar", 25, y); y+=6; docPDF.text("3. VIGENCIA DE COTIZACIÓN: 8 días", 25, y); y+=15;
+            docPDF.text("ENTREGA:", 40, y); docPDF.text("RECIBE:", 130, y); y+=15;
+            drawSignatures(docPDF, y, provName, "Proveedor", encargado.nombre, encargado.cargo);
+
+            // --- TABLA 3: PLAN COMPRAS (Landscape) ---
+            docPDF.addPage("a4", "landscape"); const centerX = docPDF.internal.pageSize.width / 2;
+            docPDF.setFont(fontName, "bold"); docPDF.setFontSize(12); docPDF.text("PLAN DE COMPRAS", centerX, 20, { align: 'center' });
+            docPDF.setFont(fontName, "normal"); docPDF.setFontSize(10); y = 30;
+
+            docPDF.text("ORGANISMO DE ADMINISTRACIÓN ESCOLAR: CDE      NOMBRE DEL C.E.: Centro Escolar Cantón Los Prados", centerX, y, { align: 'center' }); y+=6;
+            docPDF.text("CÓDIGO: 10856      DEPARTAMENTO: Chalatenango      MUNICIPIO: Chalatenango Sur      DISTRITO: La Laguna", centerX, y, { align: 'center' }); y+=6;
+            docPDF.text("DIRECCIÓN: Cantón Los Prados, La Laguna, Chalatenango Sur, Chalatenango", centerX, y, { align: 'center' }); y+=6;
+            docPDF.text(`FECHA: ${dPlan}`, centerX, y, { align: 'center' }); y+=10;
+
+            let body3 = items.map(x=>[x.rubro, x.desc, x.qty, x.unit, `$${x.price.toFixed(2)}`, `$${x.total.toFixed(2)}`, dActaShort]);
+            while(body3.length < 10) body3.push(['', '', '', '', '', '', '']);
+            body3.push(['', '', '', '', {content: 'Total', styles: {halign: 'right', fontStyle: 'bold'}}, {content: grandTotalStr, styles: {fontStyle: 'bold'}}, '']);
+
+            docPDF.autoTable({
+                startY: y, head: [['Área y rubros', 'Descripción', 'Cant.', 'Unidad', 'Precio U.', 'Total', 'Fecha compra']],
+                body: body3, theme: 'grid', styles: { fontSize: 9, cellPadding: {top: 1, bottom: 1, left: 2, right: 2}, lineColor: 0, textColor: 0, font: fontName },
+                headStyles: { fillColor: [255,255,255], textColor: 0, lineWidth: 0.1 }, columnStyles: { 1: {cellWidth: 'auto'} }
+            });
+            
+            y = docPDF.lastAutoTable.finalY + 15;
+            const roles = [
+                "Presidente propietario", "Tesorero/a propietario", "Consejal propietario docente",
+                "Secretario/a propietario", "Consejal propietario padre de familia", "Consejal propietario padre de familia",
+                "Consejal propietario alumno", "Consejal propietario alumno"
+            ];
+            const keys = ["presidente", "tesorero", "docente", "secretario", "padre", "padre", "alumno", "alumno"];
+            let pool = cdeData.miembros ? [...cdeData.miembros] : [];
+            
+            const tableBodyF = roles.map((role, i) => {
+                let name = "_____________________";
+                const idx = pool.findIndex(m => {
+                    const c1 = m.cargo ? m.cargo.toLowerCase() : "";
+                    const c2 = m.cargo2 ? m.cargo2.toLowerCase() : "";
+                    return (c1.includes(keys[i]) && !c1.includes("suplente")) || 
+                           (c2.includes(keys[i]) && !c2.includes("suplente"));
+                });
+
+                if (idx >= 0) { name = pool[idx].nombre; pool.splice(idx, 1); }
+                return [role, name, "F: _____________________"];
+            });
+
+            docPDF.autoTable({
+                startY: y, head: [['CARGO', 'NOMBRE', 'FIRMA']], body: tableBodyF,
+                theme: 'plain', 
+                styles: { fontSize: 10, cellPadding: {top: 1, bottom: 1, left: 2, right: 2}, textColor: 0, font: fontName, lineWidth: 0 },
+                headStyles: { fontStyle: 'bold', lineWidth: 0 }, 
+                columnStyles: { 0: {cellWidth: 105}, 1: {cellWidth: 105}, 2: {cellWidth: 47} }
+            });
+
+            // --- TABLA 4: ORDEN DE COMPRA ---
+            docPDF.addPage("a4", "portrait"); docPDF.setFontSize(11);
+            addHeaderCenter(docPDF, "ORDEN DE COMPRA DE BIENES Y SERVICIOS N°"); y = 35;
+            addRightAligned(docPDF, `Lugar y fecha: La Laguna, Chalatenango Sur, ${dOrd}`, y); y+=10;
+            docPDF.text("Señores:", margin, y); y+=6; docPDF.text(provName, margin, y); y+=10;
+            
+            y = addJustified(docPDF, "Por este medio se comunica que el CDE del Centro Escolar Cantón Los Prados ha decidido adquirir en esa empresa los bienes o servicios que más adelante se detallan, de acuerdo a los precios y condiciones de su oferta.", y); y+=5;
+            y = addJustified(docPDF, `Los bienes deberán entregarse el día ${dActa}, de 8:00 a 12:00 horas.`, y); y+=10;
+
+            let body4 = items.map(x=>[x.no, x.qty, x.unit, x.desc, `$${x.price.toFixed(2)}`, `$${x.total.toFixed(2)}`]);
+            while(body4.length < 10) body4.push(['', '', '', '', '', '']);
+            body4.push(['', '', '', 'Total', '', grandTotalStr]);
+
+            docPDF.autoTable({
+                startY: y, head: [['No.', 'Cant.', 'Unidad', 'Descripción', 'Precio U.', 'Total']],
+                body: body4, theme: 'plain', styles: styleCompact,
+                columnStyles: { 3: {cellWidth: 'auto'}, 4: {cellWidth: 25, halign: 'right'}, 5: {cellWidth: 25, halign: 'right'} }
+            });
+            y = docPDF.lastAutoTable.finalY + 10;
+            docPDF.text("Presentar factura a nombre de: CDE CENTRO ESCOLAR CANTÓN LOS PRADOS", margin, y, {maxWidth:170}); y+=20;
+            drawSignatures(docPDF, y, encargado.nombre, encargado.cargo, provName, "Proveedor");
+
+            // --- TABLA 5: ACTA RECEPCIÓN ---
+            docPDF.addPage();
+            addHeaderCenter(docPDF, "ACTA DE RECEPCIÓN DE BIENES N°__"); y = 35; docPDF.setFontSize(10);
+            y = addJustified(docPDF, "EL ORGANISMO DE ADMINISTRACIÓN ESCOLAR: CDE QUE ADMINISTRA EL CENTRO EDUCATIVO: CENTRO ESCOLAR CANTÓN LOS PRADOS, CON CÓDIGO: 10856, UBICADO EN EL DISTRITO: LA LAGUNA, MUNICIPIO: CHALATENANGO SUR, DEPARTAMENTO: CHALATENANGO", y); y+=10;
+            y = addJustified(docPDF, `QUE EN FECHA ${dActa}, El PRESIDENTE DEL CENTRO ESCOLAR Y EL SUSCRITO HACE CONSTAR QUE HA RECIBIDO DE ACUERDO A LO CONVENIDO CON ${provName}, LOS BIENES QUE A CONTINUACIÓN SE DETALLAN :`, y); y+=10;
+
+            let body5 = items.map(x=>[x.no, x.desc, x.qty, `$${x.price.toFixed(2)}`, `$${x.total.toFixed(2)}`]);
+            while(body5.length < 10) body5.push(['', '', '', '', '']);
+            body5.push(['', '', '', 'Total', grandTotalStr]);
+
+            docPDF.autoTable({
+                startY: y, head: [['No.', 'Descripción', 'Cantidad', 'Precio U.', 'Total']],
+                body: body5, theme: 'plain', styles: styleCompact,
+                columnStyles: { 1: {cellWidth: 'auto'}, 3: {cellWidth: 30, halign: 'right'}, 4: {cellWidth: 30, halign: 'right'} }
+            });
+            y = docPDF.lastAutoTable.finalY + 20;
+            docPDF.text("RECIBIDO POR:", 30, y); docPDF.text("ENTREGADO POR:", 120, y); y+=15;
+            docPDF.line(20, y, 90, y); docPDF.line(110, y, 180, y); y+=5;
+            docPDF.text(presidente.nombre, 25, y); docPDF.text(provName, 115, y);
+            docPDF.text(presidente.cargo, 25, y+5); docPDF.text("Proveedor", 115, y+5);
+            
+            const prefijo = esPrueba ? "PRUEBA_" : "OFICIAL_";
+            docPDF.save(`${prefijo}Compras_${Date.now()}.pdf`);
+        }
+
+        // Helpers Lógicos
+        function getMember(role) {
+            if (!cdeData.miembros) return { nombre: "_____________________", cargo: role };
+            const m = cdeData.miembros.find(x => {
+                const c1 = x.cargo ? x.cargo.toLowerCase() : "";
+                const c2 = x.cargo2 ? x.cargo2.toLowerCase() : "";
+                const query = role.toLowerCase();
+                return (c1.includes(query) && !c1.includes("suplente")) || (c2.includes(query) && !c2.includes("suplente"));
+            });
+            return m || { nombre: "_____________________", cargo: role };
+        }
+        function getEncargado() {
+            if (!cdeData.miembros) return { nombre: "_____________________", cargo: "Encargado de Compras" };
+            let m = cdeData.miembros.find(x => (x.cargo2 && x.cargo2.includes("Compras")) || (x.cargo && x.cargo.includes("Compras")));
+            return m || { nombre: "_____________________", cargo: "Encargado de Compras" };
+        }
+        function formatDateLong(str) {
+            if(!str) return "__________";
+            const [y,m,d] = str.split('-');
+            return new Date(y, m-1, d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        function formatDateShort(str) {
+            if(!str) return "__/__/____";
+            const [y,m,d] = str.split('-'); return `${d}/${m}/${y}`;
+        }
+        function addDays(str, days) {
+            if(!str) return "";
+            const [y,m,d] = str.split('-');
+            const date = new Date(y, m-1, d);
+            date.setDate(date.getDate() + days);
+            return date.toISOString().split('T')[0];
+        }
+        function addHeaderCenter(doc, text) {
+            doc.setFont("times", "bold"); doc.setFontSize(12);
+            doc.text(text, doc.internal.pageSize.width / 2, 20, { align: 'center' });
+            doc.setFont("times", "normal"); doc.setFontSize(11);
+        }
+        function addRightAligned(doc, text, y) { doc.text(text, doc.internal.pageSize.width - 20, y, { align: 'right' }); }
+        function addJustified(doc, text, y) {
+            const w = doc.internal.pageSize.width;
+            const split = doc.splitTextToSize(text, w - 40); 
+            doc.text(split, 20, y, { align: 'justify', maxWidth: w - 40 });
+            return y + (split.length * 5);
+        }
+        function drawSignatures(doc, y, n1, c1, n2, c2) {
+            doc.line(20, y, 90, y); doc.line(110, y, 180, y); y += 5;
+            doc.text(n1 || "", 25, y); doc.text(n2 || "", 115, y);
+            doc.text(c1 || "", 25, y+5); doc.text(c2 || "", 115, y+5);
+        }
+    </script>
+</body>
+</html>

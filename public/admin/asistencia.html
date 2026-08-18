@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencia Acumulada - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* BLOQUEO DE SCROLL HORIZONTAL ORIGINAL Y EXACTO */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        .admin-main { height: calc(100vh - 60px); width: 100% !important; overflow-y: auto; overflow-x: hidden !important; -ms-overflow-style: none; scrollbar-width: none; padding: var(--gap); }
+        .admin-main::-webkit-scrollbar { display: none; }
+        
+        /* ELEMENTOS GLOBALES DE LA VISTA */
+        .page-header { margin-bottom: var(--gap); display: flex; justify-content: space-between; align-items: center; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; }
+
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+        .btn-primary:hover { background: var(--primary-steel); }
+
+        .card { background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; /* Previene desbordamiento en grid/flex */ }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .form-group select, .form-group input { padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.9rem; background: white; width: 100%; color: var(--primary-dark); font-family: inherit; font-weight: 600;}
+        .form-group select:focus, .form-group input:focus { border-color: var(--primary-steel); }
+
+        /* TABLA PRINCIPAL */
+        .grade-section-title { font-size: 0.85rem; font-weight: 800; color: var(--primary-dark); margin: 1.5rem 0 0.5rem; text-transform: uppercase; border-bottom: 2px solid var(--border); padding-bottom: 0.2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .table-card { background: white; border-radius: 12px; border: 1px solid var(--border); width: 100%; overflow: hidden; margin-bottom: 1rem; }
+        table { width: 100%; border-collapse: collapse; table-layout: auto; }
+        thead th { background: var(--bg-light); padding: 0.6rem 0.5rem; font-size: 0.65rem; font-weight: 800; color: var(--accent); text-align: left; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        tbody td { padding: 0.5rem 0.5rem; font-size: 0.85rem; border-bottom: 1px solid var(--bg-light); vertical-align: middle; }
+        
+        .badge-a { background: #dcfce7; color: var(--success); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-family: monospace; font-size: 0.85rem; }
+        .badge-ij { background: #fef3c7; color: var(--warning); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-family: monospace; font-size: 0.85rem; }
+        .badge-ii { background: #fee2e2; color: var(--danger); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-family: monospace; font-size: 0.85rem; }
+
+        /* MODAL BLINDADO SIN SCROLL HORIZONTAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.5); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        
+        .modal { 
+            background: white; 
+            padding: 1.2rem; 
+            border-radius: 14px; 
+            width: 100%; 
+            max-width: 600px; 
+            display: flex; 
+            flex-direction: column; 
+            max-height: 90vh; 
+            overflow: hidden; 
+        }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-shrink: 0; }
+        .modal-header h2 { font-size: 1.1rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem; }
+        .btn-close { background: transparent; border: none; font-size: 1.5rem; color: var(--accent); cursor: pointer; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1rem; flex-shrink: 0; }
+        
+        /* Contenedor de la tabla del modal forzado SOLO a Scroll Vertical */
+        .modal-table-container { 
+            flex: 1 1 auto; 
+            overflow-y: auto; 
+            overflow-x: hidden; /* Cero Scroll Horizontal */
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            background: white;
+        }
+        
+        /* Forzamos que la tabla encaje en el ancho exacto del modal */
+        .modal-table-container table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+        .modal-table-container th { position: sticky; top: 0; z-index: 10; text-align: center; background: var(--bg-light); border-bottom: 1px solid var(--border); padding: 0.5rem; font-size: 0.7rem; color: var(--accent); font-weight: 800; text-transform: uppercase; }
+        .modal-table-container td { text-align: center; padding: 0.4rem 0.2rem; border-bottom: 1px solid var(--bg-light); }
+        
+        /* El texto del estudiante se recorta con puntos suspensivos si es muy largo, para no empujar la tabla */
+        .modal-table-container td:first-child { 
+            text-align: left; 
+            padding-left: 0.8rem; 
+            font-weight: 700; 
+            color: var(--primary-dark); 
+            font-size: 0.85rem; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        
+        /* Inputs controlados para no deformar las celdas */
+        .input-mini { 
+            width: 100%; 
+            max-width: 50px; 
+            padding: 0.4rem 0.2rem; 
+            border: 1px solid var(--border); 
+            border-radius: 6px; 
+            text-align: center; 
+            font-weight: 800; 
+            font-size: 0.9rem; 
+            color: var(--primary-dark); 
+            outline: none; 
+            font-family: monospace; 
+            margin: 0 auto;
+        }
+        .input-mini:focus { border-color: var(--primary-steel); background: #e0f2fe; }
+        .input-mini[readonly] { background: #f8fafc; color: var(--accent); border-color: transparent; cursor: not-allowed; }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; flex-shrink: 0; }
+        
+        .empty-state { text-align: center; padding: 2rem; color: var(--accent); font-style: italic; font-size: 0.85rem;}
+        
+        /* AJUSTES CELULAR Y TABLET PEQUEÑA */
+        @media (max-width: 768px) {
+            .name-desktop { display: none; }
+            
+            /* Cabecera alineada a la izquierda */
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .page-header h1 { font-size: 1.2rem; }
+            .page-header .btn-primary { width: 100%; justify-content: center; }
+
+            /* Tarjeta de filtros apilada */
+            .card { flex-direction: column; gap: 0.8rem; padding: 1rem; }
+            .card .form-group { min-width: 100% !important; flex: auto !important; }
+
+            /* Inputs sin cortes de texto */
+            .form-group select, .form-group input { font-size: 0.85rem; padding: 0.6rem; min-height: 44px;}
+            .form-group label { font-size: 0.65rem; }
+        }
+        @media (min-width: 769px) {
+            .name-mobile { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-calendar-check'></i> Asistencia Anual</h1>
+                <button class="btn-primary" onclick="openCreateModal()">
+                    <i class='bx bx-list-plus'></i> Pasar Lista (Mes)
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="form-group" style="min-width: 100px; flex: 1;">
+                    <label>Año Lectivo</label>
+                    <input type="number" id="vYear" onchange="renderMainTables()" title="Puede ingresar cualquier año">
+                </div>
+                <div class="form-group" id="vGradeContainer" style="display: none; min-width: 200px; flex: 2;">
+                    <label>Grado (Vista Director)</label>
+                    <select id="vGrade" onchange="renderMainTables()">
+                        <option value="" disabled selected>Elegir grado...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="mainTablesContainer">
+                <div class="empty-state">
+                    <i class='bx bx-loader bx-spin'></i> 
+                    <p>Sincronizando información...</p>
+                </div>
+            </div>
+            
+            <div style="height: 3rem;"></div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="createModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class='bx bx-list-check'></i> Control Mensual</h2>
+                <button class="btn-close" onclick="closeCreateModal()"><i class='bx bx-x'></i></button>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Año</label>
+                    <input type="number" id="mYear" onchange="calculateModal()">
+                </div>
+                <div class="form-group">
+                    <label>Mes</label>
+                    <select id="mMonth" onchange="calculateModal()">
+                        <option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Abr</option>
+                        <option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option>
+                        <option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Grado</label>
+                    <select id="mGrade" onchange="calculateModal()"></select>
+                </div>
+            </div>
+            
+            <div id="mInfo" style="background:var(--bg-light); padding:0.6rem; border-radius:8px; font-size:0.75rem; font-weight:700; color:var(--primary-steel); text-align:center; margin-bottom:0.8rem; border: 1px solid var(--border); flex-shrink: 0;">
+                Seleccione un grado para comenzar.
+            </div>
+            
+            <div class="modal-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th style="width: 60px;" title="Asistencias Calculadas">A</th>
+                            <th style="width: 60px;">IJ</th>
+                            <th style="width: 60px;">II</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody"></tbody>
+                </table>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-primary" style="background:var(--bg-light); color:var(--primary-dark); border:1px solid var(--border);" onclick="closeCreateModal()">Cancelar</button>
+                <button class="btn-primary" id="btnSave" onclick="saveBatch()"><i class='bx bx-save'></i> Guardar Novedades</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, onSnapshot, doc, getDoc, getDocs, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        let allStudents = [], allGrades = {}, cycleData = {};
+        let userRole = 'docente', userGrades = [], isAdmin = false;
+        
+        window.currentExpectedDays = 0;
+
+        // --- SISTEMA DE TOAST ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+        const getKeys = (fn) => { const w = fn.toLowerCase().split(/\s+/).filter(x => !['de','del','la','las','los','y'].includes(x)); return { a1: w[w.length-2]||w[0], a2: w[w.length-1]||'', n1: w[0] }; };
+
+        const initYears = () => {
+            const cur = new Date().getFullYear();
+            document.getElementById('vYear').value = cur;
+            document.getElementById('mYear').value = cur;
+            document.getElementById('mMonth').value = String(new Date().getMonth() + 1).padStart(2, '0');
+        };
+        initYears();
+
+        onAuthStateChanged(auth, async (u) => {
+            if (!u) { window.location.href = '../index.html'; return; }
+            
+            const dSnap = await getDocs(query(collection(db, "docentes"), where("correo", "==", u.email)));
+            if(!dSnap.empty) {
+                const userData = dSnap.docs[0].data();
+                userRole = (userData.cargo || '').toLowerCase();
+                userGrades = (userData.grados || []).map(String);
+                isAdmin = ['director', 'subdirector'].includes(userRole);
+            }
+
+            onSnapshot(doc(db, "control", "grados"), (s) => {
+                if(s.exists()) {
+                    allGrades = s.data();
+                    const vSel = document.getElementById('vGrade');
+                    const mSel = document.getElementById('mGrade');
+                    
+                    if(isAdmin) {
+                        const gHtml = Object.keys(allGrades).sort((a,b)=>parseInt(a)-parseInt(b)).map(id => `<option value="${id}">${cap(allGrades[id].nombre || allGrades[id])}</option>`).join('');
+                        vSel.innerHTML = '<option value="" disabled selected>Elegir grado...</option>' + gHtml;
+                        document.getElementById('vGradeContainer').style.display = 'flex';
+                        mSel.innerHTML = '<option value="" disabled selected>Elegir...</option>' + gHtml;
+                    } else {
+                        document.getElementById('vGradeContainer').style.display = 'none';
+                        const mHtml = userGrades.sort((a,b)=>parseInt(a)-parseInt(b)).map(id => `<option value="${id}">${cap(allGrades[id].nombre || allGrades[id])}</option>`).join('');
+                        mSel.innerHTML = '<option value="" disabled selected>Elegir...</option>' + mHtml;
+                    }
+                    renderMainTables();
+                }
+            });
+
+            onSnapshot(doc(db, "control", "ciclo"), (s) => { if(s.exists()) cycleData = s.data(); });
+            onSnapshot(collection(db, "users"), (snap) => {
+                allStudents = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(s => s.nombreCompleto && !s.archivado);
+                renderMainTables();
+            });
+        });
+
+        window.renderMainTables = async () => {
+            const y = String(document.getElementById('vYear').value);
+            const container = document.getElementById('mainTablesContainer');
+            
+            if(!y || y.length !== 4) return; // Validar que se ingrese un año correcto de 4 dígitos
+            
+            container.innerHTML = '<div class="empty-state"><i class="bx bx-loader bx-spin"></i> <p>Cargando registros de asistencia...</p></div>';
+            
+            let gradesToRender = [];
+            if(isAdmin) {
+                const g = document.getElementById('vGrade').value;
+                if(!g) { container.innerHTML = '<div class="empty-state"><i class="bx bx-list-ul"></i> <p>Selecciona un grado para ver la asistencia.</p></div>'; return; }
+                gradesToRender = [g];
+            } else {
+                if(userGrades.length === 0) { container.innerHTML = '<div class="empty-state"><i class="bx bx-error-circle"></i> <p>No tienes grados asignados. Contacta a dirección.</p></div>'; return; }
+                gradesToRender = [...userGrades].sort((a,b)=>parseInt(a)-parseInt(b));
+            }
+
+            let fullHtml = '';
+            
+            for(const g of gradesToRender) {
+                const cohort = allStudents.filter(s => (y === String(new Date().getFullYear()) && String(s.grade) === g) || s.asistencia_history?.[y] === g)
+                    .sort((a,b) => { const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); });
+
+                if(cohort.length === 0) continue;
+
+                let gradeAsisData = {};
+                try {
+                    const snap = await getDoc(doc(db, "asistencia", `${y}_grado_${g}`));
+                    if(snap.exists()) gradeAsisData = snap.data();
+                } catch(e) {}
+
+                let tableHtml = `
+                    <div class="grade-section-title">
+                        <i class='bx bxs-group' style="color: var(--primary-steel); font-size: 1.2rem;"></i>
+                        ${cap(allGrades[g]?.nombre || g)}
+                    </div>
+                    <div class="table-card">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th style="text-align: center;">Σ A</th>
+                                    <th style="text-align: center;">Σ IJ</th>
+                                    <th style="text-align: center;">Σ II</th>
+                                    <th style="text-align: center;">% Acumulado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                cohort.forEach(s => {
+                    let a = 0, ij = 0, ii = 0;
+                    const studentMonths = gradeAsisData[s.id] || {};
+                    
+                    Object.values(studentMonths).forEach(monthData => {
+                        a += monthData.a || 0; 
+                        ij += monthData.ij || 0; 
+                        ii += monthData.ii || 0;
+                    });
+                    
+                    const totalRegistrados = a + ij + ii;
+                    let pctTxt = 'S/D';
+                    let colorTxt = 'var(--accent)';
+
+                    if (totalRegistrados > 0) {
+                        const pct = Math.round(((a + ij) / totalRegistrados) * 100);
+                        pctTxt = pct + '%';
+                        colorTxt = pct >= 80 ? 'var(--success)' : (pct >= 60 ? 'var(--warning)' : 'var(--danger)');
+                    }
+
+                    const nameParts = cap(s.nombreCompleto).split(' ');
+                    
+                    tableHtml += `<tr>
+                        <td>
+                            <span class="name-desktop">${cap(s.nombreCompleto)}</span>
+                            <span class="name-mobile" style="font-weight:700;">${nameParts[0]} ${nameParts[1]||''}</span>
+                        </td>
+                        <td style="text-align: center;"><span class="badge-a">${a}</span></td>
+                        <td style="text-align: center;"><span class="badge-ij">${ij}</span></td>
+                        <td style="text-align: center;"><span class="badge-ii">${ii}</span></td>
+                        <td style="font-weight:800; text-align: center; color:${colorTxt}">${pctTxt}</td>
+                    </tr>`;
+                });
+
+                tableHtml += `</tbody></table></div>`;
+                fullHtml += tableHtml;
+            }
+
+            container.innerHTML = fullHtml || '<div class="empty-state"><i class="bx bx-file-blank"></i> <p>Sin registros para mostrar en este periodo.</p></div>';
+        };
+
+        function calcWorkingDays(y, m) {
+            const start = new Date(y, parseInt(m)-1, 1), end = new Date(y, parseInt(m), 0), c = cycleData[y] || {omit:[]};
+            let count = 0;
+            for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) {
+                if(d.getDay()!==0 && d.getDay()!==6 && !(c.omit||[]).includes(d.toISOString().split('T')[0])) count++;
+            }
+            return count;
+        }
+
+        window.openCreateModal = () => { 
+            document.getElementById('modalTableBody').innerHTML = ''; 
+            document.getElementById('mGrade').value = ''; 
+            document.getElementById('mInfo').innerHTML = 'Seleccione un grado para comenzar.';
+            document.getElementById('createModalOverlay').classList.add('active'); 
+        };
+        window.closeCreateModal = () => document.getElementById('createModalOverlay').classList.remove('active');
+
+        window.recalcA = (id) => {
+            const ijInp = document.querySelector(`.i-ij[data-id="${id}"]`);
+            const iiInp = document.querySelector(`.i-ii[data-id="${id}"]`);
+            const aInp = document.querySelector(`.i-a[data-id="${id}"]`);
+
+            ijInp.value = ijInp.value.replace(/[^0-9]/g, '');
+            iiInp.value = iiInp.value.replace(/[^0-9]/g, '');
+
+            let ij = parseInt(ijInp.value) || 0;
+            let ii = parseInt(iiInp.value) || 0;
+
+            let a = window.currentExpectedDays - ij - ii;
+            aInp.value = a;
+            
+            if (a < 0) aInp.style.color = "var(--danger)";
+            else aInp.style.color = "var(--primary-dark)";
+        };
+
+        window.calculateModal = async () => {
+            const y = String(document.getElementById('mYear').value);
+            const m = document.getElementById('mMonth').value;
+            const g = document.getElementById('mGrade').value;
+            
+            if(!g || !y || y.length !== 4) return;
+            
+            window.currentExpectedDays = calcWorkingDays(y, m);
+            document.getElementById('mInfo').innerHTML = `Mes: <b>${m}/${y}</b> | Días Lectivos Hábiles: <b id="lblTotalDays">${window.currentExpectedDays}</b>`;
+            
+            const tbody = document.getElementById('modalTableBody');
+            tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state" style="padding: 1.5rem;"><i class="bx bx-loader bx-spin"></i> <p>Cargando nómina...</p></div></td></tr>`;
+            
+            const students = allStudents.filter(s => String(s.grade) === g).sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); 
+            });
+
+            let gradeAsisData = {};
+            try {
+                const snap = await getDoc(doc(db, "asistencia", `${y}_grado_${g}`));
+                if(snap.exists()) gradeAsisData = snap.data();
+            } catch(e) {}
+
+            tbody.innerHTML = students.map(s => {
+                const prev = gradeAsisData[s.id]?.[m] || {a:window.currentExpectedDays, ij:0, ii:0};
+                const safeA = window.currentExpectedDays - (parseInt(prev.ij)||0) - (parseInt(prev.ii)||0);
+
+                return `<tr>
+                    <td title="${s.nombreCompleto}">${cap(s.nombreCompleto)}</td>
+                    <td><input type="text" class="input-mini i-a" data-id="${s.id}" value="${safeA}" readonly tabindex="-1"></td>
+                    <td><input type="text" inputmode="numeric" class="input-mini i-ij" data-id="${s.id}" value="${prev.ij || ''}" oninput="recalcA('${s.id}')"></td>
+                    <td><input type="text" inputmode="numeric" class="input-mini i-ii" data-id="${s.id}" value="${prev.ii || ''}" oninput="recalcA('${s.id}')"></td>
+                </tr>`;
+            }).join('');
+        };
+
+        window.saveBatch = async () => {
+            const y = document.getElementById('mYear').value;
+            const m = document.getElementById('mMonth').value;
+            const g = document.getElementById('mGrade').value;
+            
+            if(!g || !y || y.length !== 4) { showToast("Revise el grado o el año seleccionado.", "error"); return; }
+            
+            let hasError = false;
+            let errorMsg = "";
+
+            const inputsA = document.querySelectorAll('.i-a');
+            for(let inp of inputsA) {
+                const id = inp.dataset.id;
+                const a = parseInt(inp.value) || 0;
+                const ij = parseInt(document.querySelector(`.i-ij[data-id="${id}"]`).value) || 0;
+                const ii = parseInt(document.querySelector(`.i-ii[data-id="${id}"]`).value) || 0;
+                
+                if (a < 0 || (a + ij + ii !== window.currentExpectedDays)) {
+                    hasError = true;
+                    const studentNameRow = inp.closest('tr').querySelector('td:first-child').innerText;
+                    errorMsg = `Inasistencias exceden días lectivos (${window.currentExpectedDays}) para: ${studentNameRow.substring(0, 15)}...`;
+                    break;
+                }
+            }
+
+            if(hasError) { showToast(errorMsg, "error"); return; }
+
+            const btn = document.getElementById('btnSave'); btn.disabled = true; btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Guardando...";
+            
+            try {
+                const batch = writeBatch(db);
+                let payload = {};
+
+                inputsA.forEach(inp => {
+                    const id = inp.dataset.id;
+                    const a = parseInt(inp.value)||0;
+                    const ij = parseInt(document.querySelector(`.i-ij[data-id="${id}"]`).value)||0;
+                    const ii = parseInt(document.querySelector(`.i-ii[data-id="${id}"]`).value)||0;
+                    
+                    payload[id] = { [m]: { a, ij, ii } };
+                    batch.update(doc(db, "users", id), { [`asistencia_history.${y}`]: g });
+                });
+
+                batch.set(doc(db, "asistencia", `${y}_grado_${g}`), payload, { merge: true });
+
+                await batch.commit(); 
+                closeCreateModal();
+                showToast("Control de asistencia guardado exitosamente.");
+                renderMainTables(); 
+            } catch(e) { console.error(e); showToast("Error de red al guardar la asistencia.", "error"); } finally { btn.disabled = false; btn.innerHTML = "<i class='bx bx-save'></i> Guardar Novedades"; }
+        };
+    </script>
+</body>
+</html>

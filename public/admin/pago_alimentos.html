@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago de Alimentos - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark: #243C4C; --primary-steel: #5289AD; 
+            --accent: #698696; --border: #ACBCBF; 
+            --bg-light: #F4FCFB; --success: #16a34a; --warning: #f59e0b; --danger: #ef4444; --info: #3b82f6;
+            --gap: 0.5rem; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw; max-width: 100%; overflow-x: hidden; }
+        .admin-main { height: calc(100vh - 60px); padding: var(--gap); overflow-y: auto; display: flex; flex-direction: column; width: 100%; max-width: 100%; }
+        
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-wrap: wrap; gap: 0.5rem; flex-shrink: 0;}
+        .page-header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 0.5rem;}
+
+        /* TABS */
+        .tabs-header { display: flex; gap: 0.5rem; margin-bottom: var(--gap); border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; flex-shrink: 0; width: 100%;}
+        .tabs-header::-webkit-scrollbar { display: none; }
+        .tab-btn { background: transparent; border: 1px solid transparent; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 800; color: var(--accent); cursor: pointer; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; flex-shrink: 0;}
+        .tab-btn:hover { background: white; border-color: var(--border); color: var(--primary-steel); }
+        .tab-btn.active { background: var(--primary-dark); color: white; border-color: var(--primary-dark); }
+
+        .tab-content { display: none; animation: fadeIn 0.3s; flex: 1; flex-direction: column; width: 100%;}
+        .tab-content.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* PANELES DE CONTROLES */
+        .panel-card { background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: var(--gap); display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex-shrink: 0;}
+        
+        .director-panel { background: #e0f2fe; border-color: #bae6fd; }
+        .director-panel h3 { font-size: 0.85rem; color: var(--info); width: 100%; margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.4rem;}
+
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 150px; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); background: white; transition: 0.2s; width: 100%; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); }
+
+        .cfg-year, .cfg-monto, .cfg-saldo { max-width: 120px; }
+        .egreso-grid { display: flex; width: 100%; gap: 0.8rem; align-items: flex-end; flex-wrap: wrap; }
+        .egr-fecha { flex: 1; min-width: 120px; }
+        .egr-desc { flex: 3; min-width: 200px; }
+        .egr-monto { flex: 1; min-width: 100px; }
+
+        .search-wrapper { display: flex; align-items: center; background: white; border: 1px solid var(--border); border-radius: 8px; padding: 0 0.8rem; flex: 3; min-width: 250px; transition: 0.2s; }
+        .search-wrapper:focus-within { border-color: var(--primary-steel); }
+        .search-wrapper i { color: var(--accent); font-size: 1.2rem; }
+        .search-wrapper input { border: none; padding: 0.6rem 0.5rem; outline: none; flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--primary-dark); background: transparent; }
+
+        /* TABLA GLOBAL */
+        .table-container { background: white; border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; flex: 1; min-height: 250px; width: 100%;}
+        .list-table { width: 100%; border-collapse: collapse; min-width: 750px; }
+        .list-table th, .list-table td { padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .list-table th { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; background: #f8fafc; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .list-table td { font-size: 0.85rem; color: var(--primary-dark); transition: 0.2s; }
+        
+        .list-table tbody tr { cursor: pointer; transition: 0.2s; }
+        .list-table tbody tr:hover { background: #f0f8ff; }
+        .list-table tbody tr.selected { background: #e0f2fe; }
+        .list-table tbody tr.selected td { border-bottom-color: #bae6fd; }
+
+        /* Clase para forzar el centrado en celdas numéricas */
+        .text-center { text-align: center !important; }
+
+        .badge { padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 800; font-size: 0.75rem; font-family: monospace; display: inline-block; text-align: center; min-width: 80px;}
+        .b-success { background: #dcfce7; color: #16a34a; }
+        .b-danger { background: #fee2e2; color: #dc2626; }
+        .b-warning { background: #fef3c7; color: #d97706; }
+        
+        .small-meta { font-size: 0.65rem; color: var(--accent); display: block; margin-top: 0.2rem; font-weight: 700;}
+
+        /* Clases específicas Libro Desktop */
+        .lib-fecha { width: 12%; }
+        .lib-desc { width: 43%; }
+        .lib-ingreso { width: 15%; text-align: right; color: var(--success); font-weight: 800; }
+        .lib-egreso { width: 15%; text-align: right; color: var(--danger); font-weight: 800; }
+        .lib-saldo { width: 15%; text-align: right; color: var(--primary-dark); font-family: monospace; font-weight: 900; }
+
+        /* PAGINACIÓN */
+        .pagination { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: white; border-top: 1px solid var(--border); flex-shrink: 0; width: 100%;}
+        .btn-page { background: white; border: 1px solid var(--border); padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
+        .btn-page:hover:not(:disabled) { background: var(--bg-light); color: var(--primary-steel); }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* MODALES */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; padding: 1.8rem; border-radius: 12px; width: 100%; max-width: 450px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        
+        .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; border-top: 1px solid var(--bg-light); padding-top: 1rem; margin-top: 1.5rem; }
+        
+        .btn-sq { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-sq-close { background: #f1f5f9; color: #64748b; }
+        .btn-sq-close:hover { background: #e2e8f0; }
+
+        .btn-save-text { background: var(--primary-dark); color: white; padding: 0 1.2rem; height: 36px; border-radius: 8px; font-weight: 800; font-size: 0.85rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: 0.2s; }
+        .btn-save-text:hover { background: var(--primary-steel); }
+        .btn-save-text:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .empty-state { text-align: center; padding: 3rem; color: var(--accent); font-size: 0.85rem; font-style: italic; }
+
+        /* ========================================= */
+        /* AJUSTES RESPONSIVOS ESTRICTOS PARA MÓVILES */
+        /* ========================================= */
+        @media (max-width: 768px) {
+            .desktop-only { display: none !important; }
+            
+            .tabs-header { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; border-bottom: none; padding-bottom: 0; }
+            .tab-btn { font-size: 0.7rem; padding: 0.6rem 0.2rem; border: 1px solid var(--border); }
+            .tab-btn.active { border-color: var(--primary-dark); }
+
+            .panel-card { padding: 0.8rem; gap: 0.6rem; }
+            .form-group label { font-size: 0.55rem; }
+            .form-group input, .form-group select { padding: 0.4rem 0.5rem; font-size: 0.8rem; }
+            .btn-save-text { font-size: 0.75rem; padding: 0 0.5rem; height: 34px; width: 100%; }
+            .search-wrapper { min-width: 100%; }
+
+            .director-panel { display: grid; grid-template-columns: 1fr 1fr; align-items: flex-end; }
+            .director-panel h3 { grid-column: span 2; margin-bottom: 0; }
+            .cfg-year { grid-column: span 2; max-width: none; }
+            .cfg-monto { grid-column: span 1; max-width: none; }
+            .btn-guardar { grid-column: span 1; }
+            .cfg-saldo { grid-column: span 2; max-width: none; }
+
+            .egreso-grid { display: grid; grid-template-columns: 1fr 1fr; }
+            .egr-fecha { grid-column: span 2; }
+            .egr-desc { grid-column: span 2; }
+            .egr-monto { grid-column: span 1; }
+            .btn-restar { grid-column: span 1; }
+
+            .list-table { min-width: 100% !important; table-layout: fixed; }
+            .list-table th, .list-table td { padding: 0.4rem 0.2rem; word-wrap: break-word; }
+            .list-table th { font-size: 0.55rem; }
+            .list-table td { font-size: 0.7rem; line-height: 1.1; }
+            
+            .col-num { width: 10% !important; text-align: center !important; }
+            .col-resp { width: 55% !important; text-align: left !important; padding-left: 0.5rem !important; }
+            .col-resp strong { font-size: 0.7rem; }
+            
+            .col-saldo { width: 35% !important; text-align: center !important; vertical-align: middle !important; }
+            .col-saldo .badge { font-size: 0.7rem; min-width: 60px; padding: 0.3rem; margin: 0 auto; display: inline-block; width: fit-content; }
+
+            .lib-fecha { width: 17% !important; font-size: 0.55rem !important; letter-spacing: -0.5px; padding: 0.4rem 0.1rem !important; }
+            .lib-desc { width: 33% !important; font-size: 0.55rem !important; padding: 0.4rem 0.1rem !important; }
+            .lib-ingreso { width: 15% !important; font-size: 0.55rem !important; padding: 0.4rem 0.1rem !important; text-align: right; white-space: nowrap; }
+            .lib-egreso { width: 15% !important; font-size: 0.55rem !important; padding: 0.4rem 0.1rem !important; text-align: right; white-space: nowrap; }
+            .lib-saldo { width: 20% !important; font-size: 0.6rem !important; padding: 0.4rem 0.2rem !important; text-align: right; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-restaurant'></i> Pago de Alimentos</h1>
+            </div>
+
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('pagos')"><i class='bx bx-dollar-circle'></i> Registro de Pagos</button>
+                <button class="tab-btn" id="tabAdminBtn" onclick="switchTab('admin')" style="display:none;"><i class='bx bx-book-open'></i> Administrar Libro</button>
+            </div>
+
+            <div id="tab-pagos" class="tab-content active">
+                <div class="panel-card">
+                    <div class="form-group" style="max-width: 120px;">
+                        <label>Año</label>
+                        <input type="number" id="viewYear" onchange="cambiarAnio()">
+                    </div>
+                    
+                    <!-- NUEVO FILTRO INTELIGENTE PARA GRADOS -->
+                    <div class="form-group" id="filterGradosContainer" style="display: none; flex: 1.5; min-width: 160px;">
+                        <label>Mostrar</label>
+                        <select id="filterGrados" onchange="calcularYRenderizar()">
+                            <option value="mis_grados" selected>Mis Grados Asignados</option>
+                            <option value="todos">Todos los Grados</option>
+                            <optgroup label="Por Ciclo">
+                                <option value="parvularia">Parvularia (4, 5, 6)</option>
+                                <option value="ciclo_1">1° Ciclo (1º - 3º)</option>
+                                <option value="ciclo_2">2° Ciclo (4º - 6º)</option>
+                                <option value="ciclo_3">3° Ciclo (7º - 9º)</option>
+                            </optgroup>
+                            <optgroup label="Grados Específicos" id="optGradosEspecificos"></optgroup>
+                        </select>
+                    </div>
+
+                    <div class="search-wrapper">
+                        <i class='bx bx-search'></i>
+                        <input type="search" id="searchResponsable" placeholder="Buscar responsable..." oninput="filtrarTabla()">
+                    </div>
+                    <button id="btnAgregarPago" class="btn-save-text" disabled onclick="abrirModalPago()">
+                        <i class='bx bx-dollar-circle'></i> Recibir Pago
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="list-table">
+                        <thead>
+                            <tr>
+                                <th class="col-num text-center">N°</th>
+                                <th class="col-resp">RESPONSABLE</th>
+                                <th class="desktop-only" style="width: 20%;">ESTUDIANTES A CARGO</th>
+                                <th class="desktop-only text-center" style="width: 15%;">DEUDA TOTAL</th>
+                                <th class="desktop-only text-center" style="width: 10%;">PAGADO</th>
+                                <th class="col-saldo text-center">PAGO PENDIENTE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaResponsables">
+                            <tr><td colspan="6"><div class="empty-state"><i class='bx bx-loader bx-spin'></i> Calculando información...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-admin" class="tab-content">
+                
+                <div class="panel-card director-panel">
+                    <h3><i class='bx bx-cog'></i> Configuración del Año</h3>
+                    <div class="form-group cfg-year">
+                        <label>Año</label>
+                        <input type="number" id="cfgYear" placeholder="Ej: 2026">
+                    </div>
+                    <div class="form-group cfg-monto">
+                        <label>Cuota Base ($)</label>
+                        <input type="number" id="cfgMonto" step="0.01" placeholder="Ej: 30.00">
+                    </div>
+                    <button class="btn-save-text btn-guardar" onclick="guardarConfiguracion()" style="background: var(--info);"><i class='bx bx-save'></i> Guardar</button>
+                    <div class="form-group cfg-saldo">
+                        <label>Saldo Inicial ($)</label>
+                        <input type="number" id="cfgSaldoInicial" step="0.01" placeholder="Ej: 150.00">
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <form id="formEgreso" class="egreso-grid">
+                        <div class="form-group egr-fecha">
+                            <label>Fecha del Gasto</label>
+                            <input type="date" id="egrFecha" required>
+                        </div>
+                        <div class="form-group egr-desc">
+                            <label>Descripción del Egreso</label>
+                            <input type="text" id="egrDesc" placeholder="Ej: Compra de carne y verduras" required autocomplete="off">
+                        </div>
+                        <div class="form-group egr-monto">
+                            <label>Monto ($)</label>
+                            <input type="number" id="egrMonto" step="0.01" min="0.01" placeholder="0.00" required>
+                        </div>
+                        <button type="submit" class="btn-save-text btn-restar" style="background: var(--danger);"><i class='bx bx-minus-circle'></i> Restar Gasto</button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <table class="list-table">
+                        <thead>
+                            <tr>
+                                <th class="lib-fecha">FECHA</th>
+                                <th class="lib-desc">CONCEPTO</th>
+                                <th class="lib-ingreso">INGRESO</th>
+                                <th class="lib-egreso">EGRESO</th>
+                                <th class="lib-saldo">SALDO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaLibro">
+                            <tr><td colspan="5"><div class="empty-state"><i class='bx bx-loader bx-spin'></i> Extrayendo libro contable...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button class="btn-page" id="btnPrevLibro" onclick="cambiarPaginaLibro(-1)"><i class='bx bx-chevron-left'></i> Ant.</button>
+                    <span class="page-info" id="pageInfoLibro">Página 1 de 1</span>
+                    <button class="btn-page" id="btnNextLibro" onclick="cambiarPaginaLibro(1)">Sig. <i class='bx bx-chevron-right'></i></button>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL PAGO -->
+    <div class="modal-overlay" id="modalPago">
+        <div class="modal">
+            <h2 style="color: var(--primary-dark); margin-bottom: 1rem;"><i class='bx bx-receipt'></i> Registrar Abono</h2>
+            
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--border);">
+                <span style="font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase;">Recibí de:</span>
+                <div id="lblModalResp" style="font-weight: 800; font-size: 0.95rem; color: var(--primary-dark);">Nombre Responsable</div>
+                <span id="lblModalEst" class="small-meta">Aplicado a expediente titular</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Fecha de Pago</label>
+                    <input type="date" id="inpFechaPago" required>
+                </div>
+                <div class="form-group">
+                    <label>Monto a Abonar ($)</label>
+                    <input type="number" id="inpMontoPago" step="0.01" min="0.01" placeholder="Ej: 10.00" required>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-sq btn-sq-close" onclick="cerrarModalPago()" title="Cancelar"><i class='bx bx-x'></i></button>
+                <button type="button" id="btnGuardarPago" class="btn-save-text" onclick="procesarPago()">Confirmar Pago</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SALDO INICIAL -->
+    <div class="modal-overlay" id="modalSaldoInicial">
+        <div class="modal">
+            <h2 style="color: var(--primary-dark); margin-bottom: 0.5rem;"><i class='bx bx-wallet'></i> Saldo Inicial Requerido</h2>
+            <p style="font-size: 0.85rem; color: var(--accent); margin-bottom: 1.5rem; line-height: 1.4;">
+                Es la primera vez que se accede al libro contable de este año. Por favor, introduzca el <strong>Saldo Inicial</strong> (dinero arrastrado del año anterior). Puede ser 0.
+            </p>
+            
+            <div class="form-group">
+                <label>Saldo Inicial ($)</label>
+                <input type="number" id="inpSetSaldoInicial" step="0.01" value="0.00" required>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-save-text" style="width: 100%; justify-content: center;" onclick="establecerSaldoInicialModal()">Guardar y Continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        // Variables Globales RAM
+        let selectedYear = new Date().getFullYear();
+        document.getElementById('viewYear').value = selectedYear;
+        document.getElementById('cfgYear').value = selectedYear;
+        document.getElementById('egrFecha').value = new Date().toISOString().split('T')[0];
+
+        let cuotasPorAnio = {}; 
+        let allGradesDict = {};
+        let familiasBaseRAM = []; 
+        let pagosMetadataRAM = {}; 
+        let responsableSeleccionado = null;
+        let userRoleGlobal = '';
+        let misGradosIds = [];
+
+        // Libro Contable RAM
+        let allEgresos = [];
+        let libroMovs = [];
+        let currentPageLibro = 1;
+        const itemsPerPage = 20;
+
+        // Utilidades
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+        const extraerApellidos = (nombre) => {
+            if(!nombre) return "";
+            const p = nombre.trim().split(/\s+/);
+            if(p.length < 2) return nombre.toLowerCase();
+            return `${p[p.length-2]} ${p[p.length-1]}`.toLowerCase();
+        };
+        
+        const gradoANumero = (gId) => {
+            const nombreOficial = allGradesDict[gId]?.nombre || String(gId);
+            const s = nombreOficial.toLowerCase();
+            
+            if (s.includes('maternal')) return -4;
+            if (s.includes('kinder') || s.includes('kínder')) return -3;
+            if (s.includes('parvularia')) {
+                if (s.includes('4')) return -2;
+                if (s.includes('5')) return -1;
+                if (s.includes('6')) return 0;
+                return -1; 
+            }
+            
+            const num = parseInt(gId);
+            if (!isNaN(num)) return num;
+
+            if (s.includes('primer')) return 1;
+            if (s.includes('segund')) return 2;
+            if (s.includes('tercer')) return 3;
+            if (s.includes('cuart')) return 4;
+            if (s.includes('quint')) return 5;
+            if (s.includes('sext')) return 6;
+            if (s.includes('septim') || s.includes('séptim')) return 7;
+            if (s.includes('octav')) return 8;
+            if (s.includes('noven')) return 9;
+            
+            return 99;
+        };
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+            
+            if (tab === 'admin' && (userRoleGlobal === 'director' || userRoleGlobal === 'subdirector')) {
+                if (cuotasPorAnio[selectedYear] && cuotasPorAnio[selectedYear].saldo_inicial === undefined) {
+                    document.getElementById('modalSaldoInicial').classList.add('active');
+                } else if (!cuotasPorAnio[selectedYear]) {
+                     document.getElementById('modalSaldoInicial').classList.add('active');
+                }
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            
+            // Permisos
+            onSnapshot(query(collection(db, 'docentes'), where('correo', '==', user.email)), async (snap) => {
+                if(!snap.empty) {
+                    const userData = snap.docs[0].data();
+                    userRoleGlobal = (userData.cargo || '').toLowerCase();
+                    misGradosIds = (userData.grados || []).map(String);
+                    
+                    if (userRoleGlobal === 'director' || userRoleGlobal === 'subdirector') {
+                        document.getElementById('tabAdminBtn').style.display = 'flex';
+                        document.getElementById('filterGradosContainer').style.display = 'flex';
+                    }
+                    if(Object.keys(allGradesDict).length > 0) procesarEstudiantes();
+                }
+            });
+
+            // Diccionario de Grados (Totalmente cargado antes de procesar)
+            const snapGrados = await getDoc(doc(db, "control", "grados"));
+            if(snapGrados.exists()) {
+                allGradesDict = snapGrados.data();
+                
+                // Cargar OptGroup de grados específicos dinámicamente
+                const optGroup = document.getElementById('optGradosEspecificos');
+                optGroup.innerHTML = '';
+                Object.keys(allGradesDict).sort((a,b) => gradoANumero(a) - gradoANumero(b)).forEach(gId => {
+                    optGroup.innerHTML += `<option value="${gId}">${cap(allGradesDict[gId].nombre || allGradesDict[gId])}</option>`;
+                });
+            }
+
+            // Configuración Cuotas
+            onSnapshot(doc(db, "control", "pagos_alimentos"), (snap) => {
+                if(snap.exists()) cuotasPorAnio = snap.data();
+                document.getElementById('cfgMonto').value = cuotasPorAnio[selectedYear]?.monto_base || 0;
+                document.getElementById('cfgSaldoInicial').value = cuotasPorAnio[selectedYear]?.saldo_inicial !== undefined ? cuotasPorAnio[selectedYear].saldo_inicial : '';
+                if(Object.keys(allGradesDict).length > 0) procesarEstudiantes();
+            });
+
+            // Egresos del Libro
+            onSnapshot(collection(db, "alimentos_egresos"), (snap) => {
+                allEgresos = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderLibro();
+            });
+        });
+
+        // ----------------------------------------------------
+        // TAB 1: PAGO DE ESTUDIANTES (OPTIMIZADO CON PROMISE.ALL)
+        // ----------------------------------------------------
+        async function procesarEstudiantes() {
+            try {
+                const snapUsers = await getDocs(collection(db, "users"));
+                let rawStudents = snapUsers.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => !s.archivado && s.responsable);
+
+                let mapFamilias = {};
+                rawStudents.forEach(st => {
+                    let respName = st.responsable.trim().toUpperCase();
+                    if(!mapFamilias[respName]) mapFamilias[respName] = [];
+                    mapFamilias[respName].push(st);
+                });
+
+                // Descarga PARALELA y masiva de los metadatos (Reduce el tiempo de carga de 20s a menos de 1s)
+                const promesasFamilias = Object.entries(mapFamilias).map(async ([respName, estudiantes]) => {
+                    estudiantes.sort((a,b) => gradoANumero(a.grade) - gradoANumero(b.grade));
+                    const titular = estudiantes[0];
+                    
+                    let mismaFamilia = true;
+                    if (estudiantes.length > 1) {
+                        const apellidosBase = extraerApellidos(estudiantes[0].nombreCompleto);
+                        mismaFamilia = estudiantes.every(s => extraerApellidos(s.nombreCompleto) === apellidosBase);
+                    }
+
+                    if(!pagosMetadataRAM[titular.id]) {
+                        try {
+                            const docMeta = await getDoc(doc(db, "users", titular.id, "metadata", "pagos_alimentos"));
+                            pagosMetadataRAM[titular.id] = docMeta.exists() ? docMeta.data() : {};
+                        } catch(e) {
+                            pagosMetadataRAM[titular.id] = {};
+                        }
+                    }
+
+                    return {
+                        responsable: respName,
+                        titular_id: titular.id,
+                        titular_nombre: titular.nombreCompleto,
+                        grado_menor_num: gradoANumero(titular.grade),
+                        lista_estudiantes: estudiantes,
+                        mismaFamilia: mismaFamilia
+                    };
+                });
+
+                familiasBaseRAM = await Promise.all(promesasFamilias);
+
+                // ORDENAMIENTO ESTRICTO: 1ro Grado más bajo, 2do Nombre Responsable
+                familiasBaseRAM.sort((a, b) => {
+                    if (a.grado_menor_num !== b.grado_menor_num) {
+                        return a.grado_menor_num - b.grado_menor_num;
+                    }
+                    return a.responsable.localeCompare(b.responsable);
+                });
+
+                calcularYRenderizar(); 
+                renderLibro(); 
+            } catch(e) {
+                console.error(e);
+                document.getElementById('tablaResponsables').innerHTML = '<tr><td colspan="6" class="empty-state">Error al cargar datos.</td></tr>';
+            }
+        }
+
+        window.calcularYRenderizar = () => {
+            const tbody = document.getElementById('tablaResponsables');
+            const query = document.getElementById('searchResponsable').value.toLowerCase();
+            const cuotaBase = parseFloat(cuotasPorAnio[selectedYear]?.monto_base) || 0;
+
+            // EVALUACIÓN DEL FILTRO INTELIGENTE
+            const isDir = (userRoleGlobal === 'director' || userRoleGlobal === 'subdirector');
+            const filterVal = isDir ? document.getElementById('filterGrados').value : 'mis_grados';
+
+            let html = '';
+            let cont = 1;
+
+            familiasBaseRAM.forEach(f => {
+                // Filtro de Búsqueda Textual
+                if (query && !f.responsable.toLowerCase().includes(query)) return;
+
+                // Filtro de Grados por Estudiante de la Familia
+                const matchesFilter = f.lista_estudiantes.some(st => {
+                    const gStr = String(st.grade);
+                    if (filterVal === 'mis_grados') return misGradosIds.includes(gStr);
+                    if (filterVal === 'todos') return true;
+                    if (filterVal === 'ciclo_1') return ['1','2','3'].includes(gStr);
+                    if (filterVal === 'ciclo_2') return ['4','5','6'].includes(gStr);
+                    if (filterVal === 'ciclo_3') return ['7','8','9'].includes(gStr);
+                    if (filterVal === 'parvularia') {
+                        // Basado en lógica gradoANumero
+                        const s = (allGradesDict[gStr]?.nombre || gStr).toLowerCase();
+                        return s.includes('parvularia') || s.includes('kinder') || s.includes('maternal');
+                    }
+                    return gStr === filterVal; // Grado Específico Seleccionado
+                });
+
+                if (!matchesFilter) return;
+
+                let deudaTotal = 0;
+                if (f.lista_estudiantes.length === 1) {
+                    deudaTotal = cuotaBase;
+                } else if (f.mismaFamilia) {
+                    deudaTotal = cuotaBase + (5 * (f.lista_estudiantes.length - 1));
+                } else {
+                    deudaTotal = cuotaBase * f.lista_estudiantes.length;
+                }
+
+                let pagado = 0;
+                if (pagosMetadataRAM[f.titular_id] && pagosMetadataRAM[f.titular_id][selectedYear]) {
+                    pagado = parseFloat(pagosMetadataRAM[f.titular_id][selectedYear].total_pagado) || 0;
+                }
+                
+                let saldo = deudaTotal - pagado;
+                
+                f.deuda = deudaTotal;
+                f.pagado = pagado;
+                f.saldo = saldo;
+
+                const gradosStr = f.lista_estudiantes.map(s => {
+                    let nombreOficial = allGradesDict[s.grade]?.nombre || allGradesDict[s.grade] || s.grade;
+                    return cap(String(nombreOficial));
+                }).join(', ');
+
+                let badgeCls = 'b-danger';
+                let saldoTxt = `$${saldo.toFixed(2)}`;
+                if (saldo <= 0 && deudaTotal > 0) { badgeCls = 'b-success'; saldoTxt = 'SOLV.'; }
+                else if (saldo <= 0 && deudaTotal === 0) { badgeCls = 'b-warning'; saldoTxt = 'S/C'; }
+                else if (pagado > 0) { badgeCls = 'b-warning'; }
+
+                html += `
+                    <tr onclick="seleccionarFila(this, '${encodeURIComponent(JSON.stringify(f))}')">
+                        <td class="col-num text-center"><strong>${cont++}</strong></td>
+                        <td class="col-resp">
+                            <strong>${f.responsable}</strong>
+                            <span class="small-meta">${f.lista_estudiantes.length} estudiante(s) a cargo</span>
+                        </td>
+                        <td class="desktop-only"><span style="font-size: 0.75rem; font-weight: 700; color: var(--primary-steel);">${gradosStr}</span></td>
+                        <td class="desktop-only text-center"><strong>$${deudaTotal.toFixed(2)}</strong></td>
+                        <td class="desktop-only text-center" style="color: var(--primary-steel); font-weight: 800;">$${pagado.toFixed(2)}</td>
+                        <td class="col-saldo text-center"><div class="badge ${badgeCls}">${saldoTxt}</div></td>
+                    </tr>
+                `;
+            });
+
+            if(html === '') html = '<tr><td colspan="6" class="empty-state">No hay resultados para este año o filtros seleccionados.</td></tr>';
+            tbody.innerHTML = html;
+        };
+
+        window.cambiarAnio = () => {
+            selectedYear = parseInt(document.getElementById('viewYear').value);
+            document.getElementById('cfgYear').value = selectedYear;
+            document.getElementById('cfgMonto').value = cuotasPorAnio[selectedYear]?.monto_base || 0;
+            document.getElementById('cfgSaldoInicial').value = cuotasPorAnio[selectedYear]?.saldo_inicial !== undefined ? cuotasPorAnio[selectedYear].saldo_inicial : '';
+            
+            responsableSeleccionado = null;
+            document.getElementById('btnAgregarPago').disabled = true;
+            
+            calcularYRenderizar(); 
+            renderLibro();
+        };
+
+        window.filtrarTabla = () => {
+            responsableSeleccionado = null;
+            document.getElementById('btnAgregarPago').disabled = true;
+            calcularYRenderizar();
+        };
+
+        window.seleccionarFila = (trElement, jsonEncoded) => {
+            document.querySelectorAll('.list-table tbody tr').forEach(tr => tr.classList.remove('selected'));
+            trElement.classList.add('selected');
+            responsableSeleccionado = JSON.parse(decodeURIComponent(jsonEncoded));
+            document.getElementById('btnAgregarPago').disabled = false;
+        };
+
+        window.abrirModalPago = () => {
+            if (!responsableSeleccionado) return;
+            document.getElementById('lblModalResp').innerText = responsableSeleccionado.responsable;
+            document.getElementById('lblModalEst').innerText = `Aplicado a: ${responsableSeleccionado.titular_nombre}`;
+            document.getElementById('inpFechaPago').value = new Date().toISOString().split('T')[0];
+            const sugerido = responsableSeleccionado.saldo > 0 ? responsableSeleccionado.saldo : 0;
+            document.getElementById('inpMontoPago').value = sugerido ? sugerido.toFixed(2) : '';
+            document.getElementById('modalPago').classList.add('active');
+        };
+
+        window.cerrarModalPago = () => document.getElementById('modalPago').classList.remove('active');
+
+        window.procesarPago = async () => {
+            const fecha = document.getElementById('inpFechaPago').value;
+            const monto = parseFloat(document.getElementById('inpMontoPago').value);
+            if (!fecha || isNaN(monto) || monto <= 0) { alert("Datos inválidos."); return; }
+
+            const btn = document.getElementById('btnGuardarPago');
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i>"; btn.disabled = true;
+
+            try {
+                const yearStr = selectedYear.toString();
+                let dataActual = pagosMetadataRAM[responsableSeleccionado.titular_id]?.[yearStr] || { total_pagado: 0, historial: [] };
+                
+                dataActual.total_pagado += monto;
+                dataActual.historial.push({ fecha: fecha, monto: monto, timestamp: Date.now() });
+                
+                if(!pagosMetadataRAM[responsableSeleccionado.titular_id]) pagosMetadataRAM[responsableSeleccionado.titular_id] = {};
+                pagosMetadataRAM[responsableSeleccionado.titular_id][yearStr] = dataActual;
+
+                await setDoc(doc(db, "users", responsableSeleccionado.titular_id, "metadata", "pagos_alimentos"), {
+                    [yearStr]: dataActual
+                }, { merge: true });
+                
+                cerrarModalPago();
+                calcularYRenderizar(); 
+                renderLibro(); // Refresca libro automáticamente
+            } catch (error) {
+                alert("Error al guardar.");
+            } finally {
+                btn.innerHTML = "Confirmar Pago"; btn.disabled = false;
+            }
+        };
+
+        // ----------------------------------------------------
+        // TAB 2: LIBRO DE INGRESOS Y EGRESOS
+        // ----------------------------------------------------
+        
+        window.guardarConfiguracion = async () => {
+            const y = parseInt(document.getElementById('cfgYear').value);
+            const m = parseFloat(document.getElementById('cfgMonto').value) || 0;
+            const sIni = parseFloat(document.getElementById('cfgSaldoInicial').value) || 0;
+
+            if (isNaN(y)) { alert("Año inválido."); return; }
+            try {
+                await setDoc(doc(db, "control", "pagos_alimentos"), {
+                    [y]: { monto_base: m, saldo_inicial: sIni } 
+                }, { merge: true });
+                showToast(`Configuración del año ${y} guardada.`);
+            } catch (e) { showToast("Error al guardar.", "error"); }
+        };
+
+        window.establecerSaldoInicialModal = async () => {
+            const m = parseFloat(document.getElementById('inpSetSaldoInicial').value) || 0;
+            try {
+                await setDoc(doc(db, "control", "pagos_alimentos"), {
+                    [selectedYear]: { saldo_inicial: m } 
+                }, { merge: true });
+                document.getElementById('modalSaldoInicial').classList.remove('active');
+                showToast("Saldo Inicial Establecido.");
+            } catch (e) { showToast("Error al establecer saldo.", "error"); }
+        };
+
+        window.renderLibro = () => {
+            const yearStr = selectedYear.toString();
+            let ingresosDiarios = {};
+            
+            // Obtener Saldo Inicial
+            let saldoInicial = 0;
+            if (cuotasPorAnio[yearStr] && cuotasPorAnio[yearStr].saldo_inicial !== undefined) {
+                saldoInicial = parseFloat(cuotasPorAnio[yearStr].saldo_inicial);
+            }
+
+            for(let id in pagosMetadataRAM) {
+                let dataYear = pagosMetadataRAM[id][yearStr];
+                if(dataYear && dataYear.historial) {
+                    dataYear.historial.forEach(p => {
+                        if(p.fecha && p.fecha.startsWith(yearStr)) {
+                            if(!ingresosDiarios[p.fecha]) ingresosDiarios[p.fecha] = 0;
+                            ingresosDiarios[p.fecha] += p.monto;
+                        }
+                    });
+                }
+            }
+
+            let movs = [];
+            for(let fecha in ingresosDiarios) {
+                movs.push({
+                    fecha: fecha,
+                    descripcion: "PAGO DE COCINA",
+                    ingreso: ingresosDiarios[fecha],
+                    egreso: 0,
+                    timestamp: new Date(fecha).getTime()
+                });
+            }
+
+            allEgresos.forEach(eg => {
+                if(eg.fecha && eg.fecha.startsWith(yearStr)) {
+                    movs.push({
+                        fecha: eg.fecha,
+                        descripcion: eg.descripcion,
+                        ingreso: 0,
+                        egreso: eg.monto,
+                        timestamp: eg.timestamp || new Date(eg.fecha).getTime()
+                    });
+                }
+            });
+
+            // Ordenamiento Cronológico ASCENDENTE
+            movs.sort((a,b) => {
+                if(a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
+                if(a.ingreso > 0 && b.egreso > 0) return -1;
+                if(b.ingreso > 0 && a.egreso > 0) return 1;
+                return a.timestamp - b.timestamp;
+            });
+
+            let saldo = saldoInicial;
+            let historialAVisualizar = [];
+
+            // 1. Inyectamos la fila maestra de Saldo Inicial cronológicamente primero
+            historialAVisualizar.push({
+                fecha: `${yearStr}-01-01`,
+                descripcion: "SALDO INICIAL DEL AÑO",
+                ingreso: saldoInicial > 0 ? saldoInicial : 0,
+                egreso: saldoInicial < 0 ? Math.abs(saldoInicial) : 0,
+                saldo: saldoInicial,
+                isInitial: true
+            });
+
+            // 2. Sumar/Restar movimientos
+            movs.forEach(m => {
+                saldo += m.ingreso - m.egreso;
+                m.saldo = saldo;
+                historialAVisualizar.push(m);
+            });
+
+            // 3. Voltear para que lo más nuevo (y el saldo actual) esté arriba
+            historialAVisualizar.reverse();
+            libroMovs = historialAVisualizar;
+            
+            currentPageLibro = 1;
+            mostrarPaginaLibro();
+        };
+
+        window.mostrarPaginaLibro = () => {
+            const tbody = document.getElementById('tablaLibro');
+            if(libroMovs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No hay movimientos en este año.</div></td></tr>';
+                document.getElementById('btnPrevLibro').disabled = true;
+                document.getElementById('btnNextLibro').disabled = true;
+                document.getElementById('pageInfoLibro').innerText = "Página 1 de 1";
+                return;
+            }
+
+            const totalPages = Math.ceil(libroMovs.length / itemsPerPage);
+            if(currentPageLibro > totalPages) currentPageLibro = totalPages;
+            if(currentPageLibro < 1) currentPageLibro = 1;
+
+            const start = (currentPageLibro - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const items = libroMovs.slice(start, end);
+
+            let html = '';
+            items.forEach(m => {
+                const trStyle = m.isInitial ? "background: #f8fafc; border-left: 4px solid var(--primary-steel);" : "";
+                html += `
+                    <tr style="${trStyle}">
+                        <td class="lib-fecha">${m.fecha.split('-').reverse().join('/')}</td>
+                        <td class="lib-desc" style="font-weight: 700; color: var(--primary-dark);">${m.descripcion}</td>
+                        <td class="lib-ingreso">${m.ingreso > 0 ? '$'+m.ingreso.toFixed(2) : '-'}</td>
+                        <td class="lib-egreso">${m.egreso > 0 ? '$'+m.egreso.toFixed(2) : '-'}</td>
+                        <td class="lib-saldo">$${m.saldo.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            document.getElementById('pageInfoLibro').innerText = `Página ${currentPageLibro} de ${totalPages}`;
+            document.getElementById('btnPrevLibro').disabled = (currentPageLibro === 1);
+            document.getElementById('btnNextLibro').disabled = (currentPageLibro === totalPages);
+        };
+
+        window.cambiarPaginaLibro = (dir) => {
+            currentPageLibro += dir;
+            mostrarPaginaLibro();
+        };
+
+        // Agregar Gasto Manual
+        document.getElementById('formEgreso').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fecha = document.getElementById('egrFecha').value;
+            const desc = document.getElementById('egrDesc').value.trim().toUpperCase();
+            const monto = parseFloat(document.getElementById('egrMonto').value);
+
+            if(!fecha || !desc || isNaN(monto) || monto <= 0) return;
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i>";
+
+            try {
+                await addDoc(collection(db, "alimentos_egresos"), {
+                    fecha: fecha,
+                    descripcion: desc,
+                    monto: monto,
+                    timestamp: Date.now()
+                });
+                
+                document.getElementById('formEgreso').reset();
+                document.getElementById('egrFecha').value = new Date().toISOString().split('T')[0];
+                showToast("Egreso registrado correctamente.");
+            } catch(error) {
+                showToast("Error al registrar egreso.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bx-minus-circle'></i> Restar Gasto";
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juegos - CE Cantón Los Prados</title>
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-light); color: var(--primary-dark); }
+
+        .page-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .page-sub { font-size: 0.85rem; color: var(--accent); margin-bottom: 1.5rem; }
+
+        /* Game cards */
+        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; }
+        .game-card { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; transition: box-shadow 0.2s, transform 0.15s; cursor: pointer; }
+        .game-card:hover { box-shadow: 0 8px 28px rgba(36,60,76,0.13); transform: translateY(-3px); }
+        .game-card-banner { height: 130px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .game-card-banner svg { width: 64px; height: 64px; opacity: 0.9; }
+        .game-badge { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); color: var(--primary-dark); font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .game-card-body { padding: 1rem 1.25rem 1.25rem; }
+        .game-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .game-desc { font-size: 0.8rem; color: var(--accent); line-height: 1.4; margin-bottom: 1rem; }
+        .game-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 8px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; border: none; cursor: pointer; transition: opacity 0.2s; font-family: inherit; }
+        .game-btn:hover { opacity: 0.85; }
+        .game-btn-primary { background: var(--primary-dark); color: white; }
+        .game-btn-outline { background: transparent; border: 2px solid var(--border); color: var(--accent); }
+        .game-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Modal overlay */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36,60,76,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal { background: white; border-radius: 20px; width: 100%; max-width: 500px; overflow: hidden; transform: translateY(20px); transition: transform 0.2s; }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal-header { background: var(--primary-dark); color: white; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .modal-header h3 { font-size: 1.1rem; font-weight: 700; }
+        .modal-close { background: none; border: none; color: white; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; }
+        .modal-close:hover { background: rgba(255,255,255,0.15); }
+        .modal-body { padding: 1.5rem; }
+
+        /* Quiz game */
+        .quiz-question { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.4; }
+        .quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+        .quiz-option { padding: 10px 14px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; font-size: 0.875rem; transition: all 0.15s; text-align: left; font-family: inherit; background: white; }
+        .quiz-option:hover { border-color: var(--primary-steel); background: rgba(82,137,173,0.05); }
+        .quiz-option.correct { border-color: #16a34a; background: rgba(22,163,74,0.08); color: #16a34a; font-weight: 700; }
+        .quiz-option.wrong { border-color: #dc2626; background: rgba(220,38,38,0.08); color: #dc2626; }
+        .quiz-feedback { margin-top: 1rem; font-size: 0.85rem; font-weight: 600; min-height: 24px; }
+        .quiz-score { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 0.8rem; color: var(--accent); }
+        .quiz-progress { height: 4px; background: var(--bg-light); border-radius: 2px; margin-bottom: 1.25rem; }
+        .quiz-progress-fill { height: 100%; background: var(--primary-steel); border-radius: 2px; transition: width 0.3s; }
+        .quiz-next { margin-top: 1rem; padding: 10px 20px; border-radius: 8px; background: var(--primary-dark); color: white; border: none; font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: none; }
+        .quiz-next:hover { background: var(--primary-steel); }
+
+        /* Word search placeholder */
+        .coming-soon { text-align: center; padding: 2rem; color: var(--accent); }
+        .coming-soon svg { width: 48px; height: 48px; stroke: var(--border); margin: 0 auto 1rem; display: block; }
+    </style>
+</head>
+<body>
+<div id="userbar-root"></div>
+<div id="navbar-root"></div>
+<div id="navbar-mobile-root"></div>
+
+<div class="app-content">
+    <div class="page-title">Juegos educativos</div>
+    <div class="page-sub">Aprende jugando con actividades interactivas</div>
+
+    <div class="games-grid">
+
+        <!-- Quiz Matemática -->
+        <div class="game-card" id="card-quiz-mat">
+            <div class="game-card-banner" style="background:linear-gradient(135deg,#1a2d3a,#243C4C);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5289AD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span class="game-badge">Quiz</span>
+            </div>
+            <div class="game-card-body">
+                <div class="game-title">Quiz de Matemática</div>
+                <div class="game-desc">Pon a prueba tus conocimientos con preguntas de álgebra, geometría y más.</div>
+                <button class="game-btn game-btn-primary" onclick="openQuiz('mat')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Jugar
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz Ciencias -->
+        <div class="game-card">
+            <div class="game-card-banner" style="background:linear-gradient(135deg,#2a3a30,#3a5a44);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5aad7a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
+                </svg>
+                <span class="game-badge">Quiz</span>
+            </div>
+            <div class="game-card-body">
+                <div class="game-title">Quiz de Ciencias</div>
+                <div class="game-desc">Explora el mundo de la biología, física y química con preguntas interactivas.</div>
+                <button class="game-btn game-btn-primary" onclick="openQuiz('sci')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Jugar
+                </button>
+            </div>
+        </div>
+
+        <!-- Sopa de letras - coming soon -->
+        <div class="game-card">
+            <div class="game-card-banner" style="background:linear-gradient(135deg,#2a2030,#3a2050);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#9a78ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
+                    <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+                </svg>
+                <span class="game-badge">Próximo</span>
+            </div>
+            <div class="game-card-body">
+                <div class="game-title">Sopa de letras</div>
+                <div class="game-desc">Encuentra palabras relacionadas con los temas estudiados en clase.</div>
+                <button class="game-btn game-btn-outline disabled" disabled>Próximamente</button>
+            </div>
+        </div>
+
+        <!-- Memory -->
+        <div class="game-card">
+            <div class="game-card-banner" style="background:linear-gradient(135deg,#1a2540,#2a4060);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#78b8ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+                <span class="game-badge">Próximo</span>
+            </div>
+            <div class="game-card-body">
+                <div class="game-title">Memoria Educativa</div>
+                <div class="game-desc">Empareja conceptos con sus definiciones en este clásico juego de memoria.</div>
+                <button class="game-btn game-btn-outline disabled" disabled>Próximamente</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Quiz Modal -->
+<div class="modal-overlay" id="quizModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="quizModalTitle">Quiz</h3>
+            <button class="modal-close" onclick="closeQuiz()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="quiz-score">
+                <span>Pregunta <span id="qNum">1</span> de <span id="qTotal">5</span></span>
+                <span>Puntos: <strong id="qScore">0</strong></span>
+            </div>
+            <div class="quiz-progress"><div class="quiz-progress-fill" id="qProgress" style="width:0%;"></div></div>
+            <div class="quiz-question" id="qQuestion">Cargando...</div>
+            <div class="quiz-options" id="qOptions"></div>
+            <div class="quiz-feedback" id="qFeedback"></div>
+            <button class="quiz-next" id="qNext" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initUserbar } from '../js/userbar.js';
+    import { initNavbar } from '../js/navbar.js';
+    initNavbar();
+    await initUserbar({ brandHref: '../../index.html' });
+</script>
+
+<script>
+    const QUIZZES = {
+        mat: {
+            title: 'Quiz de Matemática',
+            questions: [
+                { q: '¿Cuánto es 7 × 8?', opts: ['54','56','58','64'], ans: 1 },
+                { q: '¿Cuál es la raíz cuadrada de 144?', opts: ['11','12','13','14'], ans: 1 },
+                { q: '¿Cuánto es 15% de 200?', opts: ['25','30','35','40'], ans: 1 },
+                { q: 'Si x + 5 = 12, ¿cuánto es x?', opts: ['5','6','7','8'], ans: 2 },
+                { q: '¿Cuántos grados tiene un triángulo equilátero en cada ángulo?', opts: ['45°','60°','90°','120°'], ans: 1 },
+            ]
+        },
+        sci: {
+            title: 'Quiz de Ciencias',
+            questions: [
+                { q: '¿Cuál es el símbolo químico del agua?', opts: ['CO2','H2O','O2','NaCl'], ans: 1 },
+                { q: '¿Cuántos planetas tiene el sistema solar?', opts: ['7','8','9','10'], ans: 1 },
+                { q: '¿Qué organelo es la "central energética" de la célula?', opts: ['Núcleo','Ribosoma','Mitocondria','Vacuola'], ans: 2 },
+                { q: '¿Cuál es la velocidad de la luz (aprox.)?', opts: ['300 km/s','3000 km/s','300,000 km/s','3,000,000 km/s'], ans: 2 },
+                { q: '¿Qué gas exhalan las plantas durante la fotosíntesis?', opts: ['CO2','N2','O2','H2'], ans: 2 },
+            ]
+        }
+    };
+
+    let currentQuiz = null;
+    let currentQ = 0;
+    let score = 0;
+    let answered = false;
+
+    window.openQuiz = function(type) {
+        currentQuiz = QUIZZES[type];
+        currentQ = 0;
+        score = 0;
+        answered = false;
+        document.getElementById('quizModalTitle').textContent = currentQuiz.title;
+        document.getElementById('qTotal').textContent = currentQuiz.questions.length;
+        document.getElementById('quizModal').classList.add('active');
+        renderQuestion();
+    };
+
+    window.closeQuiz = function() {
+        document.getElementById('quizModal').classList.remove('active');
+    };
+
+    window.nextQuestion = function() {
+        currentQ++;
+        answered = false;
+        if (currentQ >= currentQuiz.questions.length) {
+            showResult();
+        } else {
+            renderQuestion();
+        }
+    };
+
+    function renderQuestion() {
+        const q = currentQuiz.questions[currentQ];
+        const total = currentQuiz.questions.length;
+        document.getElementById('qNum').textContent = currentQ + 1;
+        document.getElementById('qScore').textContent = score;
+        document.getElementById('qProgress').style.width = ((currentQ / total) * 100) + '%';
+        document.getElementById('qQuestion').textContent = q.q;
+        document.getElementById('qFeedback').textContent = '';
+        document.getElementById('qNext').style.display = 'none';
+
+        const optsEl = document.getElementById('qOptions');
+        optsEl.innerHTML = q.opts.map((opt, i) => `
+            <button class="quiz-option" onclick="selectAnswer(${i})">${opt}</button>
+        `).join('');
+    }
+
+    window.selectAnswer = function(idx) {
+        if (answered) return;
+        answered = true;
+        const q = currentQuiz.questions[currentQ];
+        const opts = document.querySelectorAll('.quiz-option');
+        opts[q.ans].classList.add('correct');
+        const fb = document.getElementById('qFeedback');
+        if (idx === q.ans) {
+            score++;
+            document.getElementById('qScore').textContent = score;
+            fb.innerHTML = '<span style="color:#16a34a;">✓ ¡Correcto!</span>';
+        } else {
+            opts[idx].classList.add('wrong');
+            fb.innerHTML = `<span style="color:#dc2626;">✗ Incorrecto.</span> La respuesta era: <strong>${q.opts[q.ans]}</strong>`;
+        }
+        opts.forEach(o => o.disabled = true);
+        document.getElementById('qNext').style.display = 'block';
+    };
+
+    function showResult() {
+        const total = currentQuiz.questions.length;
+        const pct = Math.round((score / total) * 100);
+        const emoji = pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '😅';
+        document.getElementById('qQuestion').textContent = `${emoji} ¡Terminaste!`;
+        document.getElementById('qOptions').innerHTML = `
+            <div style="text-align:center;padding:1.5rem 0;">
+                <div style="font-size:2.5rem;font-weight:800;color:var(--primary-dark);">${score}/${total}</div>
+                <div style="color:var(--accent);margin:0.5rem 0;">${pct}% de aciertos</div>
+                <div style="margin-top:1rem;font-size:0.85rem;color:var(--accent);">${pct>=80?'¡Excelente trabajo!':pct>=60?'Bien, sigue practicando.':'No te rindas, vuelve a intentarlo.'}</div>
+                <button class="game-btn game-btn-primary" style="margin-top:1.5rem;" onclick="openQuiz('${currentQuiz===QUIZZES.mat?'mat':'sci'}')">Repetir quiz</button>
+            </div>`;
+        document.getElementById('qFeedback').textContent = '';
+        document.getElementById('qNext').style.display = 'none';
+        document.getElementById('qProgress').style.width = '100%';
+    }
+
+    // Close modal on overlay click
+    document.getElementById('quizModal').addEventListener('click', function(e) {
+        if (e.target === this) closeQuiz();
+    });
+</script>
+</body>
+</html>

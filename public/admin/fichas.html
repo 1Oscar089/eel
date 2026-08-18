@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fichas Disciplinarias - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* BLOQUEO DE SCROLL Y MÁRGENES EXACTOS */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        .admin-main { height: calc(100vh - 60px) !important; width: calc(100vw - 260px) !important; margin-left: 260px !important; margin-top: 0 !important; padding: var(--gap) !important; overflow-y: auto !important; overflow-x: hidden !important; display: flex; flex-direction: column; -ms-overflow-style: none; scrollbar-width: none; }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTE MÓDULO */
+
+        .header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%;}
+        .btn-link { 
+            background: white; 
+            border: 1px solid var(--border); 
+            color: var(--primary-steel); 
+            padding: 0.5rem 0.8rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 0.75rem; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.3rem; 
+            transition: 0.2s; 
+        }
+        .btn-link:hover { background: #e0f2fe; border-color: var(--primary-steel); }
+
+        /* TABS BLINDADOS */
+        .module-tabs-nav { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 0.5rem; 
+            margin-bottom: 1.5rem; 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 0.8rem; 
+            width: 100%;
+        }
+        .m-tab-btn { 
+            flex: 1; 
+            min-width: 140px; 
+            background: transparent; 
+            border: 1px solid transparent; 
+            padding: 0.6rem 0.5rem; 
+            font-size: 0.85rem; 
+            font-weight: 800; 
+            color: var(--accent); 
+            cursor: pointer; 
+            border-radius: var(--border-radius-md); 
+            transition: 0.2s; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 0.4rem; 
+            text-align: center;
+        }
+        .m-tab-btn:hover { color: var(--primary-steel); background: rgba(82, 137, 173, 0.05); }
+        .m-tab-btn.active { 
+            background: var(--primary-dark); 
+            color: white; 
+            border-color: var(--primary-dark); 
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Resultados del Buscador de Estudiantes */
+        .search-container { position: relative; margin-bottom: 1.5rem; }
+        .search-results { 
+            position: absolute; 
+            top: 100%; 
+            left: 0; 
+            width: 100%; 
+            background: white; 
+            border: 1px solid var(--border); 
+            border-radius: 0 0 8px 8px; 
+            max-height: 200px; 
+            overflow-y: auto; 
+            z-index: 100; 
+            display: none; 
+            box-shadow: var(--shadow-lg); 
+        }
+        .result-item { padding: 0.8rem 1rem; cursor: pointer; border-bottom: 1px solid var(--bg-light); display: flex; flex-direction: column; }
+        .result-item:last-child { border-bottom: none; }
+        .result-item:hover { background: #f0f8ff; color: var(--primary-steel); }
+        .result-item strong { font-size: 0.85rem; font-weight: 800; }
+        .result-item small { font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-top: 0.2rem;}
+
+        /* HISTORIAL GRID */
+        .hist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--gap); margin-top: 1rem; }
+        .hist-card { 
+            background: white; 
+            border: 1px solid var(--border); 
+            border-radius: var(--border-radius-lg); 
+            padding: 1rem; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            box-shadow: var(--shadow-sm); 
+        }
+        .hist-card:hover { border-color: var(--primary-steel); box-shadow: var(--shadow-md); transform: translateY(-2px);}
+        .hist-card h4 { font-size: 0.95rem; font-weight: 800; margin-bottom: 0.2rem; color: var(--primary-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-card p { font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 0.6rem; }
+        .badge-count { background: #e0f2fe; color: var(--primary-steel); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; display: inline-block; }
+
+        /* MODAL DETALLES */
+        .ficha-item { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 0.8rem; background: var(--bg-light); border-left: 4px solid var(--border); }
+        .ficha-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 800; color: var(--accent); }
+        .ficha-tipo { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; color: white; }
+        
+        .tipo-A { background: var(--primary-steel); } 
+        .tipo-L { background: var(--warning); } 
+        .tipo-G { background: #ea580c; } 
+        .tipo-M { background: var(--danger); } 
+
+        .ficha-item.b-A { border-left-color: var(--primary-steel); }
+        .ficha-item.b-L { border-left-color: var(--warning); }
+        .ficha-item.b-G { border-left-color: #ea580c; }
+        .ficha-item.b-M { border-left-color: var(--danger); }
+        
+        .ficha-content strong { display: block; font-size: 0.75rem; margin-top: 0.5rem; color: var(--primary-dark); text-transform: uppercase; }
+        .ficha-content p { font-size: 0.8rem; color: #444; margin-top: 0.2rem; line-height: 1.4; font-weight: 500;}
+
+        /* AJUSTES RESPONSIVOS */
+        @media (max-width: 768px) {
+            .header-actions { 
+                display: grid; 
+                grid-template-columns: 1fr; 
+                gap: 0.5rem; 
+            }
+            .btn-link { justify-content: center; font-size: 0.85rem; padding: 0.7rem; }
+
+            .module-tabs-nav { border-bottom: none; padding-bottom: 0.5rem; }
+            .m-tab-btn { font-size: 0.75rem; padding: 0.7rem 0.2rem; border: 1px solid var(--border); }
+            .m-tab-btn.active { border-color: var(--primary-dark); }
+            
+            .modal-actions { justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-book-reader'></i> Fichas Disciplinarias</h1>
+                <div class="header-actions">
+                    <a href="generar-fichas.html" class="btn-link"><i class='bx bxs-file-pdf'></i> Exportar Consolidado</a>
+                </div>
+            </div>
+
+            <div class="module-tabs-nav">
+                <button class="m-tab-btn active" onclick="switchTab('agregar')">
+                    <i class='bx bx-plus-circle'></i> Asignar Ficha
+                </button>
+                <button class="m-tab-btn" onclick="switchTab('historial')">
+                    <i class='bx bx-history'></i> Historial Anual
+                </button>
+            </div>
+
+            <div id="tab-agregar" class="tab-content active">
+                <div class="card">
+                    <h2><i class='bx bx-edit'></i> Formulario de Incidencia</h2>
+                    
+                    <div class="search-container">
+                        <div class="form-group">
+                            <label>Buscar Estudiante:</label>
+                            <input type="text" id="searchEstudiante" placeholder="Escriba el apellido o nombre..." autocomplete="off">
+                        </div>
+                        <div id="resultsEstudiante" class="search-results"></div>
+                        <input type="hidden" id="selectedId">
+                        <input type="hidden" id="selectedGrade">
+                    </div>
+
+                    <div id="formAsignacion" class="form-grid" style="opacity: 0.5; pointer-events: none;">
+                        <div class="form-group full-width">
+                            <label>Estudiante Seleccionado</label>
+                            <input type="text" id="nombreEstudiante" readonly placeholder="Ninguno">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Fecha de la Incidencia</label>
+                            <input type="date" id="fechaRegistro">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Clasificación</label>
+                            <select id="tipoFicha" onchange="actualizarCausales()">
+                                <option value="" disabled selected>-- Seleccione Tipo --</option>
+                                <option value="Anecdótica">Anecdótica (Observación)</option>
+                                <option value="Falta Leve">Falta Leve</option>
+                                <option value="Falta Grave">Falta Grave</option>
+                                <option value="Falta Muy Grave">Falta Muy Grave</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Causal Específica / Razonamiento</label>
+                            <select id="causalFicha" onchange="validarFormulario()">
+                                <option value="" disabled selected>Seleccione primero el tipo de ficha...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Detalles de los Hechos (Contexto)</label>
+                            <textarea id="descHechos" placeholder="Describa objetivamente cómo sucedieron los hechos..." oninput="validarFormulario()"></textarea>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Medida Formativa / Acción Tomada</label>
+                            <textarea id="accionTomada" placeholder="Ej: Llamado de atención verbal, citación a padres, suspensión..." oninput="validarFormulario()"></textarea>
+                        </div>
+                        
+                        <div class="full-width" style="margin-top: 1rem;">
+                            <button id="btnAsignar" class="btn-primary" onclick="guardarFicha()" disabled>
+                                <i class='bx bx-save'></i> Registrar en Expediente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-historial" class="tab-content">
+                <div class="card">
+                    <h2><i class='bx bx-folder-open'></i> Consulta de Expedientes</h2>
+                    
+                    <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap; margin-bottom: 1rem;">
+                        <div class="form-group" style="width: 150px; margin-bottom: 0;">
+                            <label>Año a Consultar</label>
+                            <input type="number" id="hist_anio" value="2026">
+                        </div>
+                        <button class="btn-primary" style="width:auto;" onclick="listarHistorialFichas()">
+                            <i class='bx bx-search'></i> Buscar Expedientes
+                        </button>
+                    </div>
+
+                    <div id="listaHistorial" class="hist-grid"></div>
+                    <div id="msgSinResultados" class="empty-state" style="display:none;">
+                        <i class='bx bx-check-shield'></i>
+                        <p>No se encontraron expedientes con fichas registradas en el año seleccionado.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height: 3rem;"></div>
+        </main>
+    </div>
+
+    <div id="modalHistorial" class="modal-overlay">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalHistTitle">Nombre del Estudiante</h2>
+                    <p id="modalHistSubtitle">Expediente Disciplinario y Anecdótico</p>
+                </div>
+            </div>
+            
+            <div class="modal-body" id="modalHistBody" style="max-height: 55vh;">
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border); display: flex;" onclick="document.getElementById('modalHistorial').classList.remove('active')">
+                    Cerrar
+                </button>
+                <button class="btn-save-text" style="background: var(--info); display: flex;" onclick="descargarPDF()">
+                    <i class='bx bxs-file-pdf'></i> Exportar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, setDoc, getDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        const { jsPDF } = window.jspdf;
+        const LOGO_URL = "../img/logo_mined.png"; 
+
+        const CAUSALES = {
+            "Anecdótica": [
+                "Destacada participación en clase o evento cívico.",
+                "Cambio positivo en la actitud, disciplina o rendimiento.",
+                "Comportamiento inusual, aislamiento o decaimiento anímico.",
+                "Problemas recurrentes de salud o fatiga evidente en clase.",
+                "Otra observación anecdótica de importancia."
+            ],
+            "Falta Leve": [
+                "[Conducta] Interrumpir el desarrollo de la clase con ruidos o comentarios innecesarios.",
+                "[Conducta] Consumir alimentos o chicles dentro del salón de clases.",
+                "[Conducta] Ponerse de pie o caminar por el aula sin autorización del docente.",
+                "[Conducta] Uso de juguetes, barajas u objetos distractores no permitidos.",
+                "[Responsabilidad] No traer el material solicitado (libros, cuadernos, herramientas).",
+                "[Responsabilidad] Incumplimiento de tareas o deberes escolares en la fecha estipulada.",
+                "[Responsabilidad] No entregar circulares o comunicaciones firmadas por los padres.",
+                "[Presentación] Llegar tarde al inicio de la jornada escolar o al cambio de clase.",
+                "[Presentación] Uso incorrecto del uniforme (camisa fuera del pantalón, zapatos distintos).",
+                "[Presentación] Falta de aseo personal o desorden en el pupitre asignado."
+            ],
+            "Falta Grave": [
+                "[Reincidencia] Cometer tres faltas leves en un mismo periodo.",
+                "[Integridad] Falta de respeto verbal: Uso de apodos, burlas o palabras soeces hacia compañeros.",
+                "[Integridad] Desobediencia manifiesta: Negarse a cumplir una orden directa de un superior o docente.",
+                "[Integridad] Salida del aula: Abandonar el salón de clase sin permiso antes de que termine el periodo.",
+                "[Académica] Fraude simple: Copiar respuestas de un compañero en un ejercicio o tarea.",
+                "[Académica] Plagio: Copiar y pegar información de internet para un trabajo sin citar fuentes.",
+                "[Académica] Ocultamiento: Esconder o no mostrar las calificaciones o reportes a los padres/tutores.",
+                "[Propiedad] Daño leve a la propiedad: Rayar pupitres, paredes o puertas con lápiz o marcador.",
+                "[Tecnología] Uso indebido de tecnología: Utilizar el celular para redes sociales o juegos durante la clase.",
+                "[Convivencia] Juegos de azar: Realizar apuestas de dinero dentro del centro escolar."
+            ],
+            "Falta Muy Grave": [
+                "[Violencia] Acoso Escolar (Bullying): Intimidación física o psicológica sistemática.",
+                "[Violencia] Ciberacoso: Publicar fotos, videos o comentarios ofensivos en redes sociales.",
+                "[Violencia] Agresión física: Participar en peleas o golpear a cualquier persona del centro.",
+                "[Violencia] Amenazas: Intimidar verbalmente o por escrito con causar daño físico.",
+                "[Peligro] Portación de armas: Ingresar navajas, herramientas punzocortantes o armas de fuego.",
+                "[Peligro] Consumo de sustancias: Posesión o uso de tabaco, alcohol, vapeadores o drogas.",
+                "[Peligro] Distribución: Venta o regalo de sustancias nocivas dentro del centro.",
+                "[Delito] Falsificación: Alterar notas, falsificar firma del tutor o certificados médicos.",
+                "[Delito] Robo o Hurto: Sustraer dinero, celulares u objetos de valor de compañeros o del centro.",
+                "[Delito] Vandalismo grave: Dañar intencionalmente sistemas eléctricos, cámaras de seguridad o PCs.",
+                "[Delito] Suplantación de identidad: Realizar exámenes o pruebas a nombre de otro estudiante."
+            ]
+        };
+
+        const gradeLabels = { '10': 'Parvularia 4', '11': 'Parvularia 5', '12': 'Parvularia 6', '1': 'Primer Grado', '2': 'Segundo Grado', '3': 'Tercer Grado', '4': 'Cuarto Grado', '5': 'Quinto Grado', '6': 'Sexto Grado', '7': 'Séptimo Grado', '8': 'Octavo Grado', '9': 'Noveno Grado' };
+        const gradeOrder = ['10', '11', '12', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        let allStudents = [];
+        let esDirector = false;
+        let userGrades = [];
+        let escuelaData = { name: "Centro Educativo", code: "" };
+        let docenteData = { name: "" };
+        let globalCacheFichas = {}; 
+        let currentStudentForPDF = null;
+
+        // --- SISTEMA DE TOAST ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const normalizeStr = (str) => { return (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); };
+        const getKeys = (fn) => { const w = (fn || '').toLowerCase().split(/\s+/).filter(x => !['de','del','la','las','los','y'].includes(x)); return { a1: w[w.length-2]||w[0]||'', a2: w[w.length-1]||'', n1: w[0]||'' }; };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const year = new Date().getFullYear();
+            // Asegurar fecha local El Salvador
+            const d = new Date();
+            const localDateStr = d.toLocaleDateString('es-SV', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+            document.getElementById('fechaRegistro').value = localDateStr;
+            document.getElementById('hist_anio').value = year;
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    await cargarPerfilDocente(user.email);
+                    cargarDatosGlobales();
+                } else {
+                    window.location.href = '../index.html';
+                }
+            });
+        });
+
+        async function cargarPerfilDocente(email) {
+            try {
+                const qUser = query(collection(db, "docentes"), where("correo", "==", email));
+                const snapUser = await getDocs(qUser);
+                
+                if (!snapUser.empty) {
+                    const userData = snapUser.docs[0].data();
+                    docenteData.name = userData.nombre || userData.name || email;
+                    if (userData.cargo && ['director', 'subdirector'].includes(userData.cargo.toLowerCase())) {
+                        esDirector = true;
+                    }
+                    userGrades = (userData.grados || []).map(String);
+                }
+                
+                const docEscuela = await getDoc(doc(db, "control", "escuela"));
+                if (docEscuela.exists()) escuelaData = docEscuela.data();
+                
+            } catch (error) { console.error("Error al cargar perfil:", error); }
+        }
+
+        function cargarDatosGlobales() {
+            onSnapshot(collection(db, "users"), (snap) => {
+                allStudents = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.nombreCompleto && !s.archivado);
+            });
+        }
+
+        function getMisEstudiantes() {
+            let estudiantesValidos = allStudents.filter(st => gradeOrder.includes(String(st.grade)));
+            if (esDirector) return estudiantesValidos;
+            return estudiantesValidos.filter(st => userGrades.includes(String(st.grade)));
+        }
+
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.m-tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            const tabBtn = document.querySelector(`.m-tab-btn[onclick="switchTab('${tab}')"]`);
+            if (tabBtn) tabBtn.classList.add('active');
+        };
+
+        // --- BUSCADOR ---
+        function filtrarEstudiantes(term, container) {
+            const cleanTerm = term.trim();
+            if (cleanTerm.length < 3) { container.style.display = 'none'; return; }
+            
+            const misEstudiantes = getMisEstudiantes();
+            const normalizedTerm = normalizeStr(cleanTerm);
+            
+            const filtered = misEstudiantes.filter(st => normalizeStr(st.nombreCompleto).includes(normalizedTerm));
+
+            filtered.sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); 
+            });
+
+            container.innerHTML = filtered.map(st => {
+                const nieText = (st.NIE || st.nie) ? `NIE: ${st.NIE || st.nie}` : '';
+                return `
+                <div class="result-item" onclick="seleccionarEstudiante('${st.id}', '${st.grade}', '${st.nombreCompleto}')">
+                    <div>
+                        <strong>${st.nombreCompleto}</strong>
+                        <small style="display:block; color:var(--accent);">${gradeLabels[st.grade] || 'Grado '+st.grade} - ${nieText}</small>
+                    </div>
+                </div>
+            `}).join('');
+            
+            container.style.display = filtered.length ? 'block' : 'none';
+        }
+        
+        document.getElementById('searchEstudiante').addEventListener('input', (e) => filtrarEstudiantes(e.target.value, document.getElementById('resultsEstudiante')));
+
+        window.seleccionarEstudiante = (id, grade, nombre) => {
+            document.getElementById('selectedId').value = id;
+            document.getElementById('selectedGrade').value = grade;
+            document.getElementById('nombreEstudiante').value = nombre;
+            
+            document.getElementById('formAsignacion').style.opacity = '1';
+            document.getElementById('formAsignacion').style.pointerEvents = 'auto';
+            document.getElementById('searchEstudiante').value = '';
+            document.getElementById('resultsEstudiante').style.display = 'none';
+            validarFormulario();
+        };
+
+        window.actualizarCausales = () => {
+            const tipo = document.getElementById('tipoFicha').value;
+            const selectCausal = document.getElementById('causalFicha');
+            
+            selectCausal.innerHTML = '<option value="" disabled selected>-- Seleccione la causal/razón --</option>';
+            
+            if(CAUSALES[tipo]) {
+                CAUSALES[tipo].forEach(causal => {
+                    selectCausal.innerHTML += `<option value="${causal}">${causal}</option>`;
+                });
+            }
+            validarFormulario();
+        };
+
+        window.validarFormulario = () => {
+            const id = document.getElementById('selectedId').value;
+            const fecha = document.getElementById('fechaRegistro').value;
+            const tipo = document.getElementById('tipoFicha').value;
+            const causal = document.getElementById('causalFicha').value;
+            const acc = document.getElementById('accionTomada').value.trim();
+            
+            document.getElementById('btnAsignar').disabled = !(id && fecha && tipo && causal && acc);
+        };
+        
+        // --- GUARDAR EN METADATA (Lotes) ---
+        window.guardarFicha = async () => {
+            const btn = document.getElementById('btnAsignar'); 
+            btn.disabled = true; 
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Guardando...";
+            
+            const id = document.getElementById('selectedId').value;
+            const grade = document.getElementById('selectedGrade').value;
+            const fecha = document.getElementById('fechaRegistro').value;
+            const anio = fecha.split('-')[0];
+            const tipo = document.getElementById('tipoFicha').value;
+            const causal = document.getElementById('causalFicha').value;
+            const descOpcional = document.getElementById('descHechos').value.trim();
+            const accion = document.getElementById('accionTomada').value.trim();
+            
+            const ts = new Date().getTime();
+            const recId = `ficha_${ts}`;
+            
+            const payload = { 
+                fecha: fecha, 
+                tipo: tipo, 
+                causal: causal,
+                descripcion: descOpcional,
+                accion: accion,
+                registradoPor: docenteData.name,
+                timestamp: ts 
+            };
+            
+            try { 
+                const batch = writeBatch(db);
+                
+                batch.set(doc(db, "users", id, "metadata", "fichas"), {
+                    [recId]: payload
+                }, { merge: true });
+
+                batch.update(doc(db, "users", id), {
+                    [`fichas_history.${anio}`]: grade
+                });
+
+                await batch.commit(); 
+                
+                showToast("Ficha registrada con éxito en el expediente."); 
+                
+                document.getElementById('tipoFicha').value = ""; 
+                document.getElementById('causalFicha').innerHTML = '<option value="" disabled selected>Seleccione primero el tipo de ficha...</option>';
+                document.getElementById('descHechos').value = "";
+                document.getElementById('accionTomada').value = "";
+                document.getElementById('selectedId').value = "";
+                document.getElementById('nombreEstudiante').value = "";
+                document.getElementById('formAsignacion').style.opacity = '0.5';
+                document.getElementById('formAsignacion').style.pointerEvents = 'none';
+                
+            } catch (e) { 
+                showToast("Error al guardar: " + e.message, "error"); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerHTML = "<i class='bx bx-save'></i> Registrar en Expediente"; 
+            }
+        };
+
+        // --- HISTORIAL ---
+        window.listarHistorialFichas = async () => {
+            const anio = document.getElementById('hist_anio').value;
+            const container = document.getElementById('listaHistorial');
+            const msg = document.getElementById('msgSinResultados');
+            const btn = document.querySelector('button[onclick="listarHistorialFichas()"]');
+            
+            if(!anio) return;
+
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Buscando...";
+            container.innerHTML = "";
+            msg.style.display = 'none';
+            globalCacheFichas = {};
+
+            const misEstudiantes = getMisEstudiantes();
+            let filtrados = misEstudiantes.filter(s => s.fichas_history && s.fichas_history[anio]);
+
+            if(filtrados.length === 0) { 
+                msg.style.display = 'block'; 
+                btn.innerHTML = "<i class='bx bx-search'></i> Buscar Expedientes";
+                return; 
+            }
+
+            filtrados.sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); 
+            });
+
+            let htmlContent = "";
+
+            await Promise.all(filtrados.map(async (st) => {
+                let fichasList = [];
+                try {
+                    const fDoc = await getDoc(doc(db, "users", st.id, "metadata", "fichas"));
+                    if(fDoc.exists()) {
+                        fichasList = Object.values(fDoc.data()).filter(r => r.fecha?.startsWith(anio));
+                    }
+                } catch(e){}
+
+                globalCacheFichas[st.id] = fichasList;
+
+                if (fichasList.length > 0) {
+                    const nieText = (st.NIE || st.nie) ? `NIE: ${st.NIE || st.nie}` : '';
+                    const totalFichas = fichasList.length;
+
+                    htmlContent += `
+                        <div class="hist-card" onclick="verDetalleFichas('${st.id}')">
+                            <h4 title="${st.nombreCompleto}">${st.nombreCompleto}</h4>
+                            <p>${gradeLabels[st.grade] || 'Grado '+st.grade} | ${nieText}</p>
+                            <div class="badge-count">${totalFichas} ${totalFichas === 1 ? 'Ficha Registrada' : 'Fichas Registradas'}</div>
+                        </div>
+                    `;
+                }
+            }));
+
+            container.innerHTML = htmlContent;
+            btn.innerHTML = "<i class='bx bx-search'></i> Buscar Expedientes";
+        };
+
+        // --- MODAL DETALLE ---
+        window.verDetalleFichas = (id) => {
+            const st = allStudents.find(s => s.id === id);
+            const anio = document.getElementById('hist_anio').value;
+            currentStudentForPDF = st;
+
+            document.getElementById('modalHistTitle').innerText = st.nombreCompleto;
+            document.getElementById('modalHistSubtitle').innerText = `Expediente de Fichas | Año: ${anio} | ${gradeLabels[st.grade] || 'Grado '+st.grade}`;
+            
+            const tbody = document.getElementById('modalHistBody');
+            tbody.innerHTML = "";
+
+            const registros = globalCacheFichas[id] || [];
+            registros.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+            if(registros.length === 0) {
+                tbody.innerHTML = "<div class='empty-state'><i class='bx bx-file-blank'></i><p>No hay fichas detalladas.</p></div>";
+            } else {
+                let html = "";
+                registros.forEach(h => {
+                    let tipoClase = 'tipo-A'; let borderClass = 'b-A';
+                    if(h.tipo === 'Falta Leve') { tipoClase = 'tipo-L'; borderClass = 'b-L'; }
+                    if(h.tipo === 'Falta Grave') { tipoClase = 'tipo-G'; borderClass = 'b-G'; }
+                    if(h.tipo === 'Falta Muy Grave') { tipoClase = 'tipo-M'; borderClass = 'b-M'; }
+
+                    const txtDescAdicional = h.descripcion ? `<br><span style="color: var(--accent); font-style:italic;">Detalles: ${h.descripcion}</span>` : '';
+                    
+                    // Formatear Fecha
+                    let fechaVisual = h.fecha;
+                    if(fechaVisual && fechaVisual.includes('-')) {
+                        const [y, m, d] = fechaVisual.split('-');
+                        fechaVisual = `${d}/${m}/${y}`;
+                    }
+
+                    html += `
+                    <div class="ficha-item ${borderClass}">
+                        <div class="ficha-header">
+                            <span style="display: flex; align-items: center; gap: 0.3rem;"><i class='bx bx-calendar'></i> ${fechaVisual}</span>
+                            <span class="ficha-tipo ${tipoClase}">${h.tipo}</span>
+                        </div>
+                        <div class="ficha-content">
+                            <strong>Causal Registrada:</strong>
+                            <p>${h.causal} ${txtDescAdicional}</p>
+                            <strong>Acción Tomada:</strong>
+                            <p>${h.accion}</p>
+                            <div style="font-size:0.65rem; color:var(--accent); font-weight: 700; margin-top:0.8rem; text-align:right;">
+                                <i class='bx bx-user'></i> Registrado por: ${h.registradoPor || 'N/D'}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                tbody.innerHTML = html;
+            }
+
+            document.getElementById('modalHistorial').classList.add('active');
+        };
+
+        // --- DESCARGA DE PDF ---
+        window.descargarPDF = async () => {
+            if(!currentStudentForPDF) return;
+            const st = currentStudentForPDF;
+            const anio = document.getElementById('hist_anio').value;
+            const registros = globalCacheFichas[st.id] || [];
+            
+            if(registros.length === 0) {
+                showToast("No hay datos para exportar.", "warning");
+                return;
+            }
+
+            const docPdf = new jsPDF('p', 'mm', 'letter');
+            const width = docPdf.internal.pageSize.getWidth();
+            const nombreEscuela = escuelaData.name || escuelaData.nombre || "Centro Educativo";
+
+            try { 
+                const response = await fetch(LOGO_URL); const blob = await response.blob();
+                const logoData = await new Promise((res) => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(blob); });
+                docPdf.addImage(logoData, 'PNG', width - 40, 10, 30, 12); 
+            } catch(e){}
+
+            docPdf.setFont("helvetica", "bold");
+            docPdf.setFontSize(14);
+            docPdf.text(nombreEscuela, 14, 15);
+            docPdf.setFontSize(12);
+            docPdf.text("Expediente Conductual y Anecdótico", 14, 22);
+            
+            docPdf.setFontSize(10);
+            docPdf.setFont("helvetica", "normal");
+            docPdf.text(`Estudiante: ${st.nombreCompleto}`, 14, 32);
+            docPdf.text(`NIE: ${st.NIE || st.nie || 'N/D'}`, 14, 38);
+            docPdf.text(`Grado: ${gradeLabels[st.grade] || st.grade}`, 14, 44);
+            docPdf.text(`Año Lectivo: ${anio}`, 14, 50);
+
+            docPdf.line(14, 54, width - 14, 54);
+
+            let tableData = [];
+            registros.sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).forEach((h, i) => {
+                
+                // Formatear Fecha para PDF
+                let fechaVisual = h.fecha;
+                if(fechaVisual && fechaVisual.includes('-')) {
+                    const [y, m, d] = fechaVisual.split('-');
+                    fechaVisual = `${d}/${m}/${y}`;
+                }
+
+                const txtCausalCompleto = h.causal + (h.descripcion ? `\n(Detalles: ${h.descripcion})` : '');
+                tableData.push([
+                    fechaVisual,
+                    h.tipo,
+                    txtCausalCompleto,
+                    h.accion,
+                    h.registradoPor || 'N/D'
+                ]);
+            });
+
+            docPdf.autoTable({
+                startY: 58,
+                head: [['Fecha', 'Tipo', 'Causal y Hechos Reportados', 'Medida Aplicada', 'Docente']],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2, valign: 'middle' },
+                headStyles: { fillColor: [36, 60, 76], textColor: 255 },
+                columnStyles: { 
+                    0: { cellWidth: 20 }, 
+                    1: { cellWidth: 25 }, 
+                    2: { cellWidth: 'auto' }, 
+                    3: { cellWidth: 40 },
+                    4: { cellWidth: 25 }
+                }
+            });
+
+            docPdf.save(`Expediente_Fichas_${st.nombreCompleto.replace(/\s+/g, '_')}_${anio}.pdf`);
+        };
+    </script>
+</body>
+</html>

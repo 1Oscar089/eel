@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario de Mobiliario - Iconic Edition</title>
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark: #243C4C; --primary-steel: #5289AD; 
+            --accent: #698696; --border: #ACBCBF; 
+            --bg-light: #F4FCFB; --danger: #ef4444; --success: #16a34a; --info: #3b82f6; --purple: #9333ea;
+            --gap: 1rem;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        body { background: var(--bg-light); color: var(--primary-dark); overflow-x: hidden; padding: var(--gap); }
+
+        .container { max-width: 1400px; margin: 0 auto; min-height: 95vh; }
+
+        /* NOTIFICACIONES (TOAST) */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { min-width: 250px; padding: 1rem 1.5rem; border-radius: 10px; color: white; font-weight: 700; font-size: 0.9rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: slideIn 0.3s ease, fadeOut 0.5s 4.5s forwards; display: flex; align-items: center; gap: 0.8rem; }
+        .toast.success { background: var(--success); border-left: 6px solid #065f46; }
+        .toast.error { background: var(--danger); border-left: 6px solid #991b1b; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
+
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem; }
+        .header h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 0.8rem; }
+        .header .btn-back { background: white; color: var(--primary-dark); border: 1px solid var(--border); padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; transition: 0.2s; }
+        .header .btn-back:hover { background: var(--bg-light); color: var(--danger); border-color: #fecaca; }
+
+        /* SWITCHES */
+        .switch-container { background: white; padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border); display: flex; gap: 0.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02); flex-wrap: wrap; }
+        .switch-btn { flex: 1; min-width: 150px; padding: 0.8rem; border-radius: 8px; border: none; background: transparent; color: var(--accent); font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-transform: uppercase; }
+        .switch-btn:hover { background: var(--bg-light); color: var(--primary-steel); }
+        .switch-btn.active { background: var(--primary-dark); color: white; box-shadow: 0 4px 10px rgba(36, 60, 76, 0.2); }
+
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS */
+        .card { background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 1rem; }
+        .card h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.5rem; color: var(--primary-steel); display: flex; align-items: center; gap: 0.5rem; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .form-group input { padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-weight: 700; font-size: 0.95rem; outline: none; transition: 0.2s; color: var(--primary-dark); background: white;}
+        .form-group input:focus { border-color: var(--primary-steel); }
+
+        .btn-action { padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 800; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; margin-top: 1.5rem; }
+        .btn-save { background: var(--primary-dark); color: white; width: 100%; }
+        .btn-save:hover { background: var(--primary-steel); }
+
+        /* TABLA Y BUSCADOR */
+        .search-wrapper { display: flex; align-items: center; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 0 1rem; margin-bottom: 1.5rem; transition: 0.2s; }
+        .search-wrapper:focus-within { border-color: var(--primary-steel); background: white; }
+        .search-wrapper i { color: var(--accent); font-size: 1.3rem; }
+        .search-wrapper input { border: none; padding: 0.8rem 0.5rem; outline: none; flex: 1; font-size: 0.95rem; font-weight: 600; color: var(--primary-dark); background: transparent; }
+
+        .table-wrapper { border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; margin-bottom: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.8rem 1rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        th { background: #f8fafc; font-weight: 800; color: var(--primary-dark); }
+        
+        .qty-badge { background: #f3e8ff; color: var(--purple); padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 800; font-family: monospace; display: inline-block; font-size: 0.85rem;}
+        .meta-text { display: block; font-size: 0.75rem; color: var(--accent); font-weight: 600; margin-top: 0.2rem; }
+        
+        .btn-view { background: #f3e8ff; color: var(--purple); border: none; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.3rem; transition: 0.2s; margin: 0 auto;}
+        .btn-view:hover { background: #e9d5ff; transform: scale(1.05); }
+
+        .pagination { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border); }
+        .btn-page { background: white; border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 6px; font-weight: 800; color: var(--primary-dark); cursor: pointer; transition: 0.2s; }
+        .btn-page:hover:not(:disabled) { background: var(--primary-steel); color: white; border-color: var(--primary-steel); }
+        .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-info { font-size: 0.85rem; font-weight: 800; color: var(--accent); }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; padding: 2rem; border-radius: 12px; width: 100%; max-width: 450px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        
+        .modal-actions { display: flex; gap: 0.8rem; justify-content: flex-end; align-items: center; border-top: 1px solid var(--bg-light); padding-top: 1rem; margin-top: 1.5rem; }
+        .btn-sq { width: 38px; height: 38px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; transition: 0.2s;}
+        .btn-sq-close { background: #f1f5f9; color: #64748b; }
+        .btn-sq-close:hover { background: #e2e8f0; }
+
+        .btn-save-text { background: var(--primary-dark); color: white; padding: 0 1.2rem; height: 38px; border-radius: 8px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
+        .btn-save-text:hover { background: var(--primary-steel); }
+
+        .empty-state { text-align: center; padding: 3rem; color: var(--accent); font-size: 0.95rem; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+        
+        <header class="header">
+            <h1><i class='bx bx-desktop'></i> Mobiliario y Equipo</h1>
+            <a href="inventarios.html" class="btn-back"><i class='bx bx-x'></i> Cerrar Módulo</a>
+        </header>
+
+        <div class="switch-container">
+            <button class="switch-btn active" onclick="switchView('view-1')" id="btn-view-1">1. Crear Registro</button>
+            <button class="switch-btn" onclick="switchView('view-2')" id="btn-view-2">2. Catálogo y Movimientos</button>
+        </div>
+
+        <section id="view-1" class="view-section active">
+            <div class="card" style="max-width: 750px; margin: 0 auto;">
+                <h2><i class='bx bx-plus-circle'></i> Registrar Nuevo Mobiliario / Equipo</h2>
+                <form id="formProducto">
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Descripción / Nombre del Artículo</label>
+                            <input type="text" id="prodNombre" placeholder="Ej: PUPITRE METÁLICO, COMPUTADORA ESCRITORIO..." required autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label>Código de Inventario</label>
+                            <input type="text" id="prodCodigo" placeholder="10856-0000-0000" maxlength="15" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label>Cantidad Inicial</label>
+                            <input type="number" id="prodCantidad" step="1" min="0" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Marca <span style="color: var(--danger);">*</span></label>
+                            <input type="text" id="prodMarca" placeholder="Ej: HP, DELL, GENÉRICA" required autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo (Opcional)</label>
+                            <input type="text" id="prodModelo" placeholder="Ej: OPTIPLEX 3020" autocomplete="off">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-action btn-save"><i class='bx bx-check-circle'></i> Guardar Registro</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-2" class="view-section">
+            <div class="card">
+                <div class="search-wrapper">
+                    <i class='bx bx-search'></i>
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre, código o marca (mínimo 3 letras)..." oninput="handleSearch()">
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 55%;">DESCRIPCIÓN DEL ARTÍCULO</th>
+                                <th style="width: 30%; text-align: center;">CANTIDAD ACTUAL</th>
+                                <th style="width: 15%; text-align: center;">ACCIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaInventario">
+                            <tr><td colspan="3"><div class="empty-state"><i class='bx bx-loader bx-spin'></i> Cargando catálogo...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button class="btn-page" id="btnPrev" onclick="cambiarPagina(-1)"><i class='bx bx-chevron-left'></i> Anterior</button>
+                    <span class="page-info" id="pageInfo">Página 1 de 1</span>
+                    <button class="btn-page" id="btnNext" onclick="cambiarPagina(1)">Siguiente <i class='bx bx-chevron-right'></i></button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <div class="modal-overlay" id="modalMovimiento">
+        <div class="modal">
+            <h2 style="color: var(--primary-dark); margin-bottom: 0.5rem; font-size: 1.4rem;"><i class='bx bx-transfer'></i> Ajustar Existencias</h2>
+            <p id="lblProdNombre" style="font-size: 0.85rem; font-weight: 800; color: var(--accent); margin-bottom: 1.5rem; text-transform: uppercase;">NOMBRE DEL PRODUCTO</p>
+            
+            <form id="formAjuste">
+                <input type="hidden" id="ajusteId">
+                <input type="hidden" id="ajusteStockActual">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tipo de Movimiento</label>
+                        <select id="ajusteTipo" required style="padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-weight: 700; outline: none; background: white;">
+                            <option value="sumar">Entrada (+ Sumar)</option>
+                            <option value="restar">Salida (- Restar o Descargo)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad a Afectar</label>
+                        <input type="number" id="ajusteCantidad" step="1" min="1" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-sq btn-sq-close" onclick="cerrarModalAjuste()" title="Cancelar"><i class='bx bx-x'></i></button>
+                    <button type="submit" class="btn-save-text" id="btnGuardarAjuste"><i class='bx bx-save'></i> Aplicar Ajuste</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, addDoc, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        let allProducts = [];
+        let filteredProducts = [];
+        let currentPage = 1;
+        const itemsPerPage = 20;
+
+        // --- SISTEMA DE TOAST ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        // --- MANEJO DE PESTAÑAS ---
+        window.switchView = (viewId) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.switch-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            document.getElementById('btn-' + viewId).classList.add('active');
+            if(viewId === 'view-2') renderTable();
+        };
+
+        // --- NORMALIZACIÓN DE TEXTO Y MÁSCARAS ---
+        const limpiarTexto = (str) => str.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        const mascaraCodigo = (val) => {
+            let v = val.replace(/\D/g, '').substring(0, 13);
+            if (v.length > 9) v = v.replace(/^(\d{5})(\d{4})(\d+)/, '$1-$2-$3');
+            else if (v.length > 5) v = v.replace(/^(\d{5})(\d+)/, '$1-$2');
+            return v;
+        };
+
+        document.getElementById('prodNombre').addEventListener('input', (e) => e.target.value = limpiarTexto(e.target.value));
+        document.getElementById('prodMarca').addEventListener('input', (e) => e.target.value = limpiarTexto(e.target.value));
+        document.getElementById('prodModelo').addEventListener('input', (e) => e.target.value = limpiarTexto(e.target.value));
+        document.getElementById('prodCodigo').addEventListener('input', (e) => e.target.value = mascaraCodigo(e.target.value));
+
+        // --- SEGURIDAD ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = '../index.html';
+        });
+
+        // --- CONEXIÓN A FIREBASE (Colección inv_mobiliario_productos) ---
+        onSnapshot(collection(db, "inv_mobiliario_productos"), (snap) => {
+            allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            allProducts.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            handleSearch();
+        });
+
+        // --- CREAR PRODUCTO (VALIDACIÓN DE DUPLICADOS) ---
+        document.getElementById('formProducto').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('prodNombre').value.trim();
+            const codigo = document.getElementById('prodCodigo').value.trim() || "S/C";
+            const cantidad = parseInt(document.getElementById('prodCantidad').value);
+            const marca = document.getElementById('prodMarca').value.trim();
+            const modelo = document.getElementById('prodModelo').value.trim() || "N/A";
+
+            // Validar existencia por nombre o código (si tiene código)
+            const existe = allProducts.some(p => p.nombre === nombre || (codigo !== "S/C" && p.codigo === codigo));
+            if (existe) {
+                showToast(`El artículo o código ya existe en el registro.`, "error");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "inv_mobiliario_productos"), { nombre, codigo, cantidad, marca, modelo });
+                document.getElementById('formProducto').reset();
+                showToast("Mobiliario/Equipo registrado exitosamente.");
+            } catch(error) {
+                showToast("Error al conectar con la base de datos.", "error");
+            }
+        });
+
+        // --- BUSCADOR INTELIGENTE Y PAGINACIÓN ---
+        window.handleSearch = () => {
+            const queryTxt = document.getElementById('searchInput').value.toUpperCase();
+            if (queryTxt.length > 0 && queryTxt.length < 3) return;
+
+            if (queryTxt.length >= 3) {
+                filteredProducts = allProducts.filter(p => 
+                    p.nombre.includes(queryTxt) || 
+                    (p.codigo && p.codigo.includes(queryTxt)) ||
+                    (p.marca && p.marca.includes(queryTxt))
+                );
+            } else {
+                filteredProducts = [...allProducts];
+            }
+            currentPage = 1;
+            renderTable();
+        };
+
+        window.renderTable = () => {
+            const tbody = document.getElementById('tablaInventario');
+            if(filteredProducts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">No se encontró mobiliario o equipo.</div></td></tr>';
+                document.getElementById('pageInfo').innerText = "Página 1 de 1";
+                document.getElementById('btnPrev').disabled = true;
+                document.getElementById('btnNext').disabled = true;
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            if(currentPage > totalPages) currentPage = totalPages;
+            
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedItems = filteredProducts.slice(start, end);
+
+            let html = '';
+            paginatedItems.forEach(p => {
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${p.nombre}</strong>
+                            <span class="meta-text">COD: ${p.codigo || 'S/C'} | MARCA: ${p.marca} ${p.modelo !== 'N/A' ? '| MOD: ' + p.modelo : ''}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="qty-badge">${p.cantidad}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="btn-view" onclick="abrirModalAjuste('${p.id}', '${p.nombre}', ${p.cantidad})" title="Ajustar Existencia">
+                                <i class='bx bx-transfer'></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+
+            document.getElementById('pageInfo').innerText = `Página ${currentPage} de ${totalPages}`;
+            document.getElementById('btnPrev').disabled = (currentPage === 1);
+            document.getElementById('btnNext').disabled = (currentPage === totalPages);
+        };
+
+        window.cambiarPagina = (dir) => {
+            currentPage += dir;
+            renderTable();
+        };
+
+        // --- AJUSTES DE INVENTARIO ---
+        window.abrirModalAjuste = (id, nombre, stockActual) => {
+            document.getElementById('formAjuste').reset();
+            document.getElementById('ajusteId').value = id;
+            document.getElementById('ajusteStockActual').value = stockActual;
+            document.getElementById('lblProdNombre').innerText = nombre;
+            document.getElementById('modalMovimiento').classList.add('active');
+        };
+
+        window.cerrarModalAjuste = () => {
+            document.getElementById('modalMovimiento').classList.remove('active');
+        };
+
+        document.getElementById('formAjuste').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('ajusteId').value;
+            const stockActual = parseInt(document.getElementById('ajusteStockActual').value);
+            const tipo = document.getElementById('ajusteTipo').value;
+            const cantMov = parseInt(document.getElementById('ajusteCantidad').value);
+
+            let nuevoStock = stockActual;
+            if (tipo === 'sumar') {
+                nuevoStock += cantMov;
+            } else {
+                nuevoStock -= cantMov;
+                if (nuevoStock < 0) {
+                    showToast("No puedes descargar o dar de baja más equipo del que existe.", "error");
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('btnGuardarAjuste');
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i>";
+            btn.disabled = true;
+
+            try {
+                const docRef = doc(db, "inv_mobiliario_productos", id);
+                await updateDoc(docRef, { cantidad: nuevoStock });
+                cerrarModalAjuste();
+                showToast("Inventario actualizado correctamente.");
+            } catch (error) {
+                showToast("Error en la operación.", "error");
+            } finally {
+                btn.innerHTML = "<i class='bx bx-save'></i> Aplicar Ajuste";
+                btn.disabled = false;
+            }
+        });
+
+    </script>
+</body>
+</html>

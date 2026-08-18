@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario de Alimentos - Kardex</title>
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { 
+            --primary-dark: #243C4C; --primary-steel: #5289AD; 
+            --accent: #698696; --border: #ACBCBF; 
+            --bg-light: #F4FCFB; --danger: #ef4444; --success: #16a34a; --info: #3b82f6;
+            --gap: 0.5rem;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        body { background: var(--bg-light); color: var(--primary-dark); overflow-x: hidden; padding: var(--gap); }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* NOTIFICACIONES (TOAST) */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { min-width: 250px; padding: 1rem 1.5rem; border-radius: 10px; color: white; font-weight: 700; font-size: 0.9rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: slideIn 0.3s ease, fadeOut 0.5s 4.5s forwards; display: flex; align-items: center; gap: 0.8rem; }
+        .toast.success { background: var(--success); border-left: 6px solid #065f46; }
+        .toast.error { background: var(--danger); border-left: 6px solid #991b1b; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
+
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.8rem; flex-wrap: wrap; gap: 1rem;}
+        .header h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 0.8rem; }
+        .header .btn-back { background: white; color: var(--primary-dark); border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; transition: 0.2s; }
+        .header .btn-back:hover { background: var(--bg-light); color: var(--danger); border-color: #fecaca; }
+
+        /* TABS */
+        .switch-container { background: white; padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border); display: flex; gap: 0.5rem; margin-bottom: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02); flex-wrap: wrap; }
+        .switch-btn { flex: 1; min-width: 150px; padding: 0.8rem; border-radius: 8px; border: none; background: transparent; color: var(--accent); font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-transform: uppercase; }
+        .switch-btn:hover { background: var(--bg-light); color: var(--primary-steel); }
+        .switch-btn.active { background: var(--primary-dark); color: white; box-shadow: 0 4px 10px rgba(36, 60, 76, 0.2); }
+
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 1rem; }
+        .card h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.2rem; color: var(--primary-steel); display: flex; align-items: center; gap: 0.5rem; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; font-weight: 700; font-size: 0.9rem; outline: none; transition: 0.2s; color: var(--primary-dark); background: white;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); }
+
+        /* CONTROLES DEL REGISTRO DE SALIDAS */
+        .grades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; margin-top: 0.5rem; background: var(--bg-light); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); }
+        .grade-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+        .grade-item input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary-dark); }
+        
+        .counter-badge { background: var(--primary-dark); color: white; padding: 0.4rem 0.8rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+
+        .calc-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+        .calc-table th { background: #f8fafc; padding: 0.6rem; text-align: left; border-bottom: 2px solid var(--border); color: var(--primary-dark); font-weight: 800; }
+        .calc-table td { padding: 0.6rem; border-bottom: 1px solid var(--bg-light); vertical-align: middle; }
+        .calc-table tr:hover { background: #f8fafc; }
+        
+        .prod-label { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; cursor: pointer; }
+        .prod-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary-dark); cursor: pointer; }
+        .input-portion { width: 90px; padding: 0.4rem; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; text-align: right; outline: none; transition: 0.2s; }
+        .input-portion:focus { border-color: var(--primary-steel); }
+        .input-portion:disabled { background: #e2e8f0; cursor: not-allowed; opacity: 0.6; }
+        .result-kg { font-family: monospace; font-weight: 800; font-size: 1rem; color: var(--danger); background: #fef2f2; padding: 0.3rem 0.6rem; border-radius: 6px; display: inline-block; min-width: 80px; text-align: right;}
+        .result-kg.entrada { color: var(--success); background: #f0fdf4; }
+
+        .btn-action { padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 800; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; margin-top: 1rem; }
+        .btn-save { background: var(--primary-dark); color: white; width: 100%; }
+        .btn-save:hover { background: var(--primary-steel); transform: translateY(-1px); }
+
+        /* KARDEX Y REPORTES */
+        .filter-controls { display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1rem; background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); flex-wrap: wrap; }
+        .table-wrapper { background: white; border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; max-height: 600px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th, td { padding: 0.6rem; border: 1px solid #e2e8f0; text-align: center; }
+        th { background: white; font-weight: 800; color: var(--primary-dark); position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .bg-in { background: #f0fdf4; color: #16a34a; font-weight: 700; }
+        .bg-out { background: #fef2f2; color: #dc2626; font-weight: 700; }
+        .bg-bal { background: #f8fafc; font-weight: 800; color: var(--primary-dark); }
+
+        .report-item { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; align-items: center; padding: 0.8rem; border-bottom: 1px solid var(--bg-light); }
+        .empty-state { text-align: center; padding: 3rem; color: var(--accent); font-size: 0.9rem; font-style: italic; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .empty-state i { font-size: 2rem; color: var(--border); }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+        <header class="header">
+            <h1><i class='bx bx-bowl-rice'></i> Inventario de Alimentos</h1>
+            <a href="inventarios.html" class="btn-back"><i class='bx bx-x'></i> Cerrar Módulo</a>
+        </header>
+
+        <div class="switch-container">
+            <button class="switch-btn active" onclick="switchView('view-1')" id="btn-view-1">1. Crear Producto</button>
+            <button class="switch-btn" onclick="switchView('view-2')" id="btn-view-2">2. Registrar Movimientos</button>
+            <button class="switch-btn" onclick="switchView('view-3')" id="btn-view-3">3. Visualizar Kardex</button>
+            <button class="switch-btn" onclick="switchView('view-4')" id="btn-view-4">4. Generar Reporte</button>
+        </div>
+
+        <section id="view-1" class="view-section active">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h2><i class='bx bx-plus-circle'></i> Añadir Nuevo Producto</h2>
+                <form id="formProducto">
+                    <div class="form-group">
+                        <label>Nombre del Producto</label>
+                        <input type="text" id="prodNombre" placeholder="Ej: Arroz Blanco, Frijol Rojo..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad Inicial Física (Kg)</label>
+                        <input type="number" id="prodStock" step="0.0001" value="0" required>
+                    </div>
+                    <button type="submit" class="btn-action btn-save"><i class='bx bx-check-circle'></i> Guardar Producto</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-2" class="view-section">
+            <div class="card">
+                <h2><i class='bx bx-transfer'></i> Registro de Consumo (Egresos) y Entradas</h2>
+                <form id="formMovimiento">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group"><label>Fecha</label><input type="date" id="movFecha" required></div>
+                        <div class="form-group">
+                            <label>Tipo de Operación</label>
+                            <select id="movTipo" onchange="toggleCalculadoraMode()" required>
+                                <option value="salida">Salida (Consumo Diario)</option>
+                                <option value="entrada">Entrada (Ingreso de Bodega)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="panelCalculoSalida">
+                        <label style="font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase;">1. Seleccionar Grados Beneficiados (Cálculo Estándar):</label>
+                        <div class="grades-grid" id="gradesContainer">
+                            <div class="empty-state" style="grid-column: 1/-1; padding: 1rem;"><i class='bx bx-loader-alt bx-spin'></i> Cargando estudiantes...</div>
+                        </div>
+                        <div class="counter-badge">
+                            <i class='bx bxs-user-detail'></i> Estudiantes estándar: <span id="lblTotalStudents">0</span>
+                        </div>
+                    </div>
+
+                    <label style="font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-top: 1.5rem; display: block;">2. Tabla de Cálculos (Gramos a Kg):</label>
+                    <div style="overflow-x: auto;">
+                        <table class="calc-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th id="thCantidad">Porción por Estudiante (Gramos)</th>
+                                    <th>Total Calculado (Kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calcTableBody">
+                                <tr><td colspan="3"><div class="empty-state"><i class='bx bx-box'></i> No hay productos registrados en el sistema.</div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button type="submit" class="btn-action btn-save" style="background: var(--primary-steel); margin-top: 1.5rem;"><i class='bx bx-save'></i> Confirmar y Guardar Movimientos</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-3" class="view-section">
+            <div class="card" style="padding-bottom: 0;">
+                <div class="filter-controls">
+                    <div class="form-group" style="max-width: 120px;"><label>Año</label><input type="number" id="kdxYear"></div>
+                    <div class="form-group" style="max-width: 150px;"><label>Vista</label><select id="kdxPeriodo" onchange="llenarMeses('kdxPeriodo', 'kdxValor'); renderKardex();"><option value="mes">Mensual</option><option value="trimestre">Trimestral</option></select></div>
+                    <div class="form-group" style="flex: 1; max-width: 250px;"><label>Mes / Trimestre</label><select id="kdxValor" onchange="renderKardex()"></select></div>
+                </div>
+                <div class="table-wrapper" id="kardexContainer"><div class="empty-state">Seleccione un periodo.</div></div>
+                <br>
+            </div>
+        </section>
+
+        <section id="view-4" class="view-section">
+            <div class="card">
+                <h2><i class='bx bxs-file-pdf'></i> Reporte Mensual PDF</h2>
+                <div class="filter-controls">
+                    <div class="form-group" style="max-width: 120px;"><label>Año</label><input type="number" id="repYear"></div>
+                    <div class="form-group" style="flex: 1; max-width: 250px;"><label>Mes del Reporte</label><select id="repValor"></select></div>
+                </div>
+                <div style="margin-top: 1rem; border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+                    <div style="background: #f8fafc; padding: 0.8rem; font-size: 0.75rem; font-weight: 800; color: var(--accent); display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; border-bottom: 1px solid var(--border);">
+                        <span>PRODUCTO</span><span>N° DE LOTE</span><span>VENCIMIENTO</span>
+                    </div>
+                    <div id="reportInputsContainer" style="padding: 0.5rem; max-height: 400px; overflow-y: auto;"><div class="empty-state">No hay productos.</div></div>
+                </div>
+                <button class="btn-action btn-save" onclick="generarPDF()" style="background: var(--info);"><i class='bx bx-download'></i> Guardar Datos y Descargar PDF</button>
+            </div>
+        </section>
+    </div>
+
+    <script type="module">
+        import { db } from '../js/initFirebase.js';
+        import { collection, addDoc, onSnapshot, query, orderBy, writeBatch, doc, getDocs, where } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        let allProducts = [];
+        let allMoves = [];
+        let studentsByGrade = {}; 
+        let totalBeneficiados = 0; 
+        
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const gradeLabels = { '10': 'Parv 4', '11': 'Parv 5', '12': 'Parv 6', '1': '1° Grado', '2': '2° Grado', '3': '3° Grado', '4': '4° Grado', '5': '5° Grado', '6': '6° Grado', '7': '7° Grado', '8': '8° Grado', '9': '9° Grado' };
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        window.switchView = (viewId) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.switch-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            document.getElementById('btn-' + viewId).classList.add('active');
+            if(viewId === 'view-3') renderKardex();
+        };
+
+        const init = () => {
+            const year = new Date().getFullYear();
+            document.getElementById('movFecha').value = new Date().toISOString().split('T')[0];
+            document.getElementById('kdxYear').value = year;
+            document.getElementById('repYear').value = year;
+            document.getElementById('kdxYear').addEventListener('change', renderKardex);
+            window.llenarMeses('kdxPeriodo', 'kdxValor');
+            const repSelect = document.getElementById('repValor');
+            repSelect.innerHTML = meses.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+            repSelect.value = new Date().getMonth() + 1;
+            
+            cargarEstudiantes();
+        };
+
+        // --- LÓGICA DE ESTUDIANTES Y CÁLCULOS ---
+        async function cargarEstudiantes() {
+            try {
+                const q = query(collection(db, "users"), where("archivado", "==", false));
+                const snap = await getDocs(q);
+                
+                studentsByGrade = {};
+                snap.forEach(d => {
+                    const g = d.data().grade;
+                    if (g) {
+                        if(!studentsByGrade[g]) studentsByGrade[g] = 0;
+                        studentsByGrade[g]++;
+                    }
+                });
+
+                renderGradesChecklist();
+            } catch (e) {
+                console.error("Error al cargar nómina:", e);
+                document.getElementById('gradesContainer').innerHTML = "<div class='empty-state'>Error al conectar con la base de datos.</div>";
+            }
+        }
+
+        function renderGradesChecklist() {
+            const container = document.getElementById('gradesContainer');
+            const order = ['10', '11', '12', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            
+            let html = '';
+            order.forEach(g => {
+                if (studentsByGrade[g]) {
+                    html += `
+                    <label class="grade-item">
+                        <input type="checkbox" class="chk-grade" value="${g}" data-qty="${studentsByGrade[g]}" onchange="recalcTotalStudents()">
+                        ${gradeLabels[g]} (${studentsByGrade[g]} est.)
+                    </label>`;
+                }
+            });
+
+            container.innerHTML = html || "<div class='empty-state'>No hay estudiantes activos.</div>";
+        }
+
+        window.recalcTotalStudents = () => {
+            const checkboxes = document.querySelectorAll('.chk-grade:checked');
+            totalBeneficiados = 0;
+            checkboxes.forEach(cb => { totalBeneficiados += parseInt(cb.dataset.qty); });
+            
+            document.getElementById('lblTotalStudents').innerText = totalBeneficiados;
+            
+            document.querySelectorAll('.input-portion').forEach(inp => {
+                if(!inp.disabled && inp.value) calcularFila(inp.dataset.id);
+            });
+        };
+
+        // --- MATEMÁTICA ESPECIAL BIOFORTIK ---
+        window.getBiofortikStudents = (maxGrade) => {
+            // Recorre desde parvularia hasta el grado especificado sumando estudiantes.
+            const order = ['10', '11', '12', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            let total = 0;
+            for (let g of order) {
+                total += (studentsByGrade[g] || 0);
+                if (g === maxGrade) break; // Detiene la suma cuando llega al límite seleccionado
+            }
+            return total;
+        };
+
+        window.toggleCalculadoraMode = () => {
+            const tipo = document.getElementById('movTipo').value;
+            const panel = document.getElementById('panelCalculoSalida');
+            const th = document.getElementById('thCantidad');
+            
+            if (tipo === 'salida') {
+                panel.style.display = 'block';
+                th.innerText = "Porción por Estudiante (Gramos)";
+            } else {
+                panel.style.display = 'none';
+                th.innerText = "Cantidad Total a Ingresar (KG)";
+            }
+
+            document.querySelectorAll('.prod-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.input-portion').forEach(inp => { inp.value = ''; inp.disabled = true; });
+            document.querySelectorAll('.result-kg').forEach(res => { 
+                res.innerText = '0.0000'; 
+                res.className = `result-kg ${tipo}`;
+            });
+            
+            // Ocultar páneles de Biofortik al cambiar modo
+            document.querySelectorAll('.bio-config').forEach(b => b.style.display = 'none');
+        };
+
+        window.toggleInputTable = (prodId) => {
+            const tipo = document.getElementById('movTipo').value;
+            const checkbox = document.querySelector(`.prod-checkbox[value="${prodId}"]`);
+            const input = document.getElementById(`input-${prodId}`);
+            const result = document.getElementById(`res-${prodId}`);
+            const bioConfig = document.getElementById(`bioConfig-${prodId}`);
+            
+            input.disabled = !checkbox.checked;
+            
+            if(!checkbox.checked) {
+                input.value = '';
+                result.innerText = '0.0000';
+                if(bioConfig) bioConfig.style.display = 'none';
+            } else {
+                input.focus();
+                if(bioConfig && tipo === 'salida') bioConfig.style.display = 'block';
+                calcularFila(prodId);
+            }
+        };
+
+        window.calcularFila = (prodId) => {
+            const tipo = document.getElementById('movTipo').value;
+            const input = document.getElementById(`input-${prodId}`);
+            const res = document.getElementById(`res-${prodId}`);
+            
+            if (!input.value) { res.innerText = '0.0000'; return; }
+
+            let totalKg = 0;
+            const inputValue = parseFloat(input.value) || 0;
+
+            if (tipo === 'salida') {
+                let activeStudents = totalBeneficiados;
+                
+                // --- INTERCEPTOR LÓGICO PARA BIOFORTIK ---
+                const bioMaxSelect = document.getElementById(`bioMax-${prodId}`);
+                if (bioMaxSelect) {
+                    const maxG = bioMaxSelect.value;
+                    activeStudents = getBiofortikStudents(maxG);
+                    document.getElementById(`bioCount-${prodId}`).innerText = `${activeStudents} estudiantes en total (Parvularia a ${maxG}°)`;
+                }
+
+                totalKg = (inputValue * activeStudents) / 1000;
+            } else {
+                totalKg = inputValue;
+            }
+
+            res.innerText = totalKg.toFixed(4);
+        };
+
+        // --- CARGA DE PRODUCTOS ---
+        onSnapshot(collection(db, "inv_alimentos_productos"), (snap) => {
+            allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            const calcBody = document.getElementById('calcTableBody');
+            if(allProducts.length > 0) {
+                calcBody.innerHTML = allProducts.map(p => {
+                    const isBiofortik = p.nombre.toUpperCase().includes('BIOFORTIK');
+                    
+                    const biofortikHtml = isBiofortik ? `
+                        <div id="bioConfig-${p.id}" class="bio-config" style="display:none; margin-top: 0.5rem; background: #e0f2fe; padding: 0.6rem; border-radius: 6px; border: 1px dashed #7dd3fc;">
+                            <label style="font-size:0.65rem; font-weight:800; color:#0369a1; display:block; margin-bottom:0.2rem;"><i class='bx bx-target-lock'></i> Limite Superior (Grado Máx.)</label>
+                            <select id="bioMax-${p.id}" style="width:100%; padding:0.3rem; font-size:0.75rem; border: 1px solid #bae6fd; border-radius: 4px; outline:none; font-weight:700; color:#0369a1;" onchange="calcularFila('${p.id}')">
+                                <option value="1">Hasta 1° Grado</option>
+                                <option value="2">Hasta 2° Grado</option>
+                                <option value="3" selected>Hasta 3° Grado</option>
+                                <option value="4">Hasta 4° Grado</option>
+                                <option value="5">Hasta 5° Grado</option>
+                                <option value="6">Hasta 6° Grado</option>
+                                <option value="7">Hasta 7° Grado</option>
+                                <option value="8">Hasta 8° Grado</option>
+                                <option value="9">Hasta 9° Grado</option>
+                            </select>
+                            <div id="bioCount-${p.id}" style="font-size:0.65rem; font-weight:800; color:var(--primary-dark); margin-top:0.4rem; text-align:center;">Calculando...</div>
+                        </div>
+                    ` : '';
+
+                    return `
+                    <tr>
+                        <td style="vertical-align: top;">
+                            <label class="prod-label">
+                                <input type="checkbox" class="prod-checkbox" value="${p.id}" onchange="toggleInputTable('${p.id}')"> 
+                                ${p.nombre}
+                            </label>
+                            ${biofortikHtml}
+                        </td>
+                        <td style="vertical-align: top; text-align:center;">
+                            <input type="number" id="input-${p.id}" data-id="${p.id}" class="input-portion" step="0.0001" min="0.0001" placeholder="0.00" disabled required oninput="calcularFila('${p.id}')">
+                        </td>
+                        <td style="vertical-align: top; text-align:center;">
+                            <div class="result-kg salida" id="res-${p.id}">0.0000</div>
+                        </td>
+                    </tr>
+                `}).join('');
+                
+                toggleCalculadoraMode();
+            }
+
+            const repContainer = document.getElementById('reportInputsContainer');
+            if(allProducts.length > 0) {
+                repContainer.innerHTML = allProducts.map(p => `
+                    <div class="report-item">
+                        <strong>${p.nombre}</strong>
+                        <div class="form-group" style="margin:0;"><input type="text" class="rep-lote" data-id="${p.id}" value="${p.lote || ''}" placeholder="N° Lote"></div>
+                        <div class="form-group" style="margin:0;"><input type="date" class="rep-venc" data-id="${p.id}" value="${p.vencimiento || ''}"></div>
+                    </div>
+                `).join('');
+            }
+            renderKardex();
+        });
+
+        onSnapshot(query(collection(db, "inv_alimentos_movimientos"), orderBy("fecha", "desc")), (snap) => {
+            allMoves = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderKardex();
+        });
+
+        window.llenarMeses = (idPeriodo, idValor) => {
+            const isMes = document.getElementById(idPeriodo).value === 'mes';
+            const select = document.getElementById(idValor);
+            if (isMes) {
+                select.innerHTML = meses.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+                select.value = new Date().getMonth() + 1;
+            } else {
+                select.innerHTML = `<option value="1">1er Trimestre</option><option value="2">2do Trimestre</option><option value="3">3er Trimestre</option><option value="4">4to Trimestre</option>`;
+            }
+        };
+
+        // --- SUBMITS ---
+        document.getElementById('formProducto').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('prodNombre').value.trim().toUpperCase();
+            const stock = parseFloat(document.getElementById('prodStock').value);
+            try {
+                await addDoc(collection(db, "inv_alimentos_productos"), { nombre, stockInicial: stock });
+                document.getElementById('formProducto').reset();
+                showToast("Producto creado.");
+            } catch(e) { showToast("Error al crear.", "error"); }
+        });
+
+        document.getElementById('formMovimiento').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const tipo = document.getElementById('movTipo').value;
+            const checkedBoxes = document.querySelectorAll('.prod-checkbox:checked');
+            
+            if(checkedBoxes.length === 0) { showToast("Seleccione al menos un producto de la tabla.", "error"); return; }
+            
+            if(tipo === 'salida') {
+                let hasStandardProduct = false;
+                checkedBoxes.forEach(box => {
+                    // Si el producto chequeado NO tiene el selector bioMax, es estándar.
+                    if(!document.getElementById(`bioMax-${box.value}`)) hasStandardProduct = true;
+                });
+                
+                // Si seleccionó un estándar pero no marcó los grados generales: Bloquea.
+                // Si SOLO seleccionó biofortik, lo deja pasar porque usa su propia cuenta.
+                if(hasStandardProduct && totalBeneficiados === 0) {
+                    showToast("Debe seleccionar al menos un grado general para la salida de productos estándar.", "error"); 
+                    return;
+                }
+            }
+
+            const batch = writeBatch(db);
+            const fecha = document.getElementById('movFecha').value;
+            
+            checkedBoxes.forEach(box => {
+                const prodId = box.value;
+                const cantFinal = parseFloat(document.getElementById(`res-${prodId}`).innerText);
+                
+                const newDocRef = doc(collection(db, "inv_alimentos_movimientos"));
+                batch.set(newDocRef, { 
+                    fecha, 
+                    tipo, 
+                    productId: prodId, 
+                    cantidad: cantFinal,
+                    timestamp: Date.now() 
+                });
+            });
+
+            try {
+                await batch.commit();
+                
+                document.querySelectorAll('.prod-checkbox').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.input-portion').forEach(inp => { inp.value = ''; inp.disabled = true; });
+                document.querySelectorAll('.result-kg').forEach(res => res.innerText = '0.0000');
+                document.querySelectorAll('.bio-config').forEach(b => b.style.display = 'none');
+                
+                showToast("Movimientos guardados exitosamente.");
+            } catch(e) { 
+                console.error(e);
+                showToast("Error al guardar en el servidor.", "error"); 
+            }
+        });
+
+        // --- REPORTES ---
+        window.renderKardex = () => {
+            const year = parseInt(document.getElementById('kdxYear').value);
+            const periodo = document.getElementById('kdxPeriodo').value;
+            const valor = parseInt(document.getElementById('kdxValor').value);
+            const container = document.getElementById('kardexContainer');
+            if(allProducts.length === 0) { container.innerHTML = '<div class="empty-state">No hay productos.</div>'; return; }
+            const filtered = allMoves.filter(m => {
+                const [y, mes] = m.fecha.split('-').map(Number);
+                if(y !== year) return false;
+                return periodo === 'mes' ? mes === valor : Math.ceil(mes / 3) === valor;
+            });
+            const fechas = [...new Set(filtered.map(m => m.fecha))].sort().reverse();
+            if(fechas.length === 0) { container.innerHTML = '<div class="empty-state">Sin movimientos.</div>'; return; }
+            let html = `<table><thead><tr><th rowspan="2">FECHA</th>`;
+            allProducts.forEach(p => html += `<th colspan="3">${p.nombre}</th>`);
+            html += `</tr><tr>`;
+            allProducts.forEach(() => html += `<th style="font-size:0.6rem">ING</th><th style="font-size:0.6rem">EGR</th><th style="font-size:0.6rem">SALDO</th>`);
+            html += `</tr></thead><tbody>`;
+            const history = [...new Set(allMoves.map(m => m.fecha))].sort();
+            const calc = {}; let current = {};
+            allProducts.forEach(p => current[p.id] = p.stockInicial || 0);
+            history.forEach(f => {
+                calc[f] = {};
+                allProducts.forEach(p => {
+                    const d = allMoves.filter(m => m.fecha === f && m.productId === p.id);
+                    let ing = 0, egr = 0;
+                    d.forEach(m => m.tipo === 'entrada' ? ing += m.cantidad : egr += m.cantidad);
+                    current[p.id] += (ing - egr);
+                    calc[f][p.id] = { ing, egr, bal: current[p.id] };
+                });
+            });
+            fechas.forEach(f => {
+                const [y, m, d] = f.split('-');
+                html += `<tr><td><strong>${d}/${m}/${y}</strong></td>`;
+                allProducts.forEach(p => {
+                    const r = calc[f][p.id];
+                    html += `<td class="bg-in">${r.ing ? r.ing.toFixed(4) : '-'}</td><td class="bg-out">${r.egr ? r.egr.toFixed(4) : '-'}</td><td class="bg-bal">${r.bal.toFixed(4)}</td>`;
+                });
+                html += `</tr>`;
+            });
+            container.innerHTML = html + `</tbody></table>`;
+        };
+
+        window.generarPDF = async () => {
+            if(allProducts.length === 0) { showToast("No hay productos.", "error"); return; }
+            
+            const updateBatch = writeBatch(db);
+            const lotes = {}; const vencs = {};
+            
+            document.querySelectorAll('.rep-lote').forEach(i => {
+                const pid = i.dataset.id;
+                const val = i.value || '';
+                lotes[pid] = val;
+                updateBatch.update(doc(db, "inv_alimentos_productos", pid), { lote: val });
+            });
+            
+            document.querySelectorAll('.rep-venc').forEach(i => {
+                const pid = i.dataset.id;
+                const val = i.value || '';
+                vencs[pid] = val ? val.split('-').reverse().join('/') : '---';
+                updateBatch.update(doc(db, "inv_alimentos_productos", pid), { vencimiento: val });
+            });
+
+            try {
+                await updateBatch.commit(); 
+                showToast("Información de productos actualizada.");
+            } catch (err) {
+                console.error(err);
+                showToast("Error al guardar datos de lote/vencimiento.", "error");
+            }
+
+            const { jsPDF } = window.jspdf; const docPDF = new jsPDF('l', 'mm', 'a4');
+            const year = document.getElementById('repYear').value;
+            const mesIdx = parseInt(document.getElementById('repValor').value) - 1;
+            docPDF.text(`REPORTE ALIMENTOS - ${meses[mesIdx].toUpperCase()} ${year}`, 14, 15);
+            const body = allProducts.map(p => {
+                let st = p.stockInicial; let ing = 0; let egr = 0;
+                const min = `${year}-${String(mesIdx + 1).padStart(2, '0')}-01`;
+                const max = `${year}-${String(mesIdx + 1).padStart(2, '0')}-31`;
+                allMoves.forEach(m => {
+                    if(m.productId === p.id) {
+                        if(m.fecha < min) st += (m.tipo === 'entrada' ? m.cantidad : -m.cantidad);
+                        else if(m.fecha <= max) m.tipo === 'entrada' ? ing += m.cantidad : egr += m.cantidad;
+                    }
+                });
+                return [p.nombre, st.toFixed(4), ing.toFixed(4), egr.toFixed(4), (st + ing - egr).toFixed(4), lotes[p.id] || '---', vencs[p.id]];
+            });
+            docPDF.autoTable({ startY: 25, head: [['PRODUCTO', 'ST. INICIAL', 'INGRESOS', 'EGRESOS', 'ST. FINAL', 'LOTE', 'VENCIMIENTO']], body, theme: 'grid', headStyles: { fillColor: [36, 60, 76] } });
+            docPDF.save(`Reporte_Alimentos_${meses[mesIdx]}_${year}.pdf`);
+        };
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horario - CE Cantón Los Prados</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/navbar.css" as="style">
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --gap:0.5rem;}
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* BLOQUEO DE PANTALLA Y ESTRUCTURA IDÉNTICA AL ADMIN */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+
+        .app-content { 
+            height: calc(100vh - 60px) !important; 
+            min-height: 0 !important;
+            width: calc(100vw - 220px) !important; /* Resta exacto el ancho del navbar lateral (220px) */
+            margin-left: 220px !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex; 
+            flex-direction: column;
+            margin-top: 0 !important;
+            -ms-overflow-style: none; 
+            scrollbar-width: none;
+        }
+        .app-content::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 768px) {
+            .app-content { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; }
+        }
+
+        .page-header { margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; margin: 0; display: flex; align-items: center; gap: 0.5rem;}
+        .page-header p { font-size: 0.85rem; color: var(--accent); margin-top: 0.2rem; font-weight: 500; }
+
+        /* TABLA DE HORARIO (SCROLL INTERNO) */
+        .schedule-wrap { flex: 1; overflow: auto; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); background: white; -ms-overflow-style: none; scrollbar-width: none;}
+        .schedule-wrap::-webkit-scrollbar { display: none; }
+        
+        .schedule-table { width: 100%; border-collapse: collapse; min-width: 700px; height: 100%; }
+        .schedule-table th { background: #f8fafc; color: var(--primary-dark); padding: 0.8rem 0.5rem; font-size: 0.75rem; text-align: center; font-weight: 800; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); text-transform: uppercase; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);}
+        .schedule-table th:first-child { width: 90px; }
+        
+        /* TRUCO CSS: height: 1px permite que los hijos con height: 100% llenen toda la celda */
+        .schedule-table td { padding: 0; border: 1px solid #e2e8f0; vertical-align: stretch; height: 1px; }
+        
+        .schedule-table td.time-col { background: #f8fafc; padding: 0.5rem; text-align: center; font-size: 0.75rem; color: var(--primary-steel); font-weight: 800; border-right: 2px solid var(--border); height: auto;}
+
+        .cell-block {
+            padding: 0.6rem;
+            min-height: 65px;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            line-height: 1.3;
+            transition: 0.2s;
+        }
+        .cell-block:hover { filter: brightness(0.95); }
+        .cell-subject { font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .s-empty { background: white; color: var(--accent); font-style: italic; font-weight: 600; }
+
+        .empty-state { text-align: center; padding: 4rem 1rem; color: var(--accent); font-size: 0.9rem; font-style: italic; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+        .empty-state i { font-size: 2.5rem; color: var(--border); }
+    </style>
+</head>
+<body>
+<div id="userbar-root"></div>
+<div id="navbar-root"></div>
+<div id="navbar-mobile-root"></div>
+
+<div class="app-content">
+    <div class="page-header">
+        <h1><i class='bx bx-time'></i> Mi Horario de Clases</h1>
+        <p id="subtitleGrade">Cargando información...</p>
+    </div>
+
+    <div class="schedule-wrap">
+        <table class="schedule-table">
+            <thead>
+                <tr>
+                    <th><i class='bx bx-stopwatch'></i> Franja</th>
+                    <th>Lunes</th>
+                    <th>Martes</th>
+                    <th>Miércoles</th>
+                    <th>Jueves</th>
+                    <th>Viernes</th>
+                </tr>
+            </thead>
+            <tbody id="scheduleBody">
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class='bx bx-loader-alt bx-spin'></i>
+                            <span>Sincronizando horario desde la dirección...</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module">
+    import { initUserbar } from '../js/userbar.js';
+    import { initNavbar } from '../js/navbar.js';
+    import { auth, db } from '../js/initFirebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+    initNavbar();
+    await initUserbar({ brandHref: '../index.html' });
+
+    const currentYear = new Date().getFullYear();
+
+    // --- PALETA DE COLORES PASTEL HERMOSOS ---
+    const SUBJECT_PALETTE = [
+        { bg: '#e0f2fe', border: '#38bdf8', text: '#0369a1' }, // Azul
+        { bg: '#dcfce7', border: '#4ade80', text: '#15803d' }, // Verde
+        { bg: '#fef3c7', border: '#fbbf24', text: '#b45309' }, // Amarillo/Naranja
+        { bg: '#f3e8ff', border: '#c084fc', text: '#7e22ce' }, // Morado
+        { bg: '#ffe4e6', border: '#f43f5e', text: '#be123c' }, // Rosa
+        { bg: '#ffedd5', border: '#fb923c', text: '#c2410c' }, // Naranja
+        { bg: '#ecfccb', border: '#a3e635', text: '#3f6212' }, // Lima
+        { bg: '#ccfbf1', border: '#2dd4bf', text: '#0f766e' }, // Turquesa
+        { bg: '#e0e7ff', border: '#818cf8', text: '#4338ca' }, // Indigo
+        { bg: '#fae8ff', border: '#e879f9', text: '#a21caf' }  // Fucsia
+    ];
+
+    // --- ASIGNADOR SECUENCIAL EN MEMORIA (Evita repeticiones) ---
+    let assignedColors = {};
+    let nextColorIndex = 0;
+
+    function getSubjectColor(subjectName) {
+        if (!subjectName || subjectName.trim() === '') return null;
+        
+        const s = subjectName.toLowerCase().trim();
+        // El receso siempre será gris sutil
+        if (s.includes('receso')) return { bg: '#f8fafc', border: '#cbd5e1', text: '#64748b' };
+
+        // Si la materia ya tiene un color asignado, lo devolvemos
+        if (assignedColors[s]) {
+            return assignedColors[s];
+        }
+
+        // Si es una materia nueva, le asignamos el siguiente color en la lista
+        const color = SUBJECT_PALETTE[nextColorIndex % SUBJECT_PALETTE.length];
+        assignedColors[s] = color;
+        nextColorIndex++;
+
+        return color;
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = '../index.html'; return; }
+
+        try {
+            const q = query(collection(db, 'users'), where('email', '==', user.email));
+            const snap = await getDocs(q);
+
+            if (!snap.empty) {
+                const studentData = snap.docs[0].data();
+                const studentGrade = studentData.grade;
+
+                if (!studentGrade) {
+                    document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bx bx-error-circle"></i>Aún no tienes un grado académico asignado.</div></td></tr>';
+                    document.getElementById('subtitleGrade').innerText = "Sin grado asignado";
+                    return;
+                }
+
+                onSnapshot(doc(db, "control", "grados"), (gradoSnap) => {
+                    if (gradoSnap.exists()) {
+                        const grados = gradoSnap.data();
+                        const nombreGrado = grados[studentGrade]?.nombre || grados[studentGrade] || `Grado ${studentGrade}`;
+                        document.getElementById('subtitleGrade').innerText = `Año Lectivo ${currentYear} — ${nombreGrado.toUpperCase()}`;
+                    }
+                });
+
+                onSnapshot(doc(db, "control", "horarios"), (horarioSnap) => {
+                    const tbody = document.getElementById('scheduleBody');
+                    
+                    if (horarioSnap.exists()) {
+                        const allHorarios = horarioSnap.data();
+                        const myHorarioKey = `${currentYear}_grado_${studentGrade}`;
+                        const mySchedule = allHorarios[myHorarioKey];
+
+                        if (mySchedule && mySchedule.filas && mySchedule.filas.length > 0) {
+                            renderSchedule(mySchedule.filas);
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bx bx-calendar-x"></i>El horario para tu grado aún no ha sido publicado.</div></td></tr>';
+                        }
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bx bx-calendar-x"></i>El horario para tu grado aún no ha sido publicado.</div></td></tr>';
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Error cargando horario:", error);
+            document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bx bx-error"></i>Ocurrió un error al cargar el horario. Intenta recargar la página.</div></td></tr>';
+        }
+    });
+
+    function renderSchedule(filas) {
+        const tbody = document.getElementById('scheduleBody');
+        let html = '';
+
+        // Resetear colores para que la asignación sea consistente si se recarga la tabla
+        assignedColors = {};
+        nextColorIndex = 0;
+
+        filas.forEach(fila => {
+            const timeStr = fila.hora.replace(' - ', '<br>');
+            const isFullRecess = !fila.lun && !fila.mar && !fila.mie && !fila.jue && !fila.vie;
+            
+            if (isFullRecess) {
+                html += `
+                <tr>
+                    <td class="time-col" style="color:var(--accent);">${timeStr}</td>
+                    <td colspan="5" style="border: 1px solid var(--bg-light);">
+                        <div class="cell-block" style="min-height: 40px; flex-direction: row; gap: 0.5rem; background: #f8fafc; color: var(--accent);">
+                            <i class='bx bx-coffee' style="font-size: 1.2rem;"></i>
+                            <span style="font-weight:800; font-size:0.85rem; letter-spacing: 2px;">RECESO</span>
+                        </div>
+                    </td>
+                </tr>`;
+            } else {
+                html += `<tr>
+                    <td class="time-col">${timeStr}</td>
+                    ${['lun', 'mar', 'mie', 'jue', 'vie'].map(day => {
+                        const subject = fila[day];
+                        
+                        if (!subject || subject === '') {
+                            return `<td><div class="cell-block s-empty">Libre</div></td>`;
+                        } else {
+                            const c = getSubjectColor(subject);
+                            return `
+                            <td>
+                                <div class="cell-block" style="background: ${c.bg}; color: ${c.text}; border-left: 4px solid ${c.border};">
+                                    <span class="cell-subject">${subject}</span>
+                                </div>
+                            </td>`;
+                        }
+                    }).join('')}
+                </tr>`;
+            }
+        });
+
+        tbody.innerHTML = html;
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imprimir Instrumento 001</title>
+    
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTA VISTA ENFOCADA */
+        body { 
+            background: var(--bg-light); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 1rem; 
+        }
+        
+        .focused-window { 
+            width: 100%; 
+            max-width: 550px; 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: var(--border-radius-xl); 
+            border: 1px solid var(--border); 
+            box-shadow: var(--shadow-lg); 
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .window-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            border-bottom: 2px solid var(--bg-light); 
+            padding-bottom: 1rem; 
+        }
+        .window-header h1 { 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            color: var(--primary-dark);
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin: 0;
+        }
+        
+        .btn-back { 
+            background: var(--bg-light); 
+            color: var(--accent); 
+            padding: 0.5rem 1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            border: 1px solid transparent; 
+        }
+        .btn-back:hover { background: #f1f5f9; color: var(--danger); border-color: #fecaca; }
+
+        .mode-selector { 
+            display: flex; 
+            justify-content: center; 
+            gap: 1.5rem; 
+            margin-bottom: 1.5rem; 
+            padding: 1rem; 
+            background: var(--bg-light); 
+            border-radius: var(--border-radius-md); 
+            border: 1px solid var(--border); 
+        }
+        .mode-selector label { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            cursor: pointer; 
+            color: var(--primary-dark); 
+        }
+        .mode-selector input[type="radio"] { 
+            accent-color: var(--primary-steel); 
+            cursor: pointer; 
+            width: 18px; 
+            height: 18px; 
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+        .form-group label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; transition: 0.2s; font-family: inherit;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+
+        .search-container { position: relative; }
+        .search-results { 
+            position: absolute; 
+            top: 100%; 
+            left: 0; 
+            width: 100%; 
+            background: white; 
+            border: 1px solid var(--border); 
+            border-radius: 0 0 8px 8px; 
+            max-height: 200px; 
+            overflow-y: auto; 
+            z-index: 100; 
+            display: none; 
+            box-shadow: var(--shadow-md); 
+        }
+        .result-item { padding: 0.8rem 1rem; cursor: pointer; border-bottom: 1px solid var(--bg-light); display: flex; flex-direction: column; }
+        .result-item:hover { background: #f0f8ff; color: var(--primary-steel); }
+        .result-item strong { font-size: 0.9rem; font-weight: 800; color: var(--primary-dark); }
+        .result-item small { font-size: 0.75rem; color: var(--accent); font-weight: 700; margin-top: 0.2rem; }
+
+        .selected-student-box { 
+            background: #f0fdf4; 
+            border: 1px solid #bbf7d0; 
+            padding: 1.5rem; 
+            border-radius: var(--border-radius-md); 
+            text-align: center; 
+            margin-bottom: 1.5rem; 
+            display: none; 
+            box-shadow: var(--shadow-sm);
+        }
+        .selected-student-box h3 { color: var(--success); margin-bottom: 0.3rem; font-size: 1.1rem; font-weight: 800; }
+        .selected-student-box p { color: #166534; font-size: 0.85rem; font-weight: 700; }
+
+        .btn-imprimir { 
+            background: var(--primary-dark); 
+            color: white; 
+            padding: 1.1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            border: none; 
+            width: 100%; 
+            transition: 0.2s; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin-top: 1rem; 
+        }
+        .btn-imprimir:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .btn-imprimir:hover:not(:disabled) { 
+            background: var(--primary-steel); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(82, 137, 173, 0.3); 
+        }
+
+        .redirect-msg { 
+            text-align: center; 
+            color: var(--primary-steel); 
+            font-size: 0.85rem; 
+            font-weight: 800; 
+            margin-top: 1.5rem; 
+            display: none; 
+            padding: 1rem; 
+            background: #e0f2fe; 
+            border-radius: 8px; 
+        }
+
+        @media (max-width: 768px) {
+            .focused-window { padding: 1.5rem; }
+            .window-header h1 { font-size: 1.1rem; }
+            .mode-selector { flex-direction: column; gap: 0.8rem; }
+            
+            /* FIX CORTES EN MÓVIL */
+            .form-group select, .form-group input { 
+                font-size: 0.85rem; 
+                padding: 0.6rem 0.8rem; 
+                min-height: 44px; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="focused-window">
+        <div class="window-header">
+            <h1><i class='bx bx-printer'></i> Instrumento 001</h1>
+            <a href="demeritos.html" class="btn-back"><i class='bx bx-x'></i> Cancelar</a>
+        </div>
+
+        <div class="mode-selector">
+            <label><input type="radio" name="modeInst001" value="individual" checked onchange="toggleMode()"> Por Estudiante</label>
+            <label><input type="radio" name="modeInst001" value="grado" onchange="toggleMode()"> Por Grado Completo</label>
+        </div>
+        
+        <div id="view_individual">
+            <div class="form-group search-container">
+                <label>Buscar Estudiante (3º a 9º Grado):</label>
+                <input type="text" id="searchEstudiante" placeholder="Escriba 3 letras del nombre o apellido..." autocomplete="off">
+                <div id="resultsEstudiante" class="search-results"></div>
+            </div>
+            
+            <div id="selectedStudentBox" class="selected-student-box">
+                <i class='bx bx-check-shield' style="font-size: 2.5rem; color: var(--success); margin-bottom: 0.5rem;"></i>
+                <h3 id="lblEstudiante"></h3>
+                <p id="lblGrado"></p>
+            </div>
+
+            <button id="btnImprimirInd" class="btn-imprimir" onclick="generarPDFIndividual()" disabled>
+                <i class='bx bxs-file-pdf'></i> Generar Tarjeta de Deméritos
+            </button>
+        </div>
+        
+        <div id="view_grado" style="display:none;">
+            <div class="form-group">
+                <label>Seleccione Grado</label>
+                <select id="selGrado" onchange="validarGrado()">
+                    <option value="" disabled selected>Cargando información de grados...</option>
+                </select>
+            </div>
+            <button id="btnImprimirGrd" class="btn-imprimir" onclick="generarPDFGrado()" disabled>
+                <i class='bx bxs-file-pdf'></i> Generar Lote Completo
+            </button>
+        </div>
+
+        <div id="redirectMsg" class="redirect-msg">
+            <i class='bx bx-loader bx-spin'></i> Descarga iniciada. Regresando a Deméritos...
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const { jsPDF } = window.jspdf;
+        // LOGO OFICIAL
+        const LOGO_URL = "../img/logo_mined.png"; 
+
+        const gradeLabels = { '10': 'Parvularia 4', '11': 'Parvularia 5', '12': 'Parvularia 6', '1': 'Primer Grado', '2': 'Segundo Grado', '3': 'Tercer Grado', '4': 'Cuarto Grado', '5': 'Quinto Grado', '6': 'Sexto Grado', '7': 'Séptimo Grado', '8': 'Octavo Grado', '9': 'Noveno Grado' };
+        
+        // El instrumento 001 y demeritos aplican para de Tercero a Noveno
+        const gradeOrder = ['3', '4', '5', '6', '7', '8', '9'];
+
+        let allStudents = [];
+        let esDirector = false;
+        let userGrades = [];
+        let currentStudentForPrint = null;
+
+        // Metadatos para PDF
+        let escuelaData = { name: "Centro Educativo", code: "", departamento: "", municipio: "", distrito: "" };
+        let nombreDirector = "__________________________";
+
+        // SISTEMA DE TOAST
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const normalizeStr = (str) => { return (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); };
+        const getKeys = (fn) => { const w = (fn || '').toLowerCase().split(/\s+/).filter(x => !['de','del','la','las','los','y'].includes(x)); return { a1: w[w.length-2]||w[0]||'', a2: w[w.length-1]||'', n1: w[0]||'' }; };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    await cargarPerfilYMetadata(user.email);
+                    cargarEstudiantes();
+                } else {
+                    window.location.href = '../index.html';
+                }
+            });
+        });
+
+        async function cargarPerfilYMetadata(email) {
+            try {
+                // Perfil del docente activo
+                const qUser = query(collection(db, "docentes"), where("correo", "==", email));
+                const snapUser = await getDocs(qUser);
+                if (!snapUser.empty) {
+                    const userData = snapUser.docs[0].data();
+                    if (userData.cargo && ['director', 'subdirector'].includes(userData.cargo.toLowerCase())) esDirector = true;
+                    userGrades = (userData.grados || []).map(String);
+                }
+
+                // Extracción de datos del Centro Escolar (control/escuela)
+                const docEscuela = await getDoc(doc(db, "control", "escuela"));
+                if (docEscuela.exists()) {
+                    escuelaData = docEscuela.data();
+                }
+
+                // BÚSQUEDA ROBUSTA DEL DIRECTOR
+                const snapDocentes = await getDocs(collection(db, "docentes"));
+                for (let d of snapDocentes.docs) {
+                    const data = d.data();
+                    if (data.cargo && data.cargo.toLowerCase().trim() === 'director') {
+                        nombreDirector = data.nombre || data.name || nombreDirector;
+                        break; 
+                    }
+                }
+
+                llenarSelectGrados();
+            } catch (error) { console.error("Error cargando metadata:", error); }
+        }
+
+        function cargarEstudiantes() {
+            onSnapshot(collection(db, "users"), (snap) => {
+                allStudents = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.nombreCompleto && !s.archivado);
+            });
+        }
+
+        function getMisEstudiantes() {
+            let estudiantesValidos = allStudents.filter(st => gradeOrder.includes(String(st.grade)));
+            if (esDirector) return estudiantesValidos;
+            return estudiantesValidos.filter(st => userGrades.includes(String(st.grade)));
+        }
+
+        function llenarSelectGrados() {
+            const sel = document.getElementById('selGrado');
+            if (esDirector) {
+                sel.innerHTML = '<option value="" disabled selected>-- Seleccione Grado --</option>' + gradeOrder.map(g => `<option value="${g}">${gradeLabels[g]}</option>`).join('');
+            } else {
+                const misGradosAplicables = userGrades.filter(g => gradeOrder.includes(String(g)));
+                if(misGradosAplicables.length === 0) {
+                    sel.innerHTML = '<option value="" disabled selected>Sin grados aplicables</option>';
+                } else {
+                    sel.innerHTML = '<option value="" disabled selected>-- Seleccione Grado --</option>' + misGradosAplicables.map(g => `<option value="${g}">${gradeLabels[g]}</option>`).join('');
+                }
+            }
+        }
+
+        // --- INTERFAZ ---
+        window.toggleMode = () => {
+            const mode = document.querySelector('input[name="modeInst001"]:checked').value;
+            document.getElementById('view_individual').style.display = mode === 'individual' ? 'block' : 'none';
+            document.getElementById('view_grado').style.display = mode === 'grado' ? 'block' : 'none';
+            
+            currentStudentForPrint = null;
+            document.getElementById('searchEstudiante').value = '';
+            document.getElementById('selectedStudentBox').style.display = 'none';
+            document.getElementById('btnImprimirInd').disabled = true;
+            document.getElementById('selGrado').value = '';
+            document.getElementById('btnImprimirGrd').disabled = true;
+        };
+
+        window.validarGrado = () => {
+            document.getElementById('btnImprimirGrd').disabled = document.getElementById('selGrado').value === '';
+        };
+
+        // --- BUSCADOR ---
+        document.getElementById('searchEstudiante').addEventListener('input', (e) => {
+            const term = e.target.value.trim();
+            const container = document.getElementById('resultsEstudiante');
+            if (term.length < 3) { container.style.display = 'none'; return; }
+            
+            const misEstudiantes = getMisEstudiantes();
+            const normalizedTerm = normalizeStr(term);
+            const filtered = misEstudiantes.filter(st => normalizeStr(st.nombreCompleto).includes(normalizedTerm));
+
+            filtered.sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); 
+            });
+
+            container.innerHTML = filtered.map(st => `
+                <div class="result-item" onclick="seleccionarEstudiante('${st.id}')">
+                    <strong>${st.nombreCompleto}</strong>
+                    <small>${st.NIE || st.nie || 'Sin NIE'} - ${gradeLabels[st.grade]||('Grado '+st.grade)}</small>
+                </div>
+            `).join('');
+            container.style.display = filtered.length ? 'block' : 'none';
+        });
+
+        window.seleccionarEstudiante = (id) => {
+            currentStudentForPrint = allStudents.find(s => s.id === id);
+            document.getElementById('searchEstudiante').value = '';
+            document.getElementById('resultsEstudiante').style.display = 'none';
+            
+            document.getElementById('lblEstudiante').innerText = currentStudentForPrint.nombreCompleto;
+            document.getElementById('lblGrado').innerText = `NIE: ${currentStudentForPrint.NIE || currentStudentForPrint.nie || 'N/A'} | ${gradeLabels[currentStudentForPrint.grade]}`;
+            
+            document.getElementById('selectedStudentBox').style.display = 'block';
+            document.getElementById('btnImprimirInd').disabled = false;
+        };
+
+        // --- LÓGICA DE PDF ---
+        function dibujarCampoConLinea(doc, etiqueta, valor, x, y, anchoTotal) {
+            doc.setFont("helvetica", "normal"); doc.text(etiqueta, x, y);
+            const anchoEtiqueta = doc.getTextWidth(etiqueta);
+            const xValor = x + anchoEtiqueta + 1; const xFin = x + anchoTotal;
+            if (valor) doc.text(String(valor), xValor, y);
+            doc.setLineWidth(0.1); doc.setDrawColor(0, 0, 0); doc.setLineDashPattern([1, 1], 0);
+            doc.line(xValor, y + 1, xFin, y + 1); doc.setLineDashPattern([], 0);
+        }
+
+        function dibujarPagina001(docPdf, st) {
+            const width = docPdf.internal.pageSize.getWidth();
+            docPdf.setFont("helvetica", "normal");
+
+            // Añadir Logo si existe
+            try { if(LOGO_URL && LOGO_URL.length > 5) docPdf.addImage(LOGO_URL, 'PNG', width - 50, 2, 45, 20); } catch(e){}
+
+            // Multi-llave Robusta para Escuela
+            const nombreEscuela = escuelaData.name || escuelaData.nombre || escuelaData.Nombre || '';
+            const codigoEscuela = escuelaData.code || escuelaData.codigo || escuelaData.Codigo || '';
+            const dep = escuelaData.departamento || '';
+            const mun = escuelaData.municipio || '';
+            const dist = escuelaData.distrito || '';
+
+            // Parser Robusto Definitivo para Sexo/Género
+            const rawSexo = st.sexo || st.Sexo || st.genero || st.Genero || st.gender || st.Gender || '';
+            let sexoTexto = '-';
+            if (typeof rawSexo === 'string' && rawSexo.trim() !== '') {
+                const val = rawSexo.trim().toLowerCase();
+                if (val === 'm' || val === 'masculino' || val === 'male' || val === 'niño' || val === 'varon' || val === 'varón') {
+                    sexoTexto = 'Masculino';
+                } else if (val === 'f' || val === 'femenino' || val === 'female' || val === 'niña' || val === 'mujer') {
+                    sexoTexto = 'Femenino';
+                } else {
+                    sexoTexto = rawSexo; 
+                }
+            }
+
+            docPdf.setFontSize(14.5); docPdf.text("Instrumento No. 001", width/2, 27, {align:'center'});
+            docPdf.setFontSize(14.5); docPdf.text("Tarjeta de Deméritos del Estudiante", width/2, 32, {align:'center'});
+            
+            docPdf.setFontSize(12); 
+            let y = 39; const m1 = 10; const x2 = 205; 
+            dibujarCampoConLinea(docPdf, "1. Nombre del Centro Educativo: ", nombreEscuela, m1, y, 185);
+            dibujarCampoConLinea(docPdf, "2. Código del C.E.: ", codigoEscuela, x2, y, 60); y+=6;
+            dibujarCampoConLinea(docPdf, "3. Departamento del C.E.: ", dep, m1, y, 90);
+            dibujarCampoConLinea(docPdf, "4. Municipio: ", mun, 110, y, 85);
+            dibujarCampoConLinea(docPdf, "5. Distrito: ", dist, x2, y, 60); y+=6;
+            dibujarCampoConLinea(docPdf, "6. Nombre del Estudiante: ", st.nombreCompleto, m1, y, 185);
+            dibujarCampoConLinea(docPdf, "7. NIE: ", st.NIE || st.nie || '', x2, y, 60); y+=6;
+            
+            dibujarCampoConLinea(docPdf, "8. Sexo: ", sexoTexto, m1, y, 40);
+            dibujarCampoConLinea(docPdf, "9. Grado/Sección: ", `${gradeLabels[st.grade]||st.grade} "A"`, 60, y, 135);
+            dibujarCampoConLinea(docPdf, "10. Turno: ", "Matutino", x2, y, 60);
+
+            y += 8; const boxH = 45; const colW = (width-20)/100; 
+            docPdf.setDrawColor(0, 0, 0); docPdf.setLineWidth(0.2); docPdf.setFontSize(8);
+
+            docPdf.rect(m1, y, colW*20, boxH); docPdf.text("Artículo 3. Asignación de deméritos", 12, y+4); docPdf.text("Los deméritos se asignarán en los\n siguientes casos:\n\nA) No saludar al entrar o al salir del\n aula.\nB) Omitir 'Por Favor' al hacer una\n petición.\nC) Omitir 'Gracias' al recibir un favor,\n material o atención.\nD) Usar un tono grosero o irrespetuoso\n hacia compañeros, docentes o\n personal.", 12, y+8, {maxWidth:colW*20-3});
+            docPdf.rect(m1+colW*20, y, colW*31, boxH); docPdf.text("Artículo 5. Escala de consecuencias", 12+colW*20, y+4); docPdf.text("- 3 deméritos: Advertencia verbal y reflexión escrita («La\n importancia de la cortesía»).\n- 6 deméritos: comunicación a la familia y tarea correctiva\n (redactar un texto, elaborar un cartel o participar en una\n actividad sobre cortesía).\n- 10 deméritos: suspensión de privilegios escolares\n(participación en juegos, actividades culturales o recreativas).\n- Más de 10 deméritos: reunión con la dirección y la familia,\nacompañada de una ultima advertencia para el estudiante.\n- 15 deméritos: el estudiante no podrá ser promovido de\ngrado", 12+colW*20, y+8, {maxWidth:colW*31-3});
+            docPdf.rect(m1+colW*51, y, colW*25, boxH); docPdf.text("Artículo 6. Redención de deméritos", 12+colW*51, y+4); docPdf.text("Los estudiantes podrán eliminar deméritos acumulados de las siguientes maneras:\nA) Cumplir una semana completa con saludos y expresiones de cortesía ejemplares.\nB) Apoyar voluntariamente en actividades de orden y limpieza escolar.\nC) Participar en campañas de valores organizadas por el centro educativo.", 12+colW*51, y+8, {maxWidth:colW*25-3});
+            docPdf.rect(m1+colW*76, y, colW*24, boxH); docPdf.text("Artículo 7. Reconocimientos", 12+colW*76, y+4); docPdf.text("Al final de cada mes, los estudiantes o las secciones con cero deméritos recibirán una Mención Honorífica de Cortesía Escolar.\nSe podrán otorgar:\nA) Diplomas\nB) Menciones en Murales Escolares", 12+colW*76, y+8, {maxWidth:colW*24-4});
+
+            docPdf.text("12. D: Deméritos,   13. R: Redención,   14. RC: Reconocimiento", m1, y+boxH+4);
+            const tableData = Array(8).fill(['','','','','','','','','','','','','','','']);
+            tableData.push(['18.','Total','','','','','','','','','','','','','']);
+            
+            docPdf.autoTable({
+                startY: y + boxH + 6,
+                head: [[{content:'No.',rowSpan:2},{content:'11.\nFecha',rowSpan:2},{content:'12. D',colSpan:4},{content:'13. R',colSpan:3},{content:'14. RC',colSpan:2},{content:'15.\nNombre y firma de quien registra Demérito o Reconocimiento',rowSpan:2},{content:'16.\nNombre y firma del Responsable de Cumplimiento de Redención',rowSpan:2},{content:'17.\nFirma del estudiante',rowSpan:2}],['A','B','C','D','A','B','C','A','B']],
+                body: tableData.map((row, i) => [i<8 ? i+1 : row[0], ...row.slice(1)]),
+                theme: 'grid', 
+                styles: {fontSize:9, cellPadding:1, halign:'center', valign:'middle', lineColor:[0,0,0], lineWidth:0.2, minCellHeight:6},
+                headStyles: {fillColor:[255,255,255], textColor:0, fontStyle:'bold', lineColor:[0,0,0], lineWidth:0.2},
+                margin: {horizontal: m1},
+                columnStyles: {0:{cellWidth:8}, 1:{cellWidth:20}, 11:{cellWidth:'auto'}, 12:{cellWidth:'auto'}, 13:{cellWidth:'auto'}}
+            });
+
+            const finalY = docPdf.lastAutoTable.finalY + 15; 
+            docPdf.setDrawColor(0,0,0); docPdf.setLineWidth(0.2);
+            docPdf.line(10, finalY, 80, finalY); docPdf.setFontSize(9); docPdf.text(`Nombre, firma y sello del Director del C. E.\n${nombreDirector}`, 10, finalY+5);
+        }
+
+        // --- DISPARADORES DE DESCARGA Y REDIRECCIÓN ---
+        function finalizarDescarga(docPdf, fileName) {
+            document.getElementById('redirectMsg').style.display = 'block';
+            document.getElementById('btnImprimirInd').style.display = 'none';
+            document.getElementById('btnImprimirGrd').style.display = 'none';
+            
+            docPdf.save(fileName);
+            setTimeout(() => { window.location.href = 'demeritos.html'; }, 2000);
+        }
+
+        window.generarPDFIndividual = async () => {
+            if (!currentStudentForPrint) {
+                showToast("Seleccione un estudiante primero.", "warning");
+                return;
+            }
+            const docPdf = new jsPDF('l', 'mm', 'letter');
+            dibujarPagina001(docPdf, currentStudentForPrint);
+            
+            const rawName = currentStudentForPrint.nombreCompleto.replace(/[^a-zA-Z0-9]/g, '_');
+            finalizarDescarga(docPdf, `001_${rawName}.pdf`);
+        };
+
+        window.generarPDFGrado = async () => {
+            const gradoCode = document.getElementById('selGrado').value;
+            if(!gradoCode) {
+                showToast("Seleccione un grado escolar.", "warning");
+                return;
+            }
+            
+            const misEstudiantes = getMisEstudiantes();
+            const students = misEstudiantes.filter(s => String(s.grade) === String(gradoCode));
+            
+            students.sort((a,b) => { 
+                const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1); 
+            });
+
+            if(students.length === 0) {
+                showToast("No hay estudiantes en el grado seleccionado.", "warning");
+                return;
+            }
+            
+            const docPdf = new jsPDF('l', 'mm', 'letter');
+            students.forEach((st, index) => {
+                if(index > 0) docPdf.addPage();
+                dibujarPagina001(docPdf, st);
+            });
+            
+            finalizarDescarga(docPdf, `001_Grado_${gradoCode}.pdf`);
+        };
+    </script>
+</body>
+</html>

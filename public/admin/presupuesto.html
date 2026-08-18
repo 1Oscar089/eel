@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto Anual - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --info:#0284c7; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        
+        /* Ajuste a pantalla completa sin sidebar */
+        .admin-main { height: calc(100vh - 60px) !important; width: 100vw !important; margin-left: 0 !important; margin-top: 0 !important; padding: var(--gap) !important; overflow-y: auto !important; overflow-x: hidden !important; display: flex; flex-direction: column; -ms-overflow-style: none; scrollbar-width: none; }
+        .admin-main::-webkit-scrollbar { display: none; }
+        @media (max-width: 1024px) { .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; } }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; display: flex; align-items: center; gap: 0.5rem;}
+        
+        .header-actions { display: flex; gap: 0.5rem; }
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-primary:hover:not(:disabled) { background: var(--primary-steel); }
+        .btn-secondary { background: #e0f2fe; color: var(--primary-steel); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: 1px solid #bae6fd; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-secondary:hover { background: #bae6fd; color: var(--primary-dark); }
+        .btn-back { background: white; color: var(--danger); border: 1px solid #fecaca;}
+        .btn-back:hover { background: #fee2e2; }
+
+        .card { background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .card-title { font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1rem; border-bottom: 2px solid var(--bg-light); padding-bottom: 0.5rem; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; align-items: end; }
+        .form-group { display: flex; flex-direction: column; gap: 0.2rem; position: relative;}
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; font-family: inherit; transition: 0.2s;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); }
+        
+        .input-readonly { background: #f8fafc !important; color: var(--accent) !important; border-color: transparent !important; }
+
+        /* Autocompletado */
+        .autocomplete-results { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid var(--primary-steel); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .ac-item { padding: 0.6rem; border-bottom: 1px solid var(--bg-light); cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; }
+        .ac-item:last-child { border-bottom: none; }
+        .ac-item:hover { background: #e0f2fe; }
+        .ac-title { font-size: 0.8rem; font-weight: 800; color: var(--primary-dark); }
+        .ac-meta { font-size: 0.6rem; color: var(--accent); font-weight: 700; }
+        
+        .ac-otro { background: #fef3c7; color: #b45309; text-align: center; font-weight: 800; font-size: 0.8rem; padding: 0.6rem; }
+        .ac-otro:hover { background: #fde68a; }
+
+        /* Estructura de la Tabla de Presupuesto */
+        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: white; }
+        .presupuesto-table { width: 100%; border-collapse: collapse; min-width: 900px; font-size: 0.8rem; }
+        .presupuesto-table th, .presupuesto-table td { border: 1px solid var(--border); padding: 0.5rem; text-align: left; vertical-align: middle; }
+        
+        .row-area { background: var(--primary-dark); color: white; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+        .row-rubro { background: var(--primary-steel); color: white; font-weight: 800; font-size: 0.75rem; }
+        .row-subarea { background: #e0f2fe; color: var(--primary-dark); font-weight: 800; font-size: 0.7rem; }
+        .row-item { background: white; color: var(--primary-dark); font-weight: 600; }
+        .row-item:hover { background: #f8fafc; }
+        .row-subtotal { background: #f1f5f9; font-weight: 800; color: var(--primary-dark); text-align: right; }
+        .row-total { background: #1e293b; color: white; font-weight: 900; font-size: 1rem; text-align: right; }
+
+        .btn-del { background: #fee2e2; color: var(--danger); border: none; padding: 0.3rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+        .btn-del:hover { background: #fca5a5; }
+        
+        .btn-edit { background: #e0f2fe; color: var(--info); border: none; padding: 0.3rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+        .btn-edit:hover { background: #bae6fd; }
+
+        .date-suggestions { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.3rem; }
+        .date-chip { background: var(--bg-light); border: 1px solid var(--border); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; cursor: pointer; color: var(--accent); font-weight: 700;}
+        .date-chip:hover { background: var(--primary-steel); color: white; border-color: var(--primary-steel);}
+
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .header-actions { width: 100%; justify-content: space-between; }
+            .form-grid { grid-template-columns: 1fr; }
+            .btn-primary { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    <div class="admin-layout">
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-pie-chart-alt-2'></i> Presupuesto Anual</h1>
+                <div class="header-actions">
+                    <a href="fondos_presupuesto.html" class="btn-secondary btn-back"><i class='bx bx-arrow-back'></i> Volver a Fondos</a>
+                    <button class="btn-secondary" onclick="window.location.href='imp_presupuesto.html'"><i class='bx bx-printer'></i> Imprimir Presupuesto</button>
+                    <button class="btn-primary" onclick="guardarPresupuesto()"><i class='bx bx-save'></i> Guardar Cambios</button>
+                </div>
+            </div>
+
+            <!-- 1. GENERALIDADES -->
+            <div class="card">
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="form-group">
+                        <label>Año Lectivo</label>
+                        <input type="number" id="genYear" onchange="cargarPresupuesto()">
+                    </div>
+                    <div class="form-group">
+                        <label>Fuente de Financiamiento</label>
+                        <select id="genFondo" onchange="cargarPresupuesto()">
+                            <option value="GOES">GOES</option>
+                            <option value="DONACION">Donación / Otros</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. AGREGAR ITEM -->
+            <div class="card">
+                <div class="card-title"><i class='bx bx-list-plus'></i> Registrar / Editar Ítem al Plan de Compras</div>
+                
+                <div id="formAdd" class="form-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr auto;">
+                    <!-- Buscador Autocompletado Principal -->
+                    <div class="form-group">
+                        <label>Descripción del bien/servicio</label>
+                        <input type="text" id="itemDesc" placeholder="Escriba para buscar..." autocomplete="off" oninput="buscarItem()">
+                        <div id="itemResults" class="autocomplete-results"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cantidad</label>
+                        <input type="number" id="itemCant" step="0.01" value="1" oninput="calcularMonto()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>U. Medida</label>
+                        <select id="itemUni">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option value="UNIDAD">UNIDAD</option>
+                            <option value="CAJA">CAJA</option>
+                            <option value="PAQUETE">PAQUETE</option>
+                            <option value="GALÓN">GALÓN</option>
+                            <option value="LITRO">LITRO</option>
+                            <option value="DOCENA">DOCENA</option>
+                            <option value="PLIEGO">PLIEGO</option>
+                            <option value="RESMA">RESMA</option>
+                            <option value="YARDA">YARDA</option>
+                            <option value="SERVICIO">SERVICIO</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Precio Unit. ($)</label>
+                        <input type="number" id="itemPrecio" step="0.01" placeholder="0.00" oninput="calcularMonto()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Monto Total ($)</label>
+                        <input type="text" id="itemTotal" class="input-readonly" readonly placeholder="0.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Fecha Probable</label>
+                        <input type="date" id="itemFecha">
+                        <div id="fechasSugeridas" class="date-suggestions"></div>
+                    </div>
+                    
+                    <button class="btn-primary" id="btnSubmitItem" onclick="agregarItemToLista()" style="height: 42px; justify-content: center;"><i class='bx bx-plus'></i> Agregar</button>
+                </div>
+
+                <!-- Campos Ocultos para "Otro" -->
+                <div id="panelOtro" class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 1rem; display: none; background: #fffbeb; padding: 1rem; border-radius: 8px; border: 1px dashed var(--warning);">
+                    <div class="form-group">
+                        <label style="color:#b45309;">Área de Operación</label>
+                        <select id="otroArea" onchange="buscarSubarea()">
+                            <option value="Gastos Corrientes">Gastos Corrientes</option>
+                            <option value="Inversión">Inversión</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="color:#b45309;">Rubro de Operación</label>
+                        <select id="otroRubro" onchange="buscarSubarea()">
+                            <option value="Material Educativo">Material Educativo</option>
+                            <option value="Operación logística">Operación logística</option>
+                            <option value="Alimentación escolar">Alimentación escolar</option>
+                            <option value="Capacitación local">Capacitación local</option>
+                            <option value="Otros gastos corrientes">Otros gastos corrientes</option>
+                            <option value="Adquisición de equipo">Adquisición de equipo</option>
+                            <option value="Adquisición de mobiliario">Adquisición de mobiliario</option>
+                            <option value="Otras inversiones">Otras inversiones</option>
+                        </select>
+                    </div>
+                    <!-- Autocompletado Secundario para Subárea -->
+                    <div class="form-group">
+                        <label style="color:#b45309;">Subárea de Operación</label>
+                        <input type="text" id="otroSub" placeholder="Ej: Gastable, Informático..." autocomplete="off" oninput="buscarSubarea()">
+                        <div id="subResults" class="autocomplete-results"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TABLA DEL PLAN DE COMPRAS -->
+            <div class="card" style="padding: 0;">
+                <div class="table-container">
+                    <table class="presupuesto-table">
+                        <thead>
+                            <tr style="background: var(--bg-light);">
+                                <th style="width: 5%;">N°</th>
+                                <th style="width: 30%;">Descripción del bien/servicio</th>
+                                <th style="width: 10%;">Cantidad</th>
+                                <th style="width: 10%;">U. Medida</th>
+                                <th style="width: 15%;">Precio U.</th>
+                                <th style="width: 15%;">Monto Total</th>
+                                <th style="width: 10%;">Fecha Probable</th>
+                                <th style="width: 5%;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyPresupuesto">
+                            <tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--accent);">Sin ítems agregados.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. CONSOLIDADO POR SEMESTRE -->
+            <div class="card" style="padding: 0;">
+                <div class="card-title" style="padding: 1rem 1rem 0; margin-bottom: 0.5rem; border: none;"><i class='bx bx-bar-chart-alt-2'></i> Consolidado por Semestre</div>
+                <div class="table-container">
+                    <table class="presupuesto-table" style="min-width: 600px;">
+                        <thead>
+                            <tr style="background: var(--bg-light);">
+                                <th>Área de inversión (Rubro)</th>
+                                <th style="text-align: right;">Semestre 1</th>
+                                <th style="text-align: right;">Semestre 2</th>
+                                <th style="text-align: center;">Fuente</th>
+                                <th style="text-align: right;">Total Anual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyConsolidado">
+                            <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--accent);">Esperando datos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div style="height: 3rem;"></div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        // --- 1. BANCO DE DATOS BASE (Extraído del Instructivo 15-0026) ---
+        let BANCO_ITEMS = [
+            // --- GASTOS CORRIENTES: MATERIAL EDUCATIVO ---
+  
+  // Gastable
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Yeso" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Plumones para pizarra acrílica" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Plastilina" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Papelería de diferentes textura y colores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Cuadernos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Reglas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Lápices" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Crayolas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Pegamento" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Papel lija" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Témperas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Baterías para contómetros y radiograbadoras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Libretas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Tachuelas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Fástener" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Borradores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Bolígrafos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Lápices de colores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Plástico" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Vejigas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Hilo nylon" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Gastable", nombre: "Cinta adherible doble cara" },
+
+  // De Escritorio
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Engrapadoras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Perforadoras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Sacagrapas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Sacapuntas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Grapas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Cintas adhesivas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Marcadores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Clips" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Almohadillas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Folders" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Correctores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Tinta para almohadillas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "De Escritorio", nombre: "Calculadoras" },
+
+  // Audiovisual
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Audiovisual", nombre: "Videos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Audiovisual", nombre: "Películas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Audiovisual", nombre: "Cassette" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Audiovisual", nombre: "DVD" },
+
+  // Visual
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Visual", nombre: "Láminas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Visual", nombre: "Mapas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Visual", nombre: "Carteles didácticos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Visual", nombre: "Globos terráqueos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Visual", nombre: "Banner acrílicos acetatos" },
+
+  // Para laboratorios
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Para laboratorios", nombre: "Reactivos químicos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Para laboratorios", nombre: "Tubos de ensayo" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Para laboratorios", nombre: "Beaker" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Para laboratorios", nombre: "Probetas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Para laboratorios", nombre: "Pipetas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Para laboratorios", nombre: "Erlenmeyer" },
+
+  // Juguetes y Juegos Educativos
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Juguetes y Juegos Educativos", nombre: "Muñecos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Juguetes y Juegos Educativos", nombre: "Instrumentos de trabajo (cocina, carpintería, albañilería, enfermería)" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Juguetes y Juegos Educativos", nombre: "Disfraces" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Juguetes y Juegos Educativos", nombre: "Títeres" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Juguetes y Juegos Educativos", nombre: "Rompecabezas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Juguetes y Juegos Educativos", nombre: "Dominós" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Juguetes y Juegos Educativos", nombre: "Juegos para desarrollo de habilidades verbales y de razonamiento" },
+
+  // Educación Especial
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Especial", nombre: "Cartulina" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Especial", nombre: "Punzones para escritura y lectura braille" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Especial", nombre: "Material para prácticas laborales" },
+
+  // Informático
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Diskette" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "CD" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "USB" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Software" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Teclados" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Mouse" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Papel continuo" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Licencias" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Tóner" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Máster" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Revelador" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Informático", nombre: "Tinta de color" },
+
+  // Útiles de enseñanza
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Útiles de enseñanza", nombre: "Esferas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Útiles de enseñanza", nombre: "Compás" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Útiles de enseñanza", nombre: "Juegos de geometría" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Útiles de enseñanza", nombre: "Ábacos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Útiles de enseñanza", nombre: "Metros" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Útiles de enseñanza", nombre: "Tablas periódicas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Útiles de enseñanza", nombre: "Tabla de valores" },
+
+  // Educación Física
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Pelotas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Bates" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Guantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Uniformes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Salta cuerdas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Lazos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Colchonetas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Saltómetros" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Juegos de mesa" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Silbatos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Redes (net)" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Trofeos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Pesas de mano" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Cascos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Protectores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Vendas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Tobilleras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Rodilleras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Guantéatelas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Conos plásticos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Física", nombre: "Vallas" },
+
+  // Educación Artística
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Listón" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Encajes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Hilos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Cintas métricas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Lanas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Agujas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Alambres para flores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Bastidores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Papel de diferentes tipos y colores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Comales" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Trajes típicos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Vestuario y accesorios para Banda de Paz" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Pergaminos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Banderines" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Cinchas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Rótulos publicitarios (banners)" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Estandartes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Disfraces" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Vestuario y accesorios para grupo folklórico y danza" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación Artística", nombre: "Instrumentos musicales" },
+
+  // Huertos escolares
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Abonos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Fertilizantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Semillas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Bolsas plásticas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Azadón" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Palas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Piochas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Cedazo" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Baldes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Mangueras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Aspersores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Alambre" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Carretilla de mano" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Tijeras de podar" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Pala dúplex" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Materiales para la construcción de macetas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Máquina cortadora de grama manual y/o de gasolina" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Huertos escolares", nombre: "Foliares" },
+
+  // Educación inicial
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación inicial", nombre: "Bloques de plástico" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación inicial", nombre: "Material de ensamble" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación inicial", nombre: "Rompecabezas de piezas grandes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Educación inicial", nombre: "Alfombras" },
+
+  // Distintivos
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Distintivos", nombre: "Insignias" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Distintivos", nombre: "Monogramas" },
+
+  // Alimentación Escolar (Implementos)
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Vajillas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Juegos de cubiertos de mesa" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Set de utensilios de cocina" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Manteles" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Servilletas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Toallas para cocina" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Vasos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Colador" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Depósitos para agua" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Tabla para picar" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Tasas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Bandejas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Gas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Leña" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Fósforos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Gorros" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Implementos de Alimentación Escolar", nombre: "Mallas para cocinero" },
+
+  // Accesorios
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Eléctricos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Mecánicos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Piedras de amoldar" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Piedras de rectificar" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Machuelas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Tijeras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Materiales para empaquetadoras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Fajas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Rodamientos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Refrigerantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Esmeriles" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Pastas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Materiales para soldadura blandas y fuertes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Chisperos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Piedra para chispero" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Pegamento para empaquetadoras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Cinta teflón" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Barras de teflón" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Repuestos para material industrial" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Equipo para distintas soldaduras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Estaño 60 y 40" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Alambre de cobre de diferentes calibres" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Bananas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Caimanes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Láminas de cobre sensibilizada" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Ácido nítrico" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Baterías AA y AAA" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Lámparas fluorescentes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Fusibles contac cliner" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Espuma" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Toalla reusable" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Reguladores de voltaje" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Bases para circuito integrado" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Accesorios", nombre: "Relex" },
+
+  // Repuestos automotrices diversos
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Repuestos", nombre: "Repuestos automotrices diversos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Repuestos", nombre: "Guantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Repuestos", nombre: "Gas oxiacetileno" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Repuestos", nombre: "Alambre de embobinar" },
+
+  // Medio Ambiente
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Medio Ambiente", nombre: "Material e insumos para la implementación de proyectos educativos de medio ambiente" },
+
+  // Talleres del Bachillerato Técnico Vocacional
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Comercial", nombre: "Cintas para máquina de escribir" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Comercial", nombre: "Cajas de diskettes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Tensiómetros" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Termómetros" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Estetoscopios" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Algodón" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Agua oxigenada" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Alcohol" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Gasa" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Jeringas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Hisopos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Bajalengua" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Salud", nombre: "Mertiolate" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Gasolina" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Aceite lubricantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Solución para frenos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Wiper" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Platina (hierro plano)" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Hierro angular" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Grasa" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Diesel" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Hierro cilíndrico" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Pintura de aceite y de agua" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Buriles de corte" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Alambre de amarre" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Varillas de bronce" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Borax" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Terminales eléctricos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Terminales de baterías" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Condensadores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Láminas de cobre virgen" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Percloro de hierro" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Tomacorrientes machos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Puntas de tester" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Puntas para cautines" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Varillas de aluminio" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Cinta aislante" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Cintas adhesiva" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Focos incandescentes y fluorescentes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Postes para bananas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Electrodos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Oxígeno" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Acetileno" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Estaño" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Gas refrigerante" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Papel lija para metales" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Transistores y circuitos integrados" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Cintas métricas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Fresas cilíndricas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Fresas de discos modulares y diametral" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Pitch" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Brocas para central" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Aceros de distintas formas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Aleaciones y formas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Láminas de hierro" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Fusibles" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Industrial", nombre: "Hojas de cierre manual y eléctrica" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Insecticidas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Barriles" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Fertilizantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Abonos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Fungicidas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Coadyuvantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Productos hormonales" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Semillas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Material vegetativo" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Bolsas plásticas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Palas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Piochas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Azadones" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Rastrillos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Madera aserrada" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Tela metálica" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Lazos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Baldes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Mangueras" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Jeringas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Material para cirugía" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Concentrados" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Melaza" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Materias primas para preparar concentrados" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Vitaminas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Antibióticos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Analgésicos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Desinfectantes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Detergentes" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Herbicidas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Vacunas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Termos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Semen para inseminación artificial" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Tuberías" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Empaques" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Aspersores" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Valonas" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Cera estampada" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Plástico negro" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Pollos" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Alevines" },
+  { area: "Gastos Corrientes", rubro: "Material Educativo", subarea: "Talleres - Agropecuario", nombre: "Cerdos" },
+
+  // --- GASTOS CORRIENTES: OPERACIÓN LOGÍSTICA ---
+  
+  // Operación Logística
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Operación Logística", nombre: "Libros de registro y control financiero" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Operación Logística", nombre: "Libros de asistencia del personal y actas" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Operación Logística", nombre: "Libros de registro de estudiantes" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Operación Logística", nombre: "Chequeras" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Operación Logística", nombre: "Papelería y útiles de escritorio" },
+
+  // Clínica y Botiquín de Primeros Auxilios
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Botiquín", nombre: "Medicamentos" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Botiquín", nombre: "Vendas" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Botiquín", nombre: "Curitas" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Botiquín", nombre: "Algodón" },
+
+  // Materiales e Implementos de Aseo y Limpieza
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Escobas" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Trapeadores" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Jabón" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Paños para limpieza" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Desinfectantes" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Baldes" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Sacudidores" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Mascones o cepillos" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Depósitos para agua" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Desodorantes para baño" },
+  { area: "Gastos Corrientes", rubro: "Operación Logística", subarea: "Aseo y Limpieza", nombre: "Mangueras" },
+
+  // --- GASTOS CORRIENTES: ALIMENTACIÓN ESCOLAR ---
+  { area: "Gastos Corrientes", rubro: "Alimentación Escolar", subarea: "Refrigerio Escolar", nombre: "Alimentos complementarios" },
+  { area: "Gastos Corrientes", rubro: "Alimentación Escolar", subarea: "Refrigerio Escolar", nombre: "Ingredientes nutritivos" },
+
+  // --- GASTOS CORRIENTES: CAPACITACIÓN LOCAL ---
+  { area: "Gastos Corrientes", rubro: "Capacitación Local", subarea: "Material Didáctico", nombre: "Material didáctico" },
+  { area: "Gastos Corrientes", rubro: "Capacitación Local", subarea: "Material Didáctico", nombre: "Bibliografía de apoyo" },
+
+  // --- INVERSIÓN: ADQUISICIÓN DE EQUIPO ---
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Televisor" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "VHS" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "DVD" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Retroproyector" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Cañón" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Data show" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Cámara de video" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Cámara digital" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Unidades de video adaptables a microscopios" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Audiovisual", nombre: "Pantalla de proyección" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Bibliográfico", nombre: "Libros de lectura recreativa" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Bibliográfico", nombre: "Libros de complemento a áreas específicas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Bibliográfico", nombre: "Libros de conducción de metodologías dinámicas e interactivas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Impresión y reimpresión", nombre: "Fotocopiadora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Impresión y reimpresión", nombre: "Mimeógrafos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Impresión y reimpresión", nombre: "Duplicadoras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Impresión y reimpresión", nombre: "Anilladora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Impresión y reimpresión", nombre: "Engrapadora industrial" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Impresión y reimpresión", nombre: "Guillotina" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Computadora (PC o portátiles)" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Impresoras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Scanner" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Motherboards" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Simms o dimms de memoria RAM" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Tarjetas de tv" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Ventilador" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Monitores" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Teclados" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Ratón electrónico" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Regulador de voltaje" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "UPS" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Tarjetas de red" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Memoria USB" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Disco duro" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Quemadores de CD" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Quemadores de DVD" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Quemador de VHS" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Cable de conexión" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Informático", nombre: "Servidores" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Laboratorios de ciencias", nombre: "Microscopio" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Laboratorios de ciencias", nombre: "Balanzas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Laboratorios de ciencias", nombre: "Equipo de experimentación de mecánica" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Laboratorios de ciencias", nombre: "Equipo de experimentación de eléctrica" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Laboratorios de ciencias", nombre: "Equipo de experimentación de óptica" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Laboratorios de ciencias", nombre: "Equipo de experimentación de hidráulica" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Laboratorios de ciencias", nombre: "Metrología" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Deportivo", nombre: "Barras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Deportivo", nombre: "Cronómetros" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Deportivo", nombre: "Soportes" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Deportivo", nombre: "Báscula" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Musical", nombre: "Guitarras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Musical", nombre: "Flautas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Musical", nombre: "Claves" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Musical", nombre: "Piano" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Musical", nombre: "Panderos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Musical", nombre: "Tambores" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Sonido", nombre: "Radiograbadora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Sonido", nombre: "Micrófono" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Sonido", nombre: "Equipo de sonido" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Sonido", nombre: "Megáfono" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Sonido", nombre: "Amplificadores" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Sonido", nombre: "Consola de audio" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Cocina", nombre: "Cocina" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Cocina", nombre: "Tambo de gas propano" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Cocina", nombre: "Refrigeradora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Cocina", nombre: "Licuadora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Cocina", nombre: "Horno" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Cocina", nombre: "Utensilios de cocina" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Ambientación", nombre: "Aire acondicionado" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Ambientación", nombre: "Ventilador" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Provisión de agua potable", nombre: "Tanques" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Provisión de agua potable", nombre: "Bombas de agua" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Provisión de agua potable", nombre: "Oasis" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Provisión de agua potable", nombre: "Filtro" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Provisión de agua potable", nombre: "Tuberías" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Provisión de agua potable", nombre: "Accesorios" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Marcos para sierra" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Equipo de medición eléctrica" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Bombas de mochila" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Carretillas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Canapé" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Contómetro" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Máquina de escribir" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Soldador" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Motor" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Atarrayas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Trasmayos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Equipo de medición para magnitudes lineales" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Equipo para medición de presiones" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Regulador de presión" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Manómetro" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Esmeriladores" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Herramientas de uso manual para operaciones eléctricas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Destornilladores" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Tenazas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Pinzas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Cauciones" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Navajas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Dobladora de tubos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Remachadora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Caladora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Taladro" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Pulidora" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Torno" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Fresadores" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Talleres Vocacionales", nombre: "Limadoras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Limas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Tijeras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Escuadras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Reglas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Martillos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Llaves extensibles" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Llaves Allen" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Llaves fijas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Coronas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Llaves mixtas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Juegos de cubos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Llaves estrellas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Prensas de banco" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Equipos para distintas soldaduras" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Osciloscopios" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Generadores de fusión" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Generadores de audio frecuencia" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Generadores de radio frecuencia" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Programadores lógicos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Galgas" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Sargentos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Quemadores de memorias" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Equipo didáctico de telefonía" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Medidores de intensidad de campo" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Herramientas mecánicas", nombre: "Generadores de patrón para TV" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Accesorios", nombre: "Accesorios para equipo hidráulico" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Accesorios", nombre: "Accesorios para equipo neumático" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Accesorios", nombre: "Accesorios eléctricos" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Proyectos de huertos caseros", nombre: "Bombas de mochila" },
+  { area: "Inversión", rubro: "Adquisición de Equipo", subarea: "Proyectos de huertos caseros", nombre: "Carretilla" },
+
+  // --- INVERSIÓN: ADQUISICIÓN DE MOBILIARIO ---
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Pizarras" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Pupitres" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Escritorios" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Sillas" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Libreras" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Mesas" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Estantes" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Archivadores" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Franelógrafos" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Rotafolios" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Mesas de tenis" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Mesas y bancos para laboratorios" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Muebles para computadoras" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Mesas hexagonales" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Sillas para parvularia" },
+  { area: "Inversión", rubro: "Adquisición de Mobiliario", subarea: "Mobiliario", nombre: "Lockers" }
+        ];
+
+        let presupuestoActual = [];
+        let currentSelectedItem = null; 
+        let editingItemId = null; 
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            document.getElementById('genYear').value = new Date().getFullYear();
+            
+            // Cargar ítems personalizados guardados en Firebase
+            try {
+                const docSnap = await getDoc(doc(db, "control", "banco_presupuesto"));
+                if(docSnap.exists()) {
+                    const customItems = docSnap.data().items || [];
+                    BANCO_ITEMS = [...BANCO_ITEMS, ...customItems];
+                }
+            } catch(e) {}
+
+            cargarPresupuesto();
+        });
+
+        // --- CARGAR / GUARDAR DATOS EN FIREBASE ---
+        window.cargarPresupuesto = async () => {
+            const y = document.getElementById('genYear').value;
+            const f = document.getElementById('genFondo').value;
+            if(!y || !f) return;
+
+            document.getElementById('tbodyPresupuesto').innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;"><i class='bx bx-loader bx-spin'></i> Cargando...</td></tr>`;
+
+            try {
+                const docId = `${y}_${f}`;
+                const snap = await getDoc(doc(db, "presupuestos", docId));
+                if(snap.exists()) {
+                    presupuestoActual = snap.data().items || [];
+                } else {
+                    presupuestoActual = [];
+                }
+                
+                extraerFechasSugeridas();
+                renderTablas();
+            } catch(error) {
+                showToast("Error al cargar el presupuesto.", "error");
+            }
+        };
+
+        window.guardarPresupuesto = async () => {
+            const y = document.getElementById('genYear').value;
+            const f = document.getElementById('genFondo').value;
+            try {
+                const docId = `${y}_${f}`;
+                await setDoc(doc(db, "presupuestos", docId), {
+                    year: y,
+                    fondo: f,
+                    items: presupuestoActual,
+                    updatedAt: Date.now()
+                });
+                showToast("Presupuesto guardado exitosamente.");
+            } catch(error) {
+                showToast("Error al guardar el presupuesto.", "error");
+            }
+        };
+
+        // --- LÓGICA DE INTERFAZ DEL FORMULARIO ---
+        window.calcularMonto = () => {
+            const cant = parseFloat(document.getElementById('itemCant').value) || 0;
+            const precio = parseFloat(document.getElementById('itemPrecio').value) || 0;
+            document.getElementById('itemTotal').value = (cant * precio).toFixed(2);
+        };
+
+        // Buscador Principal de Ítems
+        window.buscarItem = () => {
+            const query = document.getElementById('itemDesc').value.toLowerCase().trim();
+            const box = document.getElementById('itemResults');
+            currentSelectedItem = null;
+            document.getElementById('panelOtro').style.display = 'none';
+
+            if(query.length < 2) { box.style.display = 'none'; return; }
+
+            const matches = BANCO_ITEMS.filter(i => i.nombre.toLowerCase().includes(query));
+            
+            let html = matches.slice(0, 8).map(m => `
+                <div class="ac-item" onclick="seleccionarItemDeBanco('${m.nombre}', '${m.area}', '${m.rubro}', '${m.subarea}')">
+                    <span class="ac-title">${m.nombre}</span>
+                    <span class="ac-meta">${m.area} > ${m.rubro} > ${m.subarea}</span>
+                </div>
+            `).join('');
+
+            html += `<div class="ac-otro" onclick="seleccionarOtro()">+ Registrar "${query}" como Nuevo Ítem...</div>`;
+            
+            box.innerHTML = html;
+            box.style.display = 'block';
+        };
+
+        window.seleccionarItemDeBanco = (nombre, area, rubro, subarea) => {
+            document.getElementById('itemDesc').value = nombre;
+            currentSelectedItem = { nombre, area, rubro, subarea };
+            document.getElementById('itemResults').style.display = 'none';
+            document.getElementById('panelOtro').style.display = 'none';
+        };
+
+        window.seleccionarOtro = () => {
+            currentSelectedItem = null;
+            document.getElementById('itemResults').style.display = 'none';
+            document.getElementById('panelOtro').style.display = 'grid';
+        };
+
+        // Buscador Secundario (Autocompletado de Subáreas)
+        window.buscarSubarea = () => {
+            const query = document.getElementById('otroSub').value.toLowerCase().trim();
+            const box = document.getElementById('subResults');
+            const areaSel = document.getElementById('otroArea').value;
+            const rubroSel = document.getElementById('otroRubro').value;
+
+            // Extraer solo las subáreas únicas correspondientes al Área y Rubro seleccionados
+            const validSubareas = [...new Set(BANCO_ITEMS
+                .filter(i => i.area === areaSel && i.rubro === rubroSel)
+                .map(i => i.subarea)
+            )];
+
+            // Si el usuario no ha escrito nada, le mostramos todas las subáreas válidas disponibles
+            const matches = query.length === 0 
+                ? validSubareas 
+                : validSubareas.filter(s => s.toLowerCase().includes(query));
+
+            if(matches.length === 0) {
+                box.style.display = 'none';
+                return;
+            }
+
+            let html = matches.map(m => `
+                <div class="ac-item" onclick="seleccionarSubarea('${m}')">
+                    <span class="ac-title">${m}</span>
+                </div>
+            `).join('');
+
+            box.innerHTML = html;
+            box.style.display = 'block';
+        };
+
+        window.seleccionarSubarea = (subarea) => {
+            document.getElementById('otroSub').value = subarea;
+            document.getElementById('subResults').style.display = 'none';
+        };
+
+        // Manejo de clics fuera de los buscadores
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('#itemDesc') && !e.target.closest('#itemResults')) {
+                document.getElementById('itemResults').style.display = 'none';
+            }
+            if(!e.target.closest('#otroSub') && !e.target.closest('#subResults')) {
+                const subRes = document.getElementById('subResults');
+                if(subRes) subRes.style.display = 'none';
+            }
+        });
+
+        // Extraer fechas para botones de sugerencia
+        function extraerFechasSugeridas() {
+            const fechas = new Set();
+            presupuestoActual.forEach(i => { if(i.fecha) fechas.add(i.fecha); });
+            const box = document.getElementById('fechasSugeridas');
+            if(fechas.size > 0) {
+                box.innerHTML = Array.from(fechas).map(f => {
+                    const [y,m,d] = f.split('-');
+                    return `<span class="date-chip" onclick="document.getElementById('itemFecha').value='${f}'">${d}/${m}</span>`;
+                }).join('');
+            } else {
+                box.innerHTML = '';
+            }
+        }
+
+        window.agregarItemToLista = async () => {
+            const desc = document.getElementById('itemDesc').value.trim();
+            const cant = parseFloat(document.getElementById('itemCant').value);
+            const uni = document.getElementById('itemUni').value.trim();
+            const precio = parseFloat(document.getElementById('itemPrecio').value);
+            const total = parseFloat(document.getElementById('itemTotal').value);
+            const fecha = document.getElementById('itemFecha').value;
+
+            if(!desc || isNaN(cant) || isNaN(precio) || !uni) {
+                showToast("Complete todos los campos requeridos.", "warning");
+                return;
+            }
+            if(!fecha) {
+                showToast("Por favor ingrese una fecha válida.", "warning");
+                return;
+            }
+
+            // Si estamos editando un ítem existente
+            if (editingItemId) {
+                const index = presupuestoActual.findIndex(i => i.id === editingItemId);
+                if (index > -1) {
+                    presupuestoActual[index].desc = desc;
+                    presupuestoActual[index].cant = cant;
+                    presupuestoActual[index].uni = uni;
+                    presupuestoActual[index].precio = precio;
+                    presupuestoActual[index].total = total;
+                    presupuestoActual[index].fecha = fecha;
+                    
+                    // Actualizar clasificación
+                    if(currentSelectedItem) {
+                        presupuestoActual[index].area = currentSelectedItem.area;
+                        presupuestoActual[index].rubro = currentSelectedItem.rubro;
+                        presupuestoActual[index].subarea = currentSelectedItem.subarea;
+                    } else if (document.getElementById('panelOtro').style.display === 'grid') {
+                        presupuestoActual[index].area = document.getElementById('otroArea').value;
+                        presupuestoActual[index].rubro = document.getElementById('otroRubro').value;
+                        presupuestoActual[index].subarea = document.getElementById('otroSub').value.trim() || 'General';
+                        
+                        // Guardar nuevo item al banco si fue manual
+                        const guardarBanco = { area: presupuestoActual[index].area, rubro: presupuestoActual[index].rubro, subarea: presupuestoActual[index].subarea, nombre: desc };
+                        BANCO_ITEMS.push(guardarBanco);
+                        try {
+                            const docSnap = await getDoc(doc(db, "control", "banco_presupuesto"));
+                            let customItems = [];
+                            if(docSnap.exists()) customItems = docSnap.data().items || [];
+                            customItems.push(guardarBanco);
+                            await setDoc(doc(db, "control", "banco_presupuesto"), { items: customItems });
+                        } catch(e) {}
+                    }
+                }
+                
+                editingItemId = null;
+                document.getElementById('btnSubmitItem').innerHTML = "<i class='bx bx-plus'></i> Agregar";
+                showToast("Ítem actualizado correctamente.");
+                
+            } else {
+                // Nuevo ítem
+                let newItem = {
+                    id: 'it_' + Date.now(),
+                    desc, cant, uni, precio, total, fecha
+                };
+
+                // Clasificación
+                if(currentSelectedItem) {
+                    newItem.area = currentSelectedItem.area;
+                    newItem.rubro = currentSelectedItem.rubro;
+                    newItem.subarea = currentSelectedItem.subarea;
+                } else {
+                    // Es un ítem nuevo "Otro", hay que guardarlo en Firebase
+                    newItem.area = document.getElementById('otroArea').value;
+                    newItem.rubro = document.getElementById('otroRubro').value;
+                    newItem.subarea = document.getElementById('otroSub').value.trim() || 'General';
+                    
+                    const guardarBanco = { area: newItem.area, rubro: newItem.rubro, subarea: newItem.subarea, nombre: desc };
+                    BANCO_ITEMS.push(guardarBanco);
+                    
+                    try {
+                        const docSnap = await getDoc(doc(db, "control", "banco_presupuesto"));
+                        let customItems = [];
+                        if(docSnap.exists()) customItems = docSnap.data().items || [];
+                        customItems.push(guardarBanco);
+                        await setDoc(doc(db, "control", "banco_presupuesto"), { items: customItems });
+                    } catch(e) {}
+                }
+                presupuestoActual.push(newItem);
+            }
+            
+            // Limpiar formulario en ambos casos
+            document.getElementById('itemDesc').value = '';
+            document.getElementById('itemCant').value = '1';
+            document.getElementById('itemUni').value = '';
+            document.getElementById('itemPrecio').value = '';
+            document.getElementById('itemTotal').value = '';
+            document.getElementById('panelOtro').style.display = 'none';
+            document.getElementById('otroSub').value = '';
+            currentSelectedItem = null;
+
+            extraerFechasSugeridas();
+            renderTablas();
+            guardarPresupuesto(); // Auto-guardado
+        };
+
+        // --- FUNCIONES DE EDICIÓN Y ELIMINACIÓN ---
+        window.editarItem = (id) => {
+            const item = presupuestoActual.find(i => i.id === id);
+            if(!item) return;
+
+            document.getElementById('itemDesc').value = item.desc;
+            document.getElementById('itemCant').value = item.cant;
+            document.getElementById('itemUni').value = item.uni;
+            document.getElementById('itemPrecio').value = item.precio;
+            document.getElementById('itemTotal').value = item.total;
+            document.getElementById('itemFecha').value = item.fecha;
+
+            // Restablecer la selección interna para no perder el área y rubro a menos que el usuario lo cambie
+            currentSelectedItem = {
+                nombre: item.desc,
+                area: item.area,
+                rubro: item.rubro,
+                subarea: item.subarea
+            };
+            
+            document.getElementById('itemResults').style.display = 'none';
+            document.getElementById('panelOtro').style.display = 'none';
+
+            editingItemId = id;
+            document.getElementById('btnSubmitItem').innerHTML = "<i class='bx bx-save'></i> Actualizar";
+            
+            // Scroll suave hacia el formulario
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast("Modifique los valores en el formulario y haga clic en Actualizar.", "info");
+        };
+
+        window.eliminarItem = (id) => {
+            presupuestoActual = presupuestoActual.filter(i => i.id !== id);
+            
+            // Si estaba editando ese mismo item, resetear form
+            if(editingItemId === id) {
+                document.getElementById('itemDesc').value = '';
+                document.getElementById('itemCant').value = '1';
+                document.getElementById('itemUni').value = '';
+                document.getElementById('itemPrecio').value = '';
+                document.getElementById('itemTotal').value = '';
+                document.getElementById('panelOtro').style.display = 'none';
+                document.getElementById('otroSub').value = '';
+                currentSelectedItem = null;
+                editingItemId = null;
+                document.getElementById('btnSubmitItem').innerHTML = "<i class='bx bx-plus'></i> Agregar";
+            }
+
+            renderTablas();
+            guardarPresupuesto();
+        };
+
+        // --- RENDERIZADO DE TABLAS ORDENADAS ALFABÉTICAMENTE ---
+        function formatMoney(n) { return '$ ' + parseFloat(n).toLocaleString('en-US', {minimumFractionDigits: 2}); }
+        
+        function renderTablas() {
+            const tbodyMain = document.getElementById('tbodyPresupuesto');
+            const tbodyCons = document.getElementById('tbodyConsolidado');
+            const fondoFuente = document.getElementById('genFondo').value;
+
+            if(presupuestoActual.length === 0) {
+                tbodyMain.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--accent);">Sin ítems agregados al presupuesto.</td></tr>`;
+                tbodyCons.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--accent);">Esperando datos...</td></tr>`;
+                return;
+            }
+
+            // Agrupar por Area > Rubro > Subarea
+            const agrupado = {};
+            let granTotal = 0;
+            
+            // Para el consolidado (Sumatoria por Rubro en Semestres)
+            const consolidado = {};
+
+            presupuestoActual.forEach(item => {
+                // Lógica Agrupación Principal
+                if(!agrupado[item.area]) agrupado[item.area] = {};
+                if(!agrupado[item.area][item.rubro]) agrupado[item.area][item.rubro] = {};
+                if(!agrupado[item.area][item.rubro][item.subarea]) agrupado[item.area][item.rubro][item.subarea] = [];
+                
+                agrupado[item.area][item.rubro][item.subarea].push(item);
+                granTotal += item.total;
+
+                // Lógica Consolidado Semestral
+                if(!consolidado[item.rubro]) consolidado[item.rubro] = { s1: 0, s2: 0 };
+                
+                const mes = parseInt(item.fecha.split('-')[1]);
+                if(mes <= 6) consolidado[item.rubro].s1 += item.total;
+                else consolidado[item.rubro].s2 += item.total;
+            });
+
+            // Dibujar Tabla Principal con ORDEN ALFABÉTICO COMPLETO
+            let htmlMain = '';
+            let correlativo = 1;
+
+            // Ordenar Áreas alfabéticamente
+            const sortedAreas = Object.keys(agrupado).sort((a,b) => a.localeCompare(b, 'es'));
+
+            sortedAreas.forEach(area => {
+                let totalArea = 0;
+                htmlMain += `<tr><td colspan="8" class="row-area">Área de Operación: ${area}</td></tr>`;
+                
+                // Ordenar Rubros alfabéticamente
+                const sortedRubros = Object.keys(agrupado[area]).sort((a,b) => a.localeCompare(b, 'es'));
+                
+                sortedRubros.forEach(rubro => {
+                    let totalRubro = 0;
+                    htmlMain += `<tr><td colspan="8" class="row-rubro">Rubro: ${rubro}</td></tr>`;
+                    
+                    // Ordenar Subáreas alfabéticamente
+                    const sortedSubareas = Object.keys(agrupado[area][rubro]).sort((a,b) => a.localeCompare(b, 'es'));
+                    
+                    sortedSubareas.forEach(subarea => {
+                        htmlMain += `<tr><td colspan="8" class="row-subarea">${subarea}</td></tr>`;
+                        
+                        // Ordenar Ítems alfabéticamente por su descripción
+                        const sortedItems = agrupado[area][rubro][subarea].sort((a,b) => a.desc.localeCompare(b.desc, 'es'));
+                        
+                        sortedItems.forEach(item => {
+                            const [y, m, d] = item.fecha.split('-');
+                            htmlMain += `
+                            <tr class="row-item">
+                                <td style="text-align:center;">${correlativo++}</td>
+                                <td>${item.desc}</td>
+                                <td style="text-align:center;">${item.cant}</td>
+                                <td>${item.uni}</td>
+                                <td style="text-align:right;">${formatMoney(item.precio)}</td>
+                                <td style="text-align:right; font-weight:800;">${formatMoney(item.total)}</td>
+                                <td style="text-align:center;">${d}/${m}/${y}</td>
+                                <td style="text-align:center; display:flex; gap:0.4rem; justify-content:center; align-items:center;">
+                                    <button class="btn-edit" onclick="editarItem('${item.id}')" title="Editar"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="btn-del" onclick="eliminarItem('${item.id}')" title="Eliminar"><i class='bx bx-trash'></i></button>
+                                </td>
+                            </tr>`;
+                            totalRubro += item.total;
+                        });
+                    });
+                    
+                    htmlMain += `<tr><td colspan="5" class="row-subtotal">Subtotal ${rubro}:</td><td class="row-subtotal">${formatMoney(totalRubro)}</td><td colspan="2" style="background:#f1f5f9;"></td></tr>`;
+                    totalArea += totalRubro;
+                });
+            });
+
+            htmlMain += `<tr><td colspan="5" class="row-total">TOTAL PRESUPUESTO ESCOLAR:</td><td class="row-total">${formatMoney(granTotal)}</td><td colspan="2" style="background:#1e293b;"></td></tr>`;
+            tbodyMain.innerHTML = htmlMain;
+
+            // Dibujar Tabla Consolidado
+            let htmlCons = '';
+            let tS1 = 0, tS2 = 0;
+            
+            // Los rubros de consolidado según PDF
+            const rubrosConsolidado = [
+                "Material Educativo", "Operación logística", "Alimentación escolar", "Capacitación local", 
+                "Remuneraciones", "Gastos de Graduación", "Otros gastos corrientes", 
+                "Adquisición de equipo", "Adquisición de mobiliario", "Otras inversiones"
+            ];
+
+            rubrosConsolidado.forEach(rubro => {
+                if(consolidado[rubro]) {
+                    const s1 = consolidado[rubro].s1;
+                    const s2 = consolidado[rubro].s2;
+                    const totalR = s1 + s2;
+                    tS1 += s1; tS2 += s2;
+                    
+                    htmlCons += `
+                    <tr>
+                        <td style="font-weight: 800; color: var(--primary-dark);">${rubro}</td>
+                        <td style="text-align: right;">${s1 > 0 ? formatMoney(s1) : '-'}</td>
+                        <td style="text-align: right;">${s2 > 0 ? formatMoney(s2) : '-'}</td>
+                        <td style="text-align: center; font-size: 0.7rem; font-weight:800; color: var(--accent);">${fondoFuente}</td>
+                        <td style="text-align: right; font-weight: 800;">${formatMoney(totalR)}</td>
+                    </tr>`;
+                }
+            });
+
+            htmlCons += `
+                <tr style="background: #1e293b; color: white; font-weight: 900; font-size: 0.95rem;">
+                    <td>TOTAL GENERAL</td>
+                    <td style="text-align: right;">${formatMoney(tS1)}</td>
+                    <td style="text-align: right;">${formatMoney(tS2)}</td>
+                    <td></td>
+                    <td style="text-align: right;">${formatMoney(granTotal)}</td>
+                </tr>`;
+            
+            tbodyCons.innerHTML = htmlCons;
+        }
+
+    </script>
+</body>
+</html>

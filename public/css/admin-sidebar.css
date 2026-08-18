@@ -1,0 +1,168 @@
+/* public/css/admin-sidebar.css */
+* {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+:root {
+    --sidebar-width: 260px;
+    --userbar-height: 60px;
+}
+
+/* 1. ELIMINAR BARRAS DE SCROLL INNECESARIAS Y CORTES */
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Mata la barra horizontal que cortaba el menú */
+}
+
+/* Forzar que el userbar siempre quede arriba y cubra todo */
+.userbar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw; /* Asegura que cubra el 100% de la pantalla visible */
+    height: var(--userbar-height);
+    z-index: 2000 !important;
+    box-sizing: border-box;
+}
+
+/* Separar el menú desplegable del borde de la pantalla */
+.userbar-right {
+    padding-right: 15px; 
+}
+.userbar-dropdown {
+    right: 5px !important;
+}
+
+.admin-layout {
+    display: flex;
+    padding-top: var(--userbar-height);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Sidebar Fijo y Estilizado */
+.admin-sidebar {
+    width: var(--sidebar-width);
+    background-color: white;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed !important; /* Inamovible */
+    top: var(--userbar-height);
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--bg-light);
+}
+
+.sidebar-content {
+    flex: 1;
+    padding: 1rem 0;
+}
+
+.sidebar-section {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+/* Enlaces morados corregidos */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1.5rem;
+    color: var(--primary-dark) !important;
+    text-decoration: none !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s;
+    border-left: 4px solid transparent;
+}
+
+.sidebar-link svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--accent);
+    transition: stroke 0.2s;
+}
+
+.sidebar-link:hover {
+    background-color: var(--bg-light);
+    color: var(--primary-steel) !important;
+}
+
+.sidebar-link.active {
+    background-color: rgba(82, 137, 173, 0.08);
+    color: var(--primary-steel) !important;
+    border-left-color: var(--primary-steel);
+}
+
+.sidebar-link.active svg, .sidebar-link:hover svg {
+    stroke: var(--primary-steel);
+}
+
+/* 2. CÁLCULO EXACTO DEL CONTENIDO PRINCIPAL */
+.admin-main {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width)); /* Evita desbordamiento horizontal */
+    background-color: var(--bg-light);
+    min-height: calc(100vh - var(--userbar-height)); /* Elimina el scroll vertical fantasma */
+    padding: 2rem;
+    box-sizing: border-box; /* Fundamental para que el padding no expanda el ancho/alto */
+}
+
+/* Overlay para celulares */
+.navbar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    top: var(--userbar-height);
+    background: rgba(36, 60, 76, 0.4);
+    z-index: 950;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* Comportamiento Responsivo (Móviles) */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+    }
+    .admin-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    .admin-main {
+        margin-left: 0;
+        width: 100%;
+        padding: 1.25rem;
+    }
+    .navbar-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+}
+/* Ocultar la barra de scroll en todos los navegadores, pero permitir el desplazamiento */
+html, body, .admin-sidebar, .admin-main {
+    -ms-overflow-style: none;  /* IE y Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar, .admin-sidebar::-webkit-scrollbar, .admin-main::-webkit-scrollbar {
+    display: none; /* Chrome, Safari y Opera */
+}

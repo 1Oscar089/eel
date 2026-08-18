@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Fondos - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark: #243C4C; --primary-steel: #5289AD; 
+            --accent: #698696; --border: #ACBCBF; 
+            --bg-light: #F4FCFB; --success: #16a34a; --info: #3b82f6;
+            --gap: 0.5rem; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* BLOQUEO DE DESBORDAMIENTO Y AJUSTE EXACTO DE MÁRGENES */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        /* HEADER ALINEADO */
+        .page-header { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start;
+            margin-bottom: 1.5rem; 
+            flex-shrink: 0;
+        }
+        .page-header h1 { 
+            font-size: 1.6rem; 
+            font-weight: 800; 
+            color: var(--primary-dark); 
+            letter-spacing: -0.5px; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin: 0;
+        }
+        .page-header p { 
+            color: var(--accent); 
+            font-size: 0.85rem; 
+            margin-top: 0.4rem; 
+            font-weight: 600; 
+        }
+
+        /* GRID CONTABLE FLUIDO */
+        .funds-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: var(--gap); 
+            width: 100%; 
+        }
+
+        .fund-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius-lg); 
+            padding: 2.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            text-decoration: none;
+            color: var(--primary-dark);
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .fund-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: transparent;
+            transition: 0.3s ease;
+        }
+
+        .fund-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-steel);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .fund-card:hover::before {
+            background: var(--primary-steel);
+        }
+
+        .icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.2rem;
+            transition: 0.3s ease;
+        }
+
+        /* Colores Pastel */
+        .card-annual .icon-wrapper { background: #e0f2fe; color: var(--info); }
+        .card-others .icon-wrapper { background: #dcfce7; color: var(--success); }
+
+        .fund-card:hover .icon-wrapper { transform: scale(1.1); }
+
+        .fund-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary-dark); }
+        .fund-desc { font-size: 0.8rem; color: var(--accent); font-weight: 600; margin-bottom: 2rem; line-height: 1.4; }
+        
+        /* Balance Financiero */
+        .fund-balance { 
+            font-size: 2.2rem; 
+            font-weight: 900; 
+            font-family: monospace !important; 
+            color: var(--primary-dark); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 0.3rem; 
+            margin-top: auto; 
+        }
+        .fund-balance span { font-size: 1.2rem; color: var(--accent); font-weight: 800; }
+        
+        .loader-text { font-size: 0.85rem; color: var(--accent); font-style: italic; font-weight: 600; font-family: 'Segoe UI', system-ui, sans-serif !important;}
+    </style>
+</head>
+<body>
+
+    <div id="userbar-root"></div>
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-wallet'></i> Contabilidad y Fondos</h1>
+                <p>Monitoreo del estado financiero, ingresos corrientes y ejecución presupuestaria.</p>
+            </div>
+
+            <div class="funds-grid">
+                
+                <a href="fondos_presupuesto.html" class="fund-card card-annual">
+                    <div class="icon-wrapper">
+                        <i class='bx bx-calendar-event'></i>
+                    </div>
+                    <h2 class="fund-title">Presupuesto Anual</h2>
+                    <p class="fund-desc">Fondos asignados para operaciones institucionales y gastos programados.</p>
+                    <div class="fund-balance" id="saldoPresupuesto">
+                        <span class="loader-text"><i class='bx bx-loader-alt bx-spin'></i> Calculando...</span>
+                    </div>
+                </a>
+
+                <a href="fondos_otros.html" class="fund-card card-others">
+                    <div class="icon-wrapper">
+                        <i class='bx bx-trending-up'></i>
+                    </div>
+                    <h2 class="fund-title">Otros Ingresos</h2>
+                    <p class="fund-desc">Tracker de ingresos extraordinarios, donaciones y actividades escolares.</p>
+                    <div class="fund-balance" id="saldoOtros">
+                        <span class="loader-text"><i class='bx bx-loader-alt bx-spin'></i> Calculando...</span>
+                    </div>
+                </a>
+
+            </div>
+
+        </main>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = '../index.html';
+        });
+
+        const ordenarMoneda = (monto) => {
+            return parseFloat(monto || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
+        onSnapshot(collection(db, "fondos_saldos"), (snap) => {
+            let presupuesto = 0;
+            let otros = 0;
+
+            snap.forEach(documento => {
+                if (documento.id === 'presupuesto_anual') presupuesto = documento.data().saldo_actual || 0;
+                if (documento.id === 'otros_ingresos') otros = documento.data().saldo_actual || 0;
+            });
+
+            document.getElementById('saldoPresupuesto').innerHTML = `<span>$</span>${ordenarMoneda(presupuesto)}`;
+            document.getElementById('saldoOtros').innerHTML = `<span>$</span>${ordenarMoneda(otros)}`;
+        });
+    </script>
+</body>
+</html>

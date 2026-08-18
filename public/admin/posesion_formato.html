@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomas de Posesión - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <!-- LIBRERÍA PARA GENERACIÓN DIRECTA DE PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        
+        /* CONTENEDOR DEL FORMULARIO */
+        #formSection { height: calc(100vh - 60px); width: 100vw; margin: 0; padding: 1.5rem; overflow-y: auto; overflow-x: hidden; display: block; -ms-overflow-style: none; scrollbar-width: none; }
+        #formSection::-webkit-scrollbar { display: none; }
+        @media (max-width: 1024px) { #formSection { padding-bottom: 80px; } }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; margin-top: 0; flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; display: flex; align-items: center; gap: 0.5rem; margin-top: 0;}
+        
+        .header-actions { display: flex; gap: 0.5rem; }
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-primary:hover:not(:disabled) { background: var(--primary-steel); }
+        .btn-secondary { background: #e0f2fe; color: var(--primary-steel); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: 1px solid #bae6fd; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-secondary:hover { background: #bae6fd; color: var(--primary-dark); }
+
+        .card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .card-title { font-size: 1rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1.2rem; border-bottom: 2px solid var(--bg-light); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;}
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: start; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; position: relative;}
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; font-family: inherit; transition: 0.2s;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+        .form-group input:read-only, .form-group select:disabled { background: #f8fafc; color: var(--accent); cursor: not-allowed; border-color: #cbd5e1; opacity: 1; }
+        .full-width { grid-column: 1 / -1; }
+
+        /* CHECKBOX LIST PARA GRADOS */
+        .checkbox-list { max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; background: white; }
+        .checkbox-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); cursor: pointer; }
+        .checkbox-item input { width: auto; transform: scale(1.2); cursor: pointer; }
+
+        /* AUTOCOMPLETADO */
+        .autocomplete-wrapper { position: relative; width: 100%; }
+        .suggestions-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--primary-steel); border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .suggestion-item { padding: 0.7rem 0.8rem; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); cursor: pointer; border-bottom: 1px solid var(--bg-light); display: flex; flex-direction: column; }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover { background: #f0f8ff; color: var(--primary-steel); }
+        .sugg-meta { font-size: 0.65rem; color: var(--accent); font-weight: 500; margin-top: 0.2rem; }
+        .hidden-section { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border); }
+
+        /* BLOQUE OCULTO PARA CONSTRUCCIÓN DEL PDF */
+        #printSection { position: absolute; top: -9999px; left: -9999px; display: none; background: white; }
+        
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .header-actions { width: 100%; justify-content: space-between; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <!-- FORMULARIO -->
+        <main id="formSection">
+            <div class="page-header">
+                <h1><i class='bx bx-id-card'></i> Tomas de Posesión</h1>
+                <div class="header-actions">
+                    <a href="generador.html" class="btn-secondary"><i class='bx bx-arrow-back'></i> Volver</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Tipo de Nombramiento</label>
+                        <select id="tipoNombramiento" onchange="evaluarTipo()">
+                            <option value="" disabled selected>Seleccione el formato a generar...</option>
+                            <option value="sobresueldo">Toma de Posesión por Sobresueldo</option>
+                            <option value="interino">Interino (Próximamente)</option>
+                            <option value="salario">Por Ley de Salario (Próximamente)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="formContainer" style="display: none;">
+                <!-- DATOS DEL ACTA Y DIRECTOR -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bx-edit'></i> Datos de la Emisión</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Número de Acta</label>
+                            <input type="number" id="actaNum" placeholder="Ej: 100001">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de la Toma de Posesión</label>
+                            <input type="date" id="actaFecha">
+                        </div>
+                        <div class="form-group">
+                            <label>Hora</label>
+                            <input type="time" id="actaHora">
+                        </div>
+                        
+                        <div class="form-group full-width" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--bg-light);">
+                            <label style="color: var(--warning);"><i class='bx bx-user-circle'></i> Datos del Director/Presidente (Declaración Jurada)</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre del Director</label>
+                            <input type="text" id="dirNombre" placeholder="Cargando..." readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Edad (Años)</label>
+                            <input type="number" id="dirEdad" placeholder="Ej: 45">
+                        </div>
+                        <div class="form-group">
+                            <label>NIP Director</label>
+                            <input type="text" id="dirNip" placeholder="Cargando..." readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>DUI Director</label>
+                            <input type="text" id="dirDui" placeholder="Cargando..." readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Domicilio (Municipio)</label>
+                            <input type="text" id="dirDomicilio" placeholder="Ej: Tejutla" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Depto. de Domicilio</label>
+                            <input type="text" id="dirDepto" placeholder="Ej: Chalatenango" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DATOS DEL DOCENTE NOMBRADO -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bx-user'></i> Docente Nombrado</div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Buscar Docente en Base de Datos</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="docSearch" placeholder="Escriba el nombre del docente o escriba uno nuevo..." autocomplete="off" oninput="buscarDocente()">
+                                <div id="docSuggestions" class="suggestions-box"></div>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Nombre Completo del Docente *</label>
+                            <input type="text" id="docNombre">
+                        </div>
+                        <div class="form-group">
+                            <label>NIP *</label>
+                            <input type="text" id="docNip" placeholder="0000000">
+                        </div>
+                        <div class="form-group">
+                            <label>DUI *</label>
+                            <input type="text" id="docDui" placeholder="00000000-0">
+                        </div>
+                        <div class="form-group">
+                            <label>Correo Electrónico (Requerido si es nuevo)</label>
+                            <input type="email" id="docCorreo" placeholder="ejemplo@clases.edu.sv">
+                        </div>
+                        <div class="form-group">
+                            <label>Año Nacimiento (Requerido si es nuevo)</label>
+                            <input type="number" id="docNacimiento" placeholder="Ej: 1985">
+                        </div>
+                        <div class="form-group">
+                            <label>Nivel Escalafonario</label>
+                            <select id="docNivel">
+                                <option value="DOS">Nivel Dos</option>
+                                <option value="UNO">Nivel Uno</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Categoría</label>
+                            <input type="number" id="docCategoria" placeholder="Ej: 3">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Profesión / Especialidad</label>
+                            <select id="docEspecialidad" onchange="evaluarEspecialidad()">
+                                <option value="" disabled selected>Seleccione Especialidad...</option>
+                                <option value="LETRAS">LETRAS</option>
+                                <option value="CIENCIAS SOCIALES Y SOCIOLOGÍA">CIENCIAS SOCIALES Y SOCIOLOGÍA</option>
+                                <option value="CIENCIAS SOCIALES">CIENCIAS SOCIALES</option>
+                                <option value="LIC. EN CIENCIAS DE LA EDUCACIÓN">LIC. EN CIENCIAS DE LA EDUCACIÓN</option>
+                                <option value="PROFESOR EN MATEMÁTICA TERCER CICLO EDUC.BASICA-MEDIA">PROFESOR EN MATEMÁTICA TERCER CICLO EDUC.BÁSICA-MEDIA</option>
+                                <option value="OTRA">Otra (Especificar manualmente)</option>
+                            </select>
+                            <input type="text" id="docEspecialidadOtra" placeholder="Escriba la especialidad..." style="display:none; margin-top:0.5rem;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONDICIONES DEL SOBRESUELDO -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bx-briefcase'></i> Condiciones Laborales</div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Grados a Atender (Se pueden seleccionar varios)</label>
+                            <div id="gradosContainer" class="checkbox-list">
+                                <div style="color: #64748b; font-size: 0.8rem;">Cargando grados...</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Turno</label>
+                            <select id="condTurno">
+                                <option value="Matutino">Matutino</option>
+                                <option value="Vespertino">Vespertino</option>
+                                <option value="Nocturno">Nocturno</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Inicio</label>
+                            <input type="date" id="condInicio">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Finalización</label>
+                            <input type="date" id="condFin">
+                        </div>
+
+                        <div class="form-group full-width" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--bg-light);">
+                            <label style="color: var(--warning);"><i class='bx bx-error-alt'></i> ¿Tiene otro trabajo en Gobierno o Instituciones?</label>
+                            <select id="condOtroTrabajo" onchange="evaluarOtroTrabajo()" style="margin-top: 0.3rem;">
+                                <option value="NO">NO</option>
+                                <option value="SI">SÍ</option>
+                            </select>
+                        </div>
+
+                        <div id="panelOtroTrabajo" class="hidden-section form-grid full-width">
+                            <div class="form-group full-width">
+                                <label>Lugar de Trabajo</label>
+                                <input type="text" id="otLugar">
+                            </div>
+                            <div class="form-group">
+                                <label>Cargo</label>
+                                <input type="text" id="otCargo">
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Nombramiento</label>
+                                <input type="text" id="otTipo" placeholder="Ej: LEY DE SALARIO">
+                            </div>
+                            <div class="form-group">
+                                <label>Partida</label>
+                                <input type="text" id="otPartida">
+                            </div>
+                            <div class="form-group">
+                                <label>Subnúmero</label>
+                                <input type="text" id="otSubnumero">
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Contrato N° / Otros</label>
+                                <input type="text" id="otOtros" placeholder="N° de Contrato u otros detalles">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BOTÓN PARA GENERAR Y DESCARGAR EL PDF -->
+                <div style="margin-top: 1rem; margin-bottom: 2rem; display: flex; justify-content: flex-end;">
+                    <button class="btn-primary" style="font-size: 1rem; padding: 0.8rem 1.5rem;" onclick="descargarPDF()">
+                        <i class='bx bx-download'></i> Descargar PDF
+                    </button>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- CAJA OCULTA DONDE SE CONSTRUYE EL HTML PURO PARA EL PDF -->
+        <div id="printSection">
+            <div id="pdfData" style="font-family: Arial, sans-serif; font-size: 11pt; color: #000; line-height: 1.5;">
+                
+                <!-- HOJA 1: ACTA -->
+                <div style="text-align: center; font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase;">
+                    ACTA # <span id="pvActaNum"></span><br>
+                    TOMA DE POSESIÓN DE SOBRESUELDO
+                </div>
+                
+                <div style="text-align: justify; margin-bottom: 1rem;" id="pvParrafo1"></div>
+                <div style="text-align: justify; margin-bottom: 4rem;" id="pvParrafo2"></div>
+                
+                <div style="display: flex; justify-content: space-between; page-break-inside: avoid;">
+                    <div style="width: 45%; text-align: left;">
+                        <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 5px; width: 100%; display:flex; align-items:flex-end;">F:</div>
+                        <div>Nombre: <span id="pvFirmaDir"></span></div>
+                        <div>Cargo: Presidente del CDE</div>
+                    </div>
+                    <div style="width: 45%; text-align: left;">
+                        <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 5px; width: 100%; display:flex; align-items:flex-end;">F:</div>
+                        <div>Nombre: <span id="pvFirmaDoc"></span></div>
+                        <div>Cargo: Docente</div>
+                    </div>
+                </div>
+
+                <!-- SALTO DE PÁGINA (Instrucción para html2pdf) -->
+                <div class="html2pdf__page-break"></div>
+
+                <!-- HOJA 2: DECLARACIÓN JURADA -->
+                <div style="text-align: center; font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase;">
+                    DECLARACIÓN JURADA
+                </div>
+                
+                <div style="text-align: justify; margin-bottom: 1rem;" id="pvDj1"></div>
+                
+                <div style="font-weight: bold; margin: 1.5rem 0 1rem; page-break-inside: avoid;">
+                    MANIFIESTO: QUE BAJO JURAMENTO DECLARO
+                </div>
+                
+                <div style="text-align: justify; margin-bottom: 1rem;" id="pvDj2"></div>
+                <div style="text-align: justify; margin-bottom: 1rem;" id="pvDj3"></div>
+                
+                <div style="margin-top: 1.5rem; line-height: 1.8;">
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">NOMBRE COMPLETO:</span> <span id="pvDocNombre"></span>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <div style="flex: 2;">
+                            <span style="font-weight: bold;">PROFESIÓN:</span> <span id="pvDocEsp"></span>
+                        </div>
+                        <div style="flex: 1;">
+                            <span style="font-weight: bold;">NIP N°:</span> <span id="pvDocNip"></span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">DOCENTE</span> 
+                        <span>NIVEL DOS [<span id="pvNiv2"></span>]</span> 
+                        <span>NIVEL UNO [<span id="pvNiv1"></span>]</span> 
+                        <span style="font-weight: bold; margin-left: 2rem;">CATEGORÍA:</span> <span id="pvCat"></span>
+                    </div>
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">ESPECIALIDAD SEGÚN TÍTULO:</span> <span id="pvDocEsp2"></span>
+                    </div>
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">LA JORNADA LA REALIZARA EN EL TURNO:</span> 
+                        <span style="margin-left: 1rem;">MATUTINO [<span id="pvTurM"></span>]</span> 
+                        <span style="margin-left: 1rem;">VESPERTINO [<span id="pvTurV"></span>]</span>
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem; margin-bottom: 0.8rem; font-weight: bold; page-break-inside: avoid;">
+                        ¿TIENE OTRO TRABAJO EN EL GOBIERNO CENTRAL, MINEDUCYT, MUNICIPAL O INSTITUCIONES AUTÓNOMAS?
+                    </div>
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span>SI [<span id="pvOtroS"></span>]</span> <span style="margin-left: 2rem;">NO [<span id="pvOtroN"></span>]</span>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; margin-bottom: 0.8rem; font-weight: bold; page-break-inside: avoid;">
+                        SI LA RESPUESTA ES POSITIVA:
+                    </div>
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">EN QUE LUGAR:</span> <span id="pvOtLugar"></span>
+                    </div>
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">CON QUE CARGO:</span> <span id="pvOtCargo"></span>
+                    </div>
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">TIPO DE NOMBRAMIENTO:</span> <span id="pvOtTipo"></span>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <div style="flex: 1;">
+                            <span style="font-weight: bold;">PARTIDA:</span> <span id="pvOtPartida"></span>
+                        </div>
+                        <div style="flex: 1;">
+                            <span style="font-weight: bold;">SUBNÚMERO:</span> <span id="pvOtSub"></span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 0.8rem; page-break-inside: avoid;">
+                        <span style="font-weight: bold;">CONTRATO N° / OTROS:</span> <span id="pvOtOtros"></span>
+                    </div>
+                </div>
+
+                <div style="text-align: justify; margin-top: 1.5rem; margin-bottom: 1rem; page-break-inside: avoid;" id="pvDj4"></div>
+                <div style="text-align: justify; margin-bottom: 1rem; page-break-inside: avoid;" id="pvDj5"></div>
+
+                <div style="display: flex; justify-content: space-between; margin-top: 4rem; page-break-inside: avoid;">
+                    <div style="width: 50%; text-align: left;">
+                        <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 5px; width: 100%;"></div>
+                        <div style="margin-top: 5px;"><span id="pvFirmaDir2"></span></div>
+                        <div>Nombre/s y apellido/s (DIRECTOR Y PRESIDENTE DE CDE)</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, getDocs, getDoc, doc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        let escuelaData = {};
+        let listaDocentes = [];
+        let listaGrados = [];
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+
+        // FECHAS INICIALES (El Salvador)
+        const tzDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/El_Salvador" }));
+        const yyyy = tzDate.getFullYear();
+        const mm = String(tzDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(tzDate.getDate()).padStart(2, '0');
+        const defaultDate = `${yyyy}-${mm}-${dd}`;
+        
+        document.getElementById('actaFecha').value = defaultDate;
+        document.getElementById('condInicio').value = defaultDate;
+        document.getElementById('condFin').value = `${yyyy}-12-31`;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            await cargarDatosBase();
+        });
+
+        async function cargarDatosBase() {
+            try {
+                // ESCUELA
+                const escSnap = await getDoc(doc(db, "control", "escuela"));
+                if(escSnap.exists()) {
+                    escuelaData = escSnap.data();
+                    document.getElementById('dirDomicilio').value = escuelaData.municipio || '';
+                    document.getElementById('dirDepto').value = escuelaData.departamento || '';
+                }
+
+                // DIRECTOR
+                const qDirector = query(collection(db, "docentes"), where("cargo", "==", "director"));
+                const dirSnap = await getDocs(qDirector);
+                
+                if (!dirSnap.empty) {
+                    const dirData = dirSnap.docs[0].data();
+                    document.getElementById('dirNombre').value = dirData.nombre || '';
+                    document.getElementById('dirNip').value = dirData.nip || '';
+                    document.getElementById('dirDui').value = dirData.dui || '';
+                    
+                    if(dirData.nacimiento) {
+                        const birthYear = parseInt(dirData.nacimiento);
+                        if(!isNaN(birthYear)) {
+                            document.getElementById('dirEdad').value = yyyy - birthYear;
+                        }
+                    }
+                }
+
+                // DOCENTES
+                const docSnap = await getDocs(collection(db, "docentes"));
+                docSnap.forEach(d => {
+                    const data = d.data();
+                    listaDocentes.push({
+                        nombre: data.nombre,
+                        nip: data.nip,
+                        dui: data.dui,
+                        cargo: data.cargo,
+                        correo: data.correo,
+                        nacimiento: data.nacimiento
+                    });
+                });
+
+                // GRADOS
+                const gradSnap = await getDoc(doc(db, "control", "grados"));
+                if(gradSnap.exists()) {
+                    const grData = gradSnap.data();
+                    for (let key in grData) {
+                        if(grData[key] && grData[key].nombre) {
+                            listaGrados.push({ id: parseInt(key), nombre: grData[key].nombre });
+                        }
+                    }
+                    
+                    // Ordenar grados (negativos primero que positivos)
+                    listaGrados.sort((a, b) => a.id - b.id);
+                    
+                    // Insertar checkboxes
+                    const grContainer = document.getElementById('gradosContainer');
+                    if (listaGrados.length > 0) {
+                        grContainer.innerHTML = listaGrados.map(g => `
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="${g.nombre}"> ${g.nombre}
+                            </label>
+                        `).join('');
+                    } else {
+                        grContainer.innerHTML = `<div style="color: var(--danger); font-size: 0.8rem;">No hay grados configurados en la base de datos.</div>`;
+                    }
+                }
+
+            } catch (e) {
+                console.error("Error al cargar datos base", e);
+                showToast("Error al conectar con la base de datos.", "error");
+            }
+        }
+
+        window.evaluarTipo = () => {
+            const val = document.getElementById('tipoNombramiento').value;
+            const container = document.getElementById('formContainer');
+            if (val === 'sobresueldo') {
+                container.style.display = 'block';
+            } else if (val === 'interino' || val === 'salario') {
+                container.style.display = 'none';
+                showToast("Este formato estará disponible próximamente.", "info");
+                document.getElementById('tipoNombramiento').value = ""; 
+            } else {
+                container.style.display = 'none';
+            }
+        };
+
+        window.evaluarOtroTrabajo = () => {
+            const val = document.getElementById('condOtroTrabajo').value;
+            const panel = document.getElementById('panelOtroTrabajo');
+            if (val === 'SI') {
+                panel.style.display = 'grid';
+            } else {
+                panel.style.display = 'none';
+            }
+        };
+
+        window.evaluarEspecialidad = () => {
+            const sel = document.getElementById('docEspecialidad').value;
+            document.getElementById('docEspecialidadOtra').style.display = sel === 'OTRA' ? 'block' : 'none';
+        };
+
+        // AUTOCOMPLETADO DOCENTES
+        window.buscarDocente = () => {
+            const queryText = document.getElementById('docSearch').value.toLowerCase().trim();
+            const box = document.getElementById('docSuggestions');
+            
+            if (queryText.length < 3) { box.style.display = 'none'; return; }
+
+            const matches = listaDocentes.filter(d => d.nombre.toLowerCase().includes(queryText));
+            
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(m => {
+                    const n = m.nombre.replace(/'/g, "\\'");
+                    const np = (m.nip || '').replace(/'/g, "\\'");
+                    const du = (m.dui || '').replace(/'/g, "\\'");
+                    const co = (m.correo || '').replace(/'/g, "\\'");
+                    const na = (m.nacimiento || '').replace(/'/g, "\\'");
+                    
+                    return `
+                    <div class="suggestion-item" onclick="seleccionarDocente('${n}', '${np}', '${du}', '${co}', '${na}')">
+                        ${m.nombre} 
+                        <span class="sugg-meta">NIP: ${m.nip || 'S/R'} | DUI: ${m.dui || 'S/R'}</span>
+                    </div>
+                `}).join('');
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        };
+
+        window.seleccionarDocente = (nombre, nip, dui, correo, nacimiento) => {
+            document.getElementById('docSearch').value = nombre;
+            document.getElementById('docNombre').value = nombre;
+            document.getElementById('docNip').value = nip;
+            document.getElementById('docDui').value = dui;
+            document.getElementById('docCorreo').value = correo || '';
+            document.getElementById('docNacimiento').value = nacimiento || '';
+            document.getElementById('docSuggestions').style.display = 'none';
+        };
+
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.autocomplete-wrapper')) {
+                document.getElementById('docSuggestions').style.display = 'none';
+            }
+        });
+
+
+        // CONVERSORES DE TEXTO
+        const unidadesTxt = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
+        const decenasTxt = ['', 'diez', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+        const centenasTxt = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+        const mesesTxt = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+        function num2Text(n) {
+            if (n < 30) return unidadesTxt[n];
+            if (n < 100) {
+                let dec = Math.floor(n / 10);
+                let uni = n % 10;
+                return uni === 0 ? decenasTxt[dec] : `${decenasTxt[dec]} y ${unidadesTxt[uni]}`;
+            }
+            if (n === 100) return 'cien';
+            if (n < 1000) {
+                let cen = Math.floor(n / 100);
+                let rest = n % 100;
+                if (cen === 5) return rest === 0 ? 'quinientos' : `quinientos ${num2Text(rest)}`;
+                if (cen === 7) return rest === 0 ? 'setecientos' : `setecientos ${num2Text(rest)}`;
+                if (cen === 9) return rest === 0 ? 'novecientos' : `novecientos ${num2Text(rest)}`;
+                return rest === 0 ? centenasTxt[cen] : `${centenasTxt[cen]} ${num2Text(rest)}`;
+            }
+            if (n === 1000) return 'mil';
+            if (n < 2000) {
+                let rest = n % 1000;
+                return rest === 0 ? 'mil' : `mil ${num2Text(rest)}`;
+            }
+            if (n < 1000000) {
+                let miles = Math.floor(n / 1000);
+                let rest = n % 1000;
+                let milesTxt = (miles === 1) ? 'un mil' : `${num2Text(miles)} mil`;
+                return rest === 0 ? milesTxt : `${milesTxt} ${num2Text(rest)}`;
+            }
+            return n.toString();
+        }
+
+        function digitosALetras(str) {
+            if(!str) return '';
+            const mapDig = ['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve'];
+            let res = [];
+            for(let char of str) {
+                if(/[0-9]/.test(char)) res.push(mapDig[parseInt(char)]);
+            }
+            return res.join(' ');
+        }
+
+        function extractDateText(dateStr) {
+            if(!dateStr) return { d: '', m: '', y: '' };
+            const [y, m, d] = dateStr.split('-');
+            return {
+                d: num2Text(parseInt(d)),
+                m: mesesTxt[parseInt(m) - 1],
+                y: num2Text(parseInt(y))
+            };
+        }
+
+        function extractTimeText(timeStr) {
+            if(!timeStr) return "cero horas";
+            let [h, m] = timeStr.split(':');
+            h = parseInt(h); m = parseInt(m);
+            let res = `${num2Text(h)} horas`;
+            if (m > 0) res += ` y ${num2Text(m)} minutos`;
+            return res;
+        }
+
+        // =========================================================
+        // MOTOR DE GENERACIÓN DE PDF DIRECTA (HTML2PDF)
+        // =========================================================
+        window.descargarPDF = () => {
+            if (!document.getElementById('tipoNombramiento').value) {
+                showToast("Seleccione el tipo de nombramiento primero.", "warning");
+                return;
+            }
+
+            showToast("Generando documento, por favor espere...", "info");
+
+            // --- RECOGER VARIABLES ---
+            const actaNum = document.getElementById('actaNum').value || '';
+            const actaF = extractDateText(document.getElementById('actaFecha').value);
+            const actaH = extractTimeText(document.getElementById('actaHora').value);
+            
+            const escNombre = (escuelaData.name || '').toUpperCase();
+            const escCodeRaw = escuelaData.code || '';
+            const escCodeWords = escuelaData.code ? num2Text(parseInt(escuelaData.code)).toUpperCase() : '';
+            const escDist = (escuelaData.distrito || '').toUpperCase();
+            const escMuni = (escuelaData.municipio || '').toUpperCase();
+            const escDepto = (escuelaData.departamento || '').toUpperCase();
+            
+            const dNombre = (document.getElementById('dirNombre').value || '').toUpperCase();
+            const dNip = document.getElementById('dirNip').value || '';
+            const dDui = document.getElementById('dirDui').value || '';
+            const dEdad = document.getElementById('dirEdad').value || '';
+            const dDom = (document.getElementById('dirDomicilio').value || '').toUpperCase();
+            const dDepto2 = (document.getElementById('dirDepto').value || '').toUpperCase();
+
+            const docNombre = (document.getElementById('docNombre').value || '').toUpperCase();
+            const docNipRaw = document.getElementById('docNip').value || '';
+            const docDuiRaw = document.getElementById('docDui').value || '';
+            const docNipLetras = docNipRaw !== '' ? digitosALetras(docNipRaw).toUpperCase() : '';
+            const docCorreo = document.getElementById('docCorreo').value.trim();
+            const docNacimiento = document.getElementById('docNacimiento').value.trim();
+            const docNivel = document.getElementById('docNivel').value;
+            const docCat = document.getElementById('docCategoria').value || '';
+            
+            const selEsp = document.getElementById('docEspecialidad');
+            let docEsp = selEsp.options[selEsp.selectedIndex]?.text || '';
+            if(selEsp.value === 'OTRA') {
+                docEsp = document.getElementById('docEspecialidadOtra').value || '';
+            }
+            docEsp = docEsp.toUpperCase();
+
+            // LOGICA PARA UNIR GRADOS MÚLTIPLES
+            const cbGrados = document.querySelectorAll('#gradosContainer input[type="checkbox"]:checked');
+            const arrGrados = Array.from(cbGrados).map(cb => cb.value.toUpperCase());
+            let cGrado = "_____________";
+            
+            if (arrGrados.length === 1) {
+                cGrado = arrGrados[0];
+            } else if (arrGrados.length > 1) {
+                const ultimo = arrGrados.pop();
+                cGrado = arrGrados.join(", ") + " Y " + ultimo;
+            }
+
+            const cTurno = document.getElementById('condTurno').value;
+            const cIni = extractDateText(document.getElementById('condInicio').value);
+            const cFin = extractDateText(document.getElementById('condFin').value);
+            
+            const tieneOtro = document.getElementById('condOtroTrabajo').value;
+            const otLugar = (document.getElementById('otLugar').value || '').toUpperCase();
+            const otCargo = (document.getElementById('otCargo').value || '').toUpperCase();
+            const otTipo = (document.getElementById('otTipo').value || '').toUpperCase();
+            const otPartida = (document.getElementById('otPartida').value || '').toUpperCase();
+            const otSubnumero = (document.getElementById('otSubnumero').value || '').toUpperCase();
+            const otOtros = (document.getElementById('otOtros').value || '').toUpperCase();
+
+            // --- LÓGICA DE GUARDADO PARA NUEVOS DOCENTES ---
+            const dNomQuery = document.getElementById('docNombre').value.trim();
+            const existe = listaDocentes.find(d => d.nombre.toLowerCase() === dNomQuery.toLowerCase());
+            
+            if (!existe && dNomQuery && docCorreo) {
+                const newId = docCorreo.replace(/[@.]/g, '_');
+                const dataDocente = {
+                    nombre: cap(dNomQuery),
+                    dui: docDuiRaw,
+                    nip: docNipRaw,
+                    correo: docCorreo,
+                    nacimiento: docNacimiento,
+                    cargo: 'docente',
+                    grados: []
+                };
+                
+                setDoc(doc(db, "docentes", newId), dataDocente, { merge: true })
+                    .then(() => {
+                        listaDocentes.push(dataDocente); 
+                        showToast("Nuevo docente registrado automáticamente.");
+                    })
+                    .catch(e => console.error("Error guardando docente nuevo", e));
+            } else if (!existe && dNomQuery && !docCorreo) {
+                showToast("Para registrar al nuevo docente en la base de datos se requiere su correo.", "info");
+            }
+
+            // --- INSERTAR TEXTO EN EL MOLDE OCULTO ---
+            
+            // PAGINA 1
+            document.getElementById('pvActaNum').innerText = actaNum;
+            document.getElementById('pvParrafo1').innerHTML = `Reunidos en <span style="font-weight: bold;">${escNombre}</span> con código de infraestructura <span style="font-weight: bold;">${escCodeWords}</span>, del Distrito de <span style="font-weight: bold;">${escDist}</span>, Municipio de <span style="font-weight: bold;">${escMuni}</span>, del Departamento de <span style="font-weight: bold;">${escDepto}</span>, a las <span style="font-weight: bold;">${actaH.toUpperCase()}</span> del día <span style="font-weight: bold;">${actaF.d.toUpperCase()}</span> del mes de <span style="font-weight: bold;">${actaF.m.toUpperCase()}</span> de <span style="font-weight: bold;">${actaF.y.toUpperCase()}</span>.`;
+            document.getElementById('pvParrafo2').innerHTML = `Debido a la necesidad de atender apropiadamente a la población estudiantil de la institución y luego de cumplir con los requisitos estipulados en la LCD Art. 33 y en cumplimiento de lo establecido en el Reglamente de la LCD Art. 32, se procede a dar TOMA DE POSESION DEL SOBRESUELDO al docente <span style="font-weight: bold;">${docNombre}</span> con Número de Identificación Profesional <span style="font-weight: bold;">${docNipLetras} (${docNipRaw})</span>, nivel <span style="font-weight: bold;">${docNivel.toLowerCase()}</span> para que atienda el grado <span style="font-weight: bold;">${cGrado}</span> en el turno <span style="font-weight: bold;">${cTurno.toUpperCase()}</span>, dejando constancia que el sobresueldo estará vigente a partir del <span style="font-weight: bold;">${cIni.d.toUpperCase()}</span> del mes de <span style="font-weight: bold;">${cIni.m.toUpperCase()}</span> de <span style="font-weight: bold;">${cIni.y.toUpperCase()}</span> y finaliza hasta el <span style="font-weight: bold;">${cFin.d.toUpperCase()}</span> del mes de <span style="font-weight: bold;">${cFin.m.toUpperCase()}</span> de <span style="font-weight: bold;">${cFin.y.toUpperCase()}</span>. Y no habiendo más que hacer constar, suscribimos a la presente acta que firmamos para presentar en la oficina de la Unidad de Recursos Humanos de la Departamental de Educación de <span style="font-weight: bold;">${escDepto}</span>.`;
+            document.getElementById('pvFirmaDir').innerText = dNombre;
+            document.getElementById('pvFirmaDoc').innerText = docNombre;
+
+            // PAGINA 2
+            document.getElementById('pvDj1').innerHTML = `Yo: <span style="font-weight: bold;">${dNombre}</span> de <span style="font-weight: bold;">${dEdad}</span> años de edad, Docente del Domicilio de <span style="font-weight: bold;">${dDom}</span> Departamento de <span style="font-weight: bold;">${dDepto2}</span>, portador de Documento Único de Identidad <span style="font-weight: bold;">${dDui}</span> Número de Identificación Profesional (NIP) <span style="font-weight: bold;">${dNip}</span> quien labora en el Ministerio de Educación, Ciencia y Tecnología, con el cargo de Director en el Centro Educativo de nombre <span style="font-weight: bold;">${escNombre}</span> con Código de Infraestructura <span style="font-weight: bold;">${escCodeRaw}</span>, Distrito <span style="font-weight: bold;">${escDist}</span>, Municipio de <span style="font-weight: bold;">${escMuni}</span>, Departamento de <span style="font-weight: bold;">${escDepto}</span>.`;
+            document.getElementById('pvDj2').innerHTML = `A) Que existe la necesidad de nombramiento de SOBRESUELDO, con la especialidad de <span style="font-weight: bold;">${docEsp}</span> en el Centro Educativo.`;
+            document.getElementById('pvDj3').innerHTML = `B) En todo tramite de nombramiento deberá indicarse cuando el caso se presente, cuales otros cargos, desempeña la persona nombrada, ya sea del gobierno central, municipal o cualquier institución oficial autónoma por lo que los datos proporcionados por la persona nombrada son exactos y doy fe de dichos datos.`;
+
+            document.getElementById('pvDocNombre').innerText = docNombre;
+            document.getElementById('pvDocEsp').innerText = docEsp;
+            document.getElementById('pvDocNip').innerText = docNipRaw;
+            
+            document.getElementById('pvNiv2').innerText = docNivel === 'DOS' ? 'X' : '\u00A0\u00A0';
+            document.getElementById('pvNiv1').innerText = docNivel === 'UNO' ? 'X' : '\u00A0\u00A0';
+            document.getElementById('pvCat').innerText = docCat;
+            
+            document.getElementById('pvDocEsp2').innerText = docEsp;
+            
+            document.getElementById('pvTurM').innerText = cTurno === 'Matutino' ? 'X' : '\u00A0\u00A0';
+            document.getElementById('pvTurV').innerText = cTurno === 'Vespertino' ? 'X' : '\u00A0\u00A0';
+            
+            document.getElementById('pvOtroS').innerText = tieneOtro === 'SI' ? 'X' : '\u00A0\u00A0';
+            document.getElementById('pvOtroN').innerText = tieneOtro === 'NO' ? 'X' : '\u00A0\u00A0';
+
+            document.getElementById('pvOtLugar').innerText = tieneOtro === 'SI' ? otLugar : '';
+            document.getElementById('pvOtCargo').innerText = tieneOtro === 'SI' ? otCargo : '';
+            document.getElementById('pvOtTipo').innerText = tieneOtro === 'SI' ? otTipo : '';
+            document.getElementById('pvOtPartida').innerText = tieneOtro === 'SI' ? otPartida : '';
+            document.getElementById('pvOtSub').innerText = tieneOtro === 'SI' ? otSubnumero : '';
+            document.getElementById('pvOtOtros').innerText = tieneOtro === 'SI' ? otOtros : '';
+
+            document.getElementById('pvDj4').innerHTML = `Por otra parte, como Presidente y Representante del Consejo Directivo Escolar, declaro, que entre el Docente nombrado: <span style="font-weight: bold;">${docNombre}</span> y los miembros del Consejo Directivo Escolar, NO EXISTE parentesco de consanguineidad o afinidad, por tanto, todo lo manifestado en la presente Declaración Jurada es la VERDAD y me someto a lo dispuesto en el Art. 305 del Código Penal que establece lo del "falso testimonio".`;
+            document.getElementById('pvDj5').innerHTML = `Así mismo me expreso, con conocimiento de los efectos legales de la presente DECLARACIÓN jurada, que con el nombramiento del docente interino no se contraviene el Art. 3 y 6 de la Ley de Ética Gubernamental, se hace constar que el proceso se realiza conforme a los principios de mérito, transparencia, integridad y debida diligencia establecidos por el MINEDUCYT y el Sistema de Gestión Antisoborno conforme a la norma ISO 37001, para ser presentada en la Dirección Departamental de Educación de <span style="font-weight: bold;">${escDepto}</span>, ratifico su contenido y firmo.`;
+            document.getElementById('pvFirmaDir2').innerText = dNombre;
+
+            // --- DISPARAR HTML2PDF ---
+            const printSec = document.getElementById('printSection');
+            const pdfData = document.getElementById('pdfData');
+            
+            // Mostrar temporalmente para que html2pdf lo pueda "leer"
+            printSec.style.display = 'block';
+
+            const opt = {
+                margin:       1, // EXACTAMENTE 1 PULGADA DE MARGEN FÍSICO EN LOS 4 LADOS DE TODAS LAS PÁGINAS GENERADAS
+                filename:     `Acta_Sobresueldo_${docNombre.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Pequeño retardo para asegurar que el navegador pinte el DOM antes de capturarlo
+            setTimeout(() => {
+                html2pdf().set(opt).from(pdfData).save().then(() => {
+                    printSec.style.display = 'none'; // Ocultar nuevamente
+                    showToast("PDF descargado correctamente.");
+                }).catch(err => {
+                    console.error(err);
+                    printSec.style.display = 'none';
+                    showToast("Error al generar PDF", "error");
+                });
+            }, 200);
+        };
+
+    </script>
+</body>
+</html>

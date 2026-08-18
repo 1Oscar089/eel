@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instrumento 003 - Consolidado Mensual Dirección - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTA VISTA ENFOCADA */
+        body { 
+            background: var(--bg-light); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 1rem; 
+        }
+        
+        .focused-window { 
+            width: 100%; 
+            max-width: 550px; 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: var(--border-radius-xl); 
+            border: 1px solid var(--border); 
+            box-shadow: var(--shadow-lg); 
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .window-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            border-bottom: 2px solid var(--bg-light); 
+            padding-bottom: 1rem; 
+        }
+        .window-header h1 { 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            color: var(--primary-dark);
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin: 0;
+        }
+        
+        .btn-back { 
+            background: var(--bg-light); 
+            color: var(--accent); 
+            padding: 0.5rem 1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            border: 1px solid transparent; 
+        }
+        .btn-back:hover { background: #f1f5f9; color: var(--danger); border-color: #fecaca; }
+
+        .info-msg { 
+            background: #e0f2fe; 
+            color: var(--primary-steel); 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            border: 1px solid #bae6fd; 
+            text-align: center; 
+            margin-bottom: 1.5rem; 
+            line-height: 1.4;
+        }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+        .form-group label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; transition: 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+
+        .btn-imprimir { 
+            background: var(--primary-dark); 
+            color: white; 
+            padding: 1.1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            border: none; 
+            width: 100%; 
+            transition: 0.2s; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin-top: 1.5rem; 
+        }
+        .btn-imprimir:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .btn-imprimir:hover:not(:disabled) { 
+            background: var(--primary-steel); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(82, 137, 173, 0.3); 
+        }
+
+        .redirect-msg { 
+            text-align: center; 
+            color: var(--primary-steel); 
+            font-size: 0.85rem; 
+            font-weight: 800; 
+            margin-top: 1.5rem; 
+            display: none; 
+            padding: 1rem; 
+            background: #e0f2fe; 
+            border-radius: 8px; 
+        }
+
+        @media (max-width: 768px) {
+            .focused-window { padding: 1.5rem; }
+            .window-header h1 { font-size: 1.1rem; }
+            .form-grid { grid-template-columns: 1fr; gap: 0.5rem;}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div id="mainContent" class="focused-window">
+        <div class="window-header">
+            <h1><i class='bx bxs-file-pdf'></i> Instrumento No. 003</h1>
+            <a href="demeritos.html" class="btn-back"><i class='bx bx-x'></i> Cancelar</a>
+        </div>
+
+        <div class="info-msg" id="statusMsg">
+            <i class='bx bx-info-circle'></i> Genera el reporte oficial de la Dirección con el consolidado global de todos los grados.
+        </div>
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Año Lectivo</label>
+                <input type="number" id="s2_anio">
+            </div>
+            <div class="form-group">
+                <label>Mes a Exportar</label>
+                <select id="s2_mes">
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="btnImprimir" class="btn-imprimir" onclick="generarInstrumento003()">
+            <i class='bx bxs-download'></i> Descargar Reporte Oficial
+        </button>
+
+        <div id="redirectMsg" class="redirect-msg">
+            <i class='bx bx-loader bx-spin'></i> Descarga iniciada. Regresando a Deméritos...
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const { jsPDF } = window.jspdf;
+        const LOGO_URL = "../img/logo_mined.png"; 
+
+        const gradeLabels = { '10': 'Parvularia 4', '11': 'Parvularia 5', '12': 'Parvularia 6', '1': 'Primer Grado', '2': 'Segundo Grado', '3': 'Tercer Grado', '4': 'Cuarto Grado', '5': 'Quinto Grado', '6': 'Sexto Grado', '7': 'Séptimo Grado', '8': 'Octavo Grado', '9': 'Noveno Grado' };
+        
+        // GRADOS QUE SOLO DEBEN MOSTRAR GUIONES EN TODA LA FILA
+        const gradosOmitidos = ['10', '11', '12', '1', '2']; 
+        
+        const ordenGradosPDF = ['10', '11', '12', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        const MESES_LISTA = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"];
+
+        let escuelaData = { name: "Centro Educativo", code: "00000", departamento: "", municipio: "", distrito: "" };
+        let nombreDirector = "__________________________";
+        let allStudents = [];
+
+        // SISTEMA DE TOAST
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const anioActual = new Date().getFullYear();
+            const mesActual = new Date().getMonth() + 1;
+            
+            document.getElementById('s2_anio').value = anioActual;
+            
+            // Limitar hasta noviembre
+            let mesDefecto = mesActual > 11 ? 11 : mesActual;
+            document.getElementById('s2_mes').value = mesDefecto;
+
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) return window.location.href = '../index.html';
+                
+                try {
+                    // Cargar datos del Director
+                    const snapDocentes = await getDocs(collection(db, "docentes"));
+                    const dir = snapDocentes.docs.map(d=>d.data()).find(d => d.cargo && d.cargo.toLowerCase().trim() === 'director');
+                    if (dir) nombreDirector = dir.nombre || dir.name || nombreDirector;
+
+                    // Cargar datos de la escuela
+                    const docEscuela = await getDoc(doc(db, "control", "escuela"));
+                    if (docEscuela.exists()) escuelaData = docEscuela.data();
+
+                    // Sincronizar nómina de alumnos
+                    onSnapshot(collection(db, "users"), (snap) => {
+                        allStudents = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(s => s.nombreCompleto && !s.archivado);
+                    });
+
+                } catch (e) {
+                    console.error("Error al cargar datos base: ", e);
+                }
+            });
+        });
+
+        function determinarSexoH(rawSexo) {
+            if (typeof rawSexo === 'string' && rawSexo.trim() !== '') {
+                const val = rawSexo.trim().toLowerCase();
+                if (val === 'h' || val === 'hombre' || val === 'masculino' || val === 'varon' || val === 'varón' || val === 'niño') return true;
+            }
+            return false; // Por defecto M (Mujer)
+        }
+
+        const formatCero = (val) => val === 0 ? '-' : val;
+
+        function dibujarCampoConLinea(doc, etiqueta, valor, x, y, anchoTotal) { 
+            doc.setFont("helvetica", "normal"); doc.text(etiqueta, x, y); 
+            const xValor = x + doc.getTextWidth(etiqueta) + 1; const xFin = x + anchoTotal; 
+            if (valor) doc.text(String(valor), xValor, y - 0.5); 
+            doc.setLineWidth(0.3); doc.setDrawColor(0,0,0); doc.setLineDashPattern([1, 1], 0);
+            doc.line(xValor, y + 1, xFin, y + 1); doc.setLineDashPattern([], 0);
+        }
+
+        window.generarInstrumento003 = async () => {
+            const mesInput = document.getElementById('s2_mes').value; 
+            const anioInput = document.getElementById('s2_anio').value;
+            const btn = document.getElementById('btnImprimir');
+
+            if(!mesInput || !anioInput) {
+                showToast("Por favor, ingrese el Mes y el Año.", "warning");
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Extrayendo datos globales...";
+
+            try {
+                const mesStr = String(mesInput).padStart(2, '0'); 
+                const mesNombre = MESES_LISTA[parseInt(mesInput)-1];
+                const nombreEscuela = escuelaData.name || escuelaData.nombre || escuelaData.Nombre || '';
+                const codigoEscuela = escuelaData.code || escuelaData.codigo || escuelaData.Codigo || '';
+
+                if (allStudents.length === 0) {
+                    const snapUs = await getDocs(collection(db, "users")); 
+                    allStudents = snapUs.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.nombreCompleto && !s.archivado);
+                }
+                
+                const bodyData = []; 
+                let tMat = {m:0, h:0}, tDem = {m:0, h:0, a:0, b:0, c:0, d:0}, tRed = {m:0, h:0, a:0, b:0, c:0}, tRec = {m:0, h:0};
+                
+                for (let i = 0; i < ordenGradosPDF.length; i++) {
+                    const gCode = ordenGradosPDF[i];
+                    const turno = ['3','5','6'].includes(gCode) ? "Vespertino" : "Matutino"; 
+                    const students = allStudents.filter(s => String(s.grade) === gCode);
+                    
+                    const esOmitido = gradosOmitidos.includes(gCode);
+                    
+                    let cMat = {m:0, h:0}, cDem = {m:0, h:0, a:0, b:0, c:0, d:0}, cRed = {m:0, h:0, a:0, b:0, c:0}, cRec = {m:0, h:0};
+
+                    await Promise.all(students.map(async (st) => {
+                        // Evaluación estricta de matrícula por fecha de registro
+                        let cuentaEsteMes = true;
+                        if (st.createdAt || st.timestamp) {
+                            const cDate = new Date(st.createdAt || st.timestamp);
+                            const cYear = cDate.getFullYear();
+                            const cMonth = cDate.getMonth() + 1; // 1 a 12
+                            
+                            if (cYear > parseInt(anioInput)) cuentaEsteMes = false;
+                            else if (cYear === parseInt(anioInput) && cMonth > parseInt(mesInput)) cuentaEsteMes = false;
+                        }
+
+                        if (cuentaEsteMes) {
+                            const isH = determinarSexoH(st.sexo || st.Sexo || st.genero || st.gender || '');
+                            if(isH) cMat.h++; else cMat.m++;
+
+                            if(!esOmitido) {
+                                try {
+                                    const dDoc = await getDoc(doc(db, "users", st.id, "metadata", "demeritos"));
+                                    if(dDoc.exists()) Object.values(dDoc.data()).forEach(h => {
+                                        if(h.fecha && h.fecha.startsWith(`${anioInput}-${mesStr}`)) {
+                                            if(isH) cDem.h++; else cDem.m++;
+                                            if(h.letra==='A') cDem.a++; else if(h.letra==='B') cDem.b++; else if(h.letra==='C') cDem.c++; else if(h.letra==='D') cDem.d++;
+                                        }
+                                    });
+                                    
+                                    const rDoc = await getDoc(doc(db, "users", st.id, "metadata", "redenciones"));
+                                    if(rDoc.exists()) Object.values(rDoc.data()).forEach(h => {
+                                        if(h.fecha && h.fecha.startsWith(`${anioInput}-${mesStr}`)) {
+                                            if(isH) cRed.h++; else cRed.m++;
+                                            if(h.letra==='A') cRed.a++; else if(h.letra==='B') cRed.b++; else if(h.letra==='C') cRed.c++;
+                                        }
+                                    });
+
+                                    const recDoc = await getDoc(doc(db, "users", st.id, "metadata", "reconocimientos"));
+                                    if(recDoc.exists()) Object.values(recDoc.data()).forEach(h => {
+                                        const rAnio = h.anioAsociado || (h.fecha ? h.fecha.split('-')[0] : '');
+                                        const rMes = h.mesAsociado || (h.fecha ? h.fecha.split('-')[1] : '');
+                                        if(String(rAnio) === String(anioInput) && String(rMes) === String(mesStr)) {
+                                            if(isH) cRec.h++; else cRec.m++;
+                                        }
+                                    });
+                                } catch(e){}
+                            }
+                        }
+                    }));
+
+                    if (!esOmitido) {
+                        tMat.m += cMat.m; tMat.h += cMat.h; 
+                        tDem.m += cDem.m; tDem.h += cDem.h; tDem.a += cDem.a; tDem.b += cDem.b; tDem.c += cDem.c; tDem.d += cDem.d; 
+                        tRed.m += cRed.m; tRed.h += cRed.h; tRed.a += cRed.a; tRed.b += cRed.b; tRed.c += cRed.c;
+                        tRec.m += cRec.m; tRec.h += cRec.h;
+
+                        bodyData.push([i+1, gradeLabels[gCode], 'A', turno, 
+                            formatCero(cMat.m), formatCero(cMat.h), formatCero(cMat.m+cMat.h), 
+                            formatCero(cDem.m), formatCero(cDem.h), formatCero(cDem.m+cDem.h), formatCero(cDem.a), formatCero(cDem.b), formatCero(cDem.c), formatCero(cDem.d), formatCero(cDem.a+cDem.b+cDem.c+cDem.d), 
+                            formatCero(cRed.m), formatCero(cRed.h), formatCero(cRed.m+cRed.h), formatCero(cRed.a), formatCero(cRed.b), formatCero(cRed.c), formatCero(cRed.a+cRed.b+cRed.c), 
+                            formatCero(cRec.m), formatCero(cRec.h), formatCero(cRec.m+cRec.h)
+                        ]);
+                    } else {
+                        // Insertar fila con puros guiones y NO sumar a los totales
+                        bodyData.push([
+                            i+1, gradeLabels[gCode], 'A', turno, 
+                            '-', '-', '-', 
+                            '-', '-', '-', '-', '-', '-', '-', '-', 
+                            '-', '-', '-', '-', '-', '-', '-', 
+                            '-', '-', '-'
+                        ]);
+                    }
+                }
+                
+                bodyData.push([{content: '16. TOTAL', colSpan: 4, styles: {halign: 'left', fontStyle: 'bold'}}, 
+                    formatCero(tMat.m), formatCero(tMat.h), formatCero(tMat.m+tMat.h), 
+                    formatCero(tDem.m), formatCero(tDem.h), formatCero(tDem.m+tDem.h), formatCero(tDem.a), formatCero(tDem.b), formatCero(tDem.c), formatCero(tDem.d), formatCero(tDem.a+tDem.b+tDem.c+tDem.d), 
+                    formatCero(tRed.m), formatCero(tRed.h), formatCero(tRed.m+tRed.h), formatCero(tRed.a), formatCero(tRed.b), formatCero(tRed.c), formatCero(tRed.a+tRed.b+tRed.c), 
+                    formatCero(tRec.m), formatCero(tRec.h), formatCero(tRec.m+tRec.h)
+                ]);
+
+                // Generar Documento
+                btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Dibujando PDF...";
+
+                const docPdf = new jsPDF('l', 'mm', 'letter'); 
+                const width = docPdf.internal.pageSize.getWidth(); 
+                
+                try { 
+                    const response = await fetch(LOGO_URL); const blob = await response.blob();
+                    const logoData = await new Promise((res) => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(blob); });
+                    docPdf.addImage(logoData, 'PNG', width - 55, 8, 45, 18); 
+                } catch(e){}
+                
+                docPdf.setFontSize(10); let y = 39; const m1 = 10; const x2 = 205; 
+                docPdf.setFontSize(14.5); docPdf.text("Instrumento No. 003", width/2, 27, {align:'center'});
+                docPdf.setFontSize(12); docPdf.text("Registro Consolidado Mensual de Deméritos/Redenciones/Reconocimientos (Director)", width/2, 32, {align:'center'});
+                docPdf.setFontSize(10);
+                
+                dibujarCampoConLinea(docPdf, "1. Nombre del Centro Educativo: ", nombreEscuela, m1, y, 185); 
+                dibujarCampoConLinea(docPdf, "2. Código del C.E: ", codigoEscuela, x2, y, 60); y+=6;
+                dibujarCampoConLinea(docPdf, "3. Departamento: ", escuelaData.departamento||'', m1, y, 90);
+                dibujarCampoConLinea(docPdf, "4. Municipio: ", escuelaData.municipio||'', 110, y, 85); y+=6;
+                dibujarCampoConLinea(docPdf, "5. Distrito: ", escuelaData.distrito||'', m1, y, 90); 
+                dibujarCampoConLinea(docPdf, "6. Mes/Año: ", `${mesNombre} / ${anioInput}`, 110, y, 85);
+                
+                docPdf.autoTable({
+                    startY: y + 8,
+                    head: [[{content:'No.',rowSpan:2},{content:'7.\nGrado',rowSpan:2},{content:'8.\nSección',rowSpan:2},{content:'9.\nTurno /\nmodalidad',rowSpan:2},{content:'10.\nMatricula',colSpan:3},{content:'11.\nNúmero de\nDeméritos por\nsexo',colSpan:3},{content:'12.\nNúmero de\nDeméritos por causales',colSpan:5},{content:'13.\nNúmero de\nRedenciones por sexo',colSpan:3},{content:'14.\nNúmero de Redenciones por\nopción elegida',colSpan:4},{content:'15.\nNúmero de\nReconocimientos',colSpan:3}],['M','H','Total','M','H','Total','A','B','C','D','Total','M','H','Total','A','B','C','Total','M','H','Total']],
+                    body: bodyData, theme: 'grid', styles: { fontSize: 7, halign: 'center', cellPadding: 1, valign: 'middle', lineColor:[0,0,0], lineWidth:0.1, minCellHeight: 6 },
+                    headStyles: { fillColor:[255,255,255], textColor:0, fontStyle:'normal', lineColor:[0,0,0], lineWidth:0.1 }
+                });
+                
+                const finalY = docPdf.lastAutoTable.finalY + 25;
+                docPdf.setDrawColor(0,0,0); docPdf.setLineWidth(0.2); 
+                docPdf.text(`Nombre, firma y sello del Director del C. E. `, 10, finalY);
+                docPdf.line(80, finalY, 160, finalY); 
+                docPdf.text(nombreDirector, 120, finalY + 5, { align: 'center' });
+                
+                document.getElementById('redirectMsg').style.display = 'block';
+                document.getElementById('btnImprimir').style.display = 'none';
+                
+                docPdf.save(`003_Consolidado_Escuela_${mesNombre}_${anioInput}.pdf`);
+                
+                setTimeout(() => { window.location.href = 'demeritos.html'; }, 2500);
+
+            } catch (e) { 
+                console.error(e); 
+                showToast("Error generando el documento.", "error"); 
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bxs-download'></i> Descargar Reporte Oficial";
+            } 
+        };
+    </script>
+</body>
+</html>

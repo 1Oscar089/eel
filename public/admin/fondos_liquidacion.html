@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidación de Presupuesto - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTE MÓDULO */
+        body { padding: var(--gap); overflow-y: auto; background: var(--bg-light); }
+        .container { max-width: 1400px; margin: 0 auto; min-height: 95vh; }
+
+        /* HEADER INTERNO */
+        .module-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: var(--gap); 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 1rem; 
+            flex-wrap: wrap; 
+            gap: var(--gap); 
+        }
+        .module-header h1 { 
+            font-size: 1.6rem; 
+            font-weight: 800; 
+            letter-spacing: -1px; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.8rem; 
+            margin: 0;
+            color: var(--primary-dark);
+        }
+        .header-actions { 
+            display: flex; 
+            gap: 0.8rem; 
+            align-items: center; 
+            flex-wrap: wrap;
+        }
+        .btn-header { 
+            background: white; 
+            color: var(--primary-dark); 
+            border: 1px solid var(--border); 
+            padding: 0.6rem 1rem; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            cursor: pointer; 
+        }
+        .btn-header:hover { background: var(--bg-light); border-color: var(--primary-steel); }
+        .btn-back { color: var(--danger); border-color: #fecaca;}
+        .btn-back:hover { background: #fee2e2; }
+        .btn-hist { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+        .btn-hist:hover { background: #f59e0b; color: white; border-color: #f59e0b; }
+
+        .input-error { border-color: var(--danger) !important; background-color: #fef2f2 !important; }
+        .form-group input[readonly], .form-group select[readonly], .form-group textarea[readonly] { 
+            background: #f8fafc; color: #475569; border-color: #e2e8f0; cursor: not-allowed; 
+        }
+
+        /* BOTONES DE ACCIÓN INFERIORES */
+        .action-bar { display: flex; justify-content: flex-end; gap: var(--gap); margin-top: 1.5rem; flex-wrap: wrap;}
+        .btn-action-test { background: #fffbeb; color: var(--warning); border: 1px solid #fde68a; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s;}
+        .btn-action-test:hover { background: #fde68a; color: #b45309; }
+
+        .status-box { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: var(--gap); display: none; }
+
+        /* MODALES (Blindaje Móvil) */
+        .modal {
+            display: flex !important;
+            flex-direction: column !important;
+            max-height: 90vh !important;
+            overflow: hidden !important;
+            padding-bottom: 1.2rem !important;
+            box-shadow: var(--shadow-modal) !important;
+        }
+        .modal-header { flex-shrink: 0 !important; margin-bottom: 0.5rem; }
+        .modal-body {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            padding-right: 0.5rem !important;
+        }
+        .modal-actions {
+            flex-shrink: 0 !important;
+            background: white !important;
+            padding-top: 1rem !important;
+            margin-top: 0 !important;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* Tablas internas en modales */
+        .table-wrapper { border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; margin-bottom: var(--gap); background: white;}
+        .table-compras { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px; }
+        .table-compras th, .table-compras td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .table-compras th { background: #f8fafc; font-weight: 800; color: var(--primary-dark); text-transform: uppercase; font-size: 0.7rem; }
+
+        .btn-restore-action { background: #e0f2fe; color: #0284c7; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem; transition: 0.2s; width: 100%; justify-content: center;}
+        .btn-restore-action:hover { background: #0284c7; color: white; }
+
+        @media (max-width: 768px) {
+            .header-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+            .btn-header { justify-content: center; font-size: 0.75rem; padding: 0.6rem 0.2rem; text-align: center;}
+            .btn-back { grid-column: 1 / -1; }
+            
+            .action-bar { flex-direction: column-reverse; }
+            .action-bar button { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+        <header class="module-header">
+            <h1><i class='bx bx-check-shield'></i> Liquidación de Presupuesto</h1>
+            <div class="header-actions">
+                <button class="btn-header btn-hist" onclick="abrirModalRestaurar()"><i class='bx bx-history'></i> Historial</button>
+                <a href="fondos_presupuesto.html" class="btn-header btn-back"><i class='bx bx-chevron-left'></i> Volver a Presupuesto</a>
+            </div>
+        </header>
+
+        <div id="statusCalculo" class="status-box">
+            <i class='bx bx-loader-alt bx-spin'></i> Calculando consolidado de movimientos y datos poblacionales...
+        </div>
+
+        <form id="formLiquidacion">
+            <div class="card">
+                <h2><i class='bx bx-building-house'></i> Datos Institucionales y Bancarios (Automático)</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Año de Liquidación</label>
+                        <input type="number" id="liqAno" class="req-field" value="2026" onchange="cargarDatosAutomaticos()">
+                    </div>
+                    <div class="form-group"><label>Rubro General</label><input type="text" id="liqRubro" readonly></div>
+                    <div class="form-group"><label>Fuente de Financiamiento</label><input type="text" id="liqFuente" readonly></div>
+                    <div class="form-group"><label>NIT del Organismo</label><input type="text" id="liqNit" readonly></div>
+                </div>
+                <div class="form-grid" style="margin-top: var(--gap);">
+                    <div class="form-group"><label>Nombre del Banco</label><input type="text" id="liqBanco" readonly></div>
+                    <div class="form-group"><label>Número de Cuenta Corriente</label><input type="text" id="liqCuenta" readonly></div>
+                    <div class="form-group"><label>Nombre de la Cuenta</label><input type="text" id="liqNombreCuenta" readonly></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class='bx bx-money-withdraw'></i> Control de Cheques y Fechas (Auto-calculado)</h2>
+                <div class="form-grid">
+                    <div class="form-group"><label>Fecha(s) de Ingreso de Fondos</label><input type="text" id="liqFechaIngreso" readonly></div>
+                    <div class="form-group"><label>Fecha del Último Cheque</label><input type="text" id="liqFechaUltimo" readonly></div>
+                    <div class="form-group"><label>Cheque Inicial N°</label><input type="text" id="liqChequeIni" readonly></div>
+                    <div class="form-group"><label>Cheque Final N°</label><input type="text" id="liqChequeFin" readonly></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class='bx bx-line-chart'></i> Informe de Rendición de Cuentas</h2>
+                <div class="form-grid">
+                    <div class="form-group"><label>Población: Niños</label><input type="number" id="pobNinos" readonly></div>
+                    <div class="form-group"><label>Población: Niñas</label><input type="number" id="pobNinas" readonly></div>
+                    <div class="form-group"><label>Maestros</label><input type="number" id="pobMaestros" readonly></div>
+                    <div class="form-group"><label>Familias</label><input type="number" id="pobFamilias" readonly></div>
+                </div>
+                <div class="form-group" style="margin-top: var(--gap);">
+                    <label>Beneficios Alcanzados</label>
+                    <textarea id="liqBeneficios" rows="3" class="req-field" placeholder="Ej: Se adquirieron materiales didácticos que enriquecen el proceso..."></textarea>
+                </div>
+                <div class="form-group" style="margin-top: var(--gap);">
+                    <label>Cumplimiento de Objetivos y Metas</label>
+                    <textarea id="liqMetas" rows="3" class="req-field" placeholder="Ej: Se logró el objetivo de mejorar el ambiente de aprendizaje..."></textarea>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button type="button" class="btn-action-test" onclick="ejecutarLiquidacion(true)"><i class='bx bx-test-tube'></i> Generar Prueba</button>
+                <button type="button" class="btn-primary" style="width: auto; padding: 0.8rem 1.5rem;" onclick="ejecutarLiquidacion(false)"><i class='bx bxs-file-pdf'></i> Validar y Generar Oficial</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" id="modalConfigInicial" style="z-index: 4000;">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); margin: 0;"><i class='bx bx-cog'></i> Configuración Inicial Requerida</h2>
+                <p style="font-size: 0.85rem; color: var(--accent); margin-top: 0.2rem;">Para generar la liquidación por primera vez, necesitamos registrar los datos bancarios del centro escolar.</p>
+            </div>
+            
+            <div class="modal-body">
+                <form id="formConfigInicial">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Rubro General</label><input type="text" id="confRubro" value="FUNCIONAMIENTO BÁSICA" required></div>
+                        <div class="form-group"><label>Fuente de Financiamiento</label><input type="text" id="confFuente" value="GOES- MINEDUCYT" required></div>
+                    </div>
+                    <div class="form-grid" style="margin-top: 0.8rem;">
+                        <div class="form-group"><label>NIT del Organismo</label><input type="text" id="confNit" placeholder="0000-000000-000-0" required></div>
+                        <div class="form-group"><label>Nombre del Banco</label><input type="text" id="confBanco" placeholder="Ej: BANCO CUSCATLAN" required></div>
+                    </div>
+                    <div class="form-grid" style="margin-top: 0.8rem;">
+                        <div class="form-group"><label>Número de Cuenta Corriente</label><input type="text" id="confCuenta" required></div>
+                    </div>
+                    <div class="form-group" style="margin-top: 0.8rem;">
+                        <label>Nombre de la Cuenta Corriente</label>
+                        <input type="text" id="confNombreCuenta" placeholder="Ej: CDE CENTRO ESCOLAR..." required>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-primary" style="width: auto; padding: 0.6rem 1.5rem;" onclick="guardarConfigInicial()"><i class='bx bx-save'></i> Guardar e Iniciar Automatización</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalRestaurar">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin: 0;"><i class='bx bx-history'></i> Historial de Liquidaciones</h2>
+                <p style="font-size: 0.8rem; color: var(--accent); margin-top: 0.2rem;">Selecciona una liquidación guardada para cargarla.</p>
+            </div>
+            
+            <div class="modal-body">
+                <div class="table-wrapper">
+                    <table class="table-compras">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Año</th>
+                                <th style="width: 40%;">Rubro</th>
+                                <th style="width: 25%; text-align: right;">Gasto Total</th>
+                                <th style="width: 15%; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaHistorial"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border); display: block;" onclick="cerrarModalRestaurar()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, doc, getDoc, setDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const LOGO_BASE64 = ""; 
+
+        let ceData = {}; let cdeData = { miembros: [] };
+        let totalIngresos = 0; let totalEgresos = 0; let saldoFinal = 0;
+        let rubrosTotales = { "1.1": 0, "1.2": 0, "1.3": 0, "1.5": 0, "1.6": 0, "2.1": 0, "2.2": 0 };
+        let listaCheques = [];
+        window.listaIngresosGlobal = [];
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : type === 'error' ? 'bx-error-circle' : 'bx-info-circle'}'></i> ${msg}`;
+            container.appendChild(toast); setTimeout(() => toast.remove(), 5000);
+        };
+
+        const formatearMoneda = (num) => parseFloat(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatDateShortStr = (str) => { if(!str) return "---"; const [y,m,d] = str.split('-'); return `${d}/${m}/${y}`; };
+        
+        const fR = (val) => val ? `$${formatearMoneda(val)}` : '---';
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            await window.cargarDatosAutomaticos();
+        });
+
+        window.cargarDatosAutomaticos = async () => {
+            const box = document.getElementById('statusCalculo'); 
+            box.style.display = 'block';
+            box.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Extrayendo datos del sistema...`;
+            
+            try {
+                const yearStr = document.getElementById('liqAno').value;
+
+                // --- A) GESTIÓN INSTITUCIONAL ---
+                const infoRef = doc(db, "centroescolar", "info");
+                const snapCE = await getDoc(infoRef); 
+                
+                if (snapCE.exists() && snapCE.data().liqNit && snapCE.data().liqBanco) {
+                    ceData = snapCE.data();
+                    document.getElementById('liqRubro').value = ceData.liqRubro || "FUNCIONAMIENTO BÁSICA";
+                    document.getElementById('liqFuente').value = ceData.liqFuente || "GOES- MINEDUCYT";
+                    document.getElementById('liqNit').value = ceData.liqNit;
+                    document.getElementById('liqBanco').value = ceData.liqBanco;
+                    document.getElementById('liqCuenta').value = ceData.liqCuenta;
+                    document.getElementById('liqNombreCuenta').value = ceData.liqNombreCuenta;
+                } else {
+                    document.getElementById('modalConfigInicial').classList.add('active');
+                    box.innerHTML = `<i class='bx bx-error'></i> Requiere configuración inicial.`;
+                    box.style.background = '#fffbeb'; box.style.color = '#b45309'; box.style.borderColor = '#fde68a';
+                    return; 
+                }
+
+                const snapCDE = await getDoc(doc(db, "centroescolar", "cde")); 
+                if (snapCDE.exists()) cdeData = snapCDE.data();
+
+                // --- B) POBLACIÓN ---
+                const snapUsers = await getDocs(collection(db, "users"));
+                let contNinos = 0, contNinas = 0; let responsablesSet = new Set();
+                snapUsers.docs.forEach(docSnap => {
+                    const d = docSnap.data();
+                    if(!d.archivado) {
+                        if(d.sexo === 'Masculino') contNinos++;
+                        if(d.sexo === 'Femenino') contNinas++;
+                        if(d.responsable) responsablesSet.add(d.responsable.toUpperCase().trim());
+                    }
+                });
+                document.getElementById('pobNinos').value = contNinos;
+                document.getElementById('pobNinas').value = contNinas;
+                document.getElementById('pobFamilias').value = responsablesSet.size;
+
+                const snapDocentes = await getDocs(collection(db, "docentes"));
+                document.getElementById('pobMaestros').value = snapDocentes.size;
+
+                // --- C) MOVIMIENTOS ---
+                const snapMovs = await getDocs(query(collection(db, "fondos_movimientos"), where("fondoId", "==", "presupuesto_anual")));
+                let movs = snapMovs.docs.map(d => ({ id: d.id, ...d.data() }));
+                movs = movs.filter(m => m.fecha && m.fecha.startsWith(yearStr));
+                movs.sort((a,b) => (a.fecha > b.fecha) ? 1 : -1);
+
+                const snapCompras = await getDocs(collection(db, "compras_guardadas"));
+                const comprasDic = {}; snapCompras.docs.forEach(d => { comprasDic[d.id] = d.data(); });
+
+                totalIngresos = 0; totalEgresos = 0; saldoFinal = 0;
+                rubrosTotales = { "1.1": 0, "1.2": 0, "1.3": 0, "1.5": 0, "1.6": 0, "2.1": 0, "2.2": 0 };
+                listaCheques = [];
+                window.listaIngresosGlobal = [];
+                let ingresosFechas = [];
+                let gastosArr = [];
+
+                movs.forEach(m => {
+                    const mnto = parseFloat(m.monto) || 0;
+                    if(m.tipo === 'ingreso') { 
+                        totalIngresos += mnto; 
+                        ingresosFechas.push(formatDateShortStr(m.fecha));
+                        window.listaIngresosGlobal.push({ monto: mnto, fecha: m.fecha });
+                    } 
+                    else if (m.tipo === 'gasto') {
+                        totalEgresos += mnto;
+                        gastosArr.push(m);
+                        
+                        let compRow = { cheque: m.num_cheque || "---", fecha: m.fecha, concepto: m.descripcion, factura: "---", t11: 0, t12: 0, t13: 0, t15: 0, t16: 0, t21: 0, t22: 0, total: mnto };
+                        if(m.compraVinculadaId && comprasDic[m.compraVinculadaId]) {
+                            const compra = comprasDic[m.compraVinculadaId];
+                            compRow.factura = "S/N"; 
+                            compra.items.forEach(it => {
+                                const trub = it.rubro || ""; let rKey = "1.2";
+                                if(trub.includes("Material educativo")) rKey = "1.1";
+                                else if(trub.includes("Alimentación")) rKey = "1.3";
+                                else if(trub.includes("Remuneraciones")) rKey = "1.5";
+                                else if(trub.includes("Graduación")) rKey = "1.6";
+                                else if(trub.includes("equipo")) rKey = "2.1";
+                                else if(trub.includes("mobiliario")) rKey = "2.2";
+                                rubrosTotales[rKey] += (it.total || 0); compRow[`t${rKey.replace('.','')}`] += (it.total || 0);
+                            });
+                        } else { rubrosTotales["1.2"] += mnto; compRow.t12 = mnto; }
+                        listaCheques.push(compRow);
+                    }
+                });
+
+                saldoFinal = totalIngresos - totalEgresos;
+
+                const fechasUnicas = [...new Set(ingresosFechas)].join(', ');
+                document.getElementById('liqFechaIngreso').value = fechasUnicas || "---";
+
+                if(gastosArr.length > 0) {
+                    document.getElementById('liqChequeIni').value = gastosArr[0].num_cheque || '---';
+                    document.getElementById('liqChequeFin').value = gastosArr[gastosArr.length - 1].num_cheque || '---';
+                    document.getElementById('liqFechaUltimo').value = gastosArr[gastosArr.length - 1].fecha || '';
+                } else {
+                    document.getElementById('liqChequeIni').value = '---';
+                    document.getElementById('liqChequeFin').value = '---';
+                    document.getElementById('liqFechaUltimo').value = '';
+                }
+
+                box.innerHTML = `<i class='bx bx-check-circle'></i> Consolidado del ${yearStr} automático listo. Ingresos: <b>$${formatearMoneda(totalIngresos)}</b> | Egresos: <b>$${formatearMoneda(totalEgresos)}</b>`;
+                box.style.background = '#f0fdf4'; box.style.color = '#166534'; box.style.borderColor = '#bbf7d0';
+            } catch(e) { 
+                console.error(e);
+                box.innerHTML = `<i class='bx bx-error'></i> Error calculando el sistema.`; 
+                box.style.background = '#fef2f2'; box.style.color = '#991b1b'; box.style.borderColor = '#fecaca';
+            }
+        };
+
+        window.guardarConfigInicial = async () => {
+            const rubro = document.getElementById('confRubro').value.trim();
+            const fuente = document.getElementById('confFuente').value.trim();
+            const nit = document.getElementById('confNit').value.trim();
+            const banco = document.getElementById('confBanco').value.trim();
+            const cuenta = document.getElementById('confCuenta').value.trim();
+            const nombre = document.getElementById('confNombreCuenta').value.trim();
+
+            if(!nit || !banco || !cuenta || !nombre) { showToast("Completa los datos requeridos.", "error"); return; }
+
+            try {
+                await setDoc(doc(db, "centroescolar", "info"), {
+                    liqRubro: rubro.toUpperCase(), liqFuente: fuente.toUpperCase(),
+                    liqNit: nit, liqBanco: banco.toUpperCase(), liqCuenta: cuenta, liqNombreCuenta: nombre.toUpperCase()
+                }, { merge: true });
+                document.getElementById('modalConfigInicial').classList.remove('active');
+                showToast("Configuración guardada exitosamente.", "success");
+                await window.cargarDatosAutomaticos();
+            } catch (error) { showToast("Error al guardar.", "error"); }
+        };
+
+        window.abrirModalRestaurar = async () => {
+            document.getElementById('modalRestaurar').classList.add('active');
+            const tbody = document.getElementById('listaHistorial');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;"><i class="bx bx-loader-alt bx-spin"></i> Cargando base de datos...</td></tr>';
+            try {
+                const snap = await getDocs(query(collection(db, "liquidaciones_guardadas"), orderBy("ano", "desc")));
+                if(snap.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay liquidaciones previas guardadas.</td></tr>'; return; }
+                let html = '';
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const jsonStr = encodeURIComponent(JSON.stringify(data));
+                    const totalE = data.totalGastos ? `$${parseFloat(data.totalGastos).toFixed(2)}` : '$0.00';
+                    html += `<tr><td style="font-weight:bold;">${data.ano}</td><td>${data.rubro}</td><td style="text-align:right;">${totalE}</td><td style="text-align:center;"><button class="btn-restore-action" onclick="restaurarLiquidacion('${jsonStr}')"><i class='bx bx-upload'></i> Cargar</button></td></tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (error) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--danger);">Error al cargar historial.</td></tr>'; }
+        };
+
+        window.cerrarModalRestaurar = () => document.getElementById('modalRestaurar').classList.remove('active');
+        window.restaurarLiquidacion = (jsonEncoded) => {
+            const data = JSON.parse(decodeURIComponent(jsonEncoded));
+            document.getElementById('liqAno').value = data.ano || "";
+            document.getElementById('liqBeneficios').value = data.beneficios || "";
+            document.getElementById('liqMetas').value = data.metas || "";
+            cerrarModalRestaurar();
+            showToast(`Liquidación del ${data.ano} cargada.`, "info");
+            window.cargarDatosAutomaticos(); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.ejecutarLiquidacion = async (esPrueba) => {
+            if(!esPrueba) {
+                let isValid = true;
+                document.querySelectorAll('.req-field').forEach(inp => {
+                    if (!inp.value.trim()) { inp.classList.add('input-error'); isValid = false; }
+                    inp.addEventListener('input', () => inp.classList.remove('input-error'), {once:true});
+                });
+                if (!isValid) { showToast("Completa los campos requeridos.", "error"); return; }
+            }
+            try { 
+                showToast("Generando PDF estructurado...", "info"); 
+                await generarPDFLiquidacion(esPrueba); 
+
+                if(!esPrueba) {
+                    const liqData = {
+                        ano: document.getElementById('liqAno').value, rubro: document.getElementById('liqRubro').value, fuente: document.getElementById('liqFuente').value,
+                        nit: document.getElementById('liqNit').value, banco: document.getElementById('liqBanco').value, cuenta: document.getElementById('liqCuenta').value,
+                        nombreCuenta: document.getElementById('liqNombreCuenta').value, fechaIngreso: document.getElementById('liqFechaIngreso').value,
+                        fechaUltimo: document.getElementById('liqFechaUltimo').value, chequeIni: document.getElementById('liqChequeIni').value, chequeFin: document.getElementById('liqChequeFin').value,
+                        pobNinos: document.getElementById('pobNinos').value, pobNinas: document.getElementById('pobNinas').value, pobMaestros: document.getElementById('pobMaestros').value,
+                        pobFamilias: document.getElementById('pobFamilias').value, 
+                        beneficios: document.getElementById('liqBeneficios').value.toUpperCase(),
+                        metas: document.getElementById('liqMetas').value.toUpperCase(),
+                        totalIngresos: totalIngresos, totalGastos: totalEgresos, timestamp: Date.now()
+                    };
+                    await setDoc(doc(collection(db, "liquidaciones_guardadas")), liqData);
+                    showToast("Liquidación Oficial guardada y PDF generado.", "success"); 
+                } else { showToast("PDF de prueba generado correctamente.", "success"); }
+            } catch(e) { console.error("Error PDF:", e); showToast("Ocurrió un error al generar el documento.", "error"); }
+        };
+
+        // --- DIBUJADO DE PDF ---
+        function dibujarCampo(docInstance, label, valor, x, y, endX) {
+            docInstance.text(label, x, y);
+            const textWidth = docInstance.getTextWidth(label);
+            const startX = x + textWidth + 2;
+            docInstance.text(valor || "---", startX + 2, y - 0.5);
+            docInstance.line(startX, y + 1, endX, y + 1);
+        }
+
+        function agregarEncabezado(docInstance, dep) {
+            const w = docInstance.internal.pageSize.width;
+            if(LOGO_BASE64) { try { docInstance.addImage(LOGO_BASE64, "PNG", 15, 8, 18, 18); } catch(e){} }
+            docInstance.setFont("times", "bold"); docInstance.setFontSize(10);
+            docInstance.text("GOBIERNO DE EL SALVADOR", 40, 14);
+            docInstance.text("MINISTERIO DE EDUCACIÓN, CIENCIA Y TECNOLOGÍA", 40, 19);
+            docInstance.text(`Dirección Departamental de Educación ${dep}`, 40, 24);
+        }
+
+        async function generarPDFLiquidacion(esPrueba) {
+            const { jsPDF } = window.jspdf;
+            const docPDF = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
+            
+            const fAno = document.getElementById('liqAno').value;
+            const fRubro = document.getElementById('liqRubro').value.toUpperCase();
+            const fFuente = document.getElementById('liqFuente').value.toUpperCase();
+            const fNit = document.getElementById('liqNit').value;
+            const fBanco = document.getElementById('liqBanco').value.toUpperCase();
+            const fCuenta = document.getElementById('liqCuenta').value;
+            const fNomCuenta = document.getElementById('liqNombreCuenta').value.toUpperCase();
+            
+            const fIngresoText = document.getElementById('liqFechaIngreso').value || "---";
+            const fUltimo = formatDateShortStr(document.getElementById('liqFechaUltimo').value);
+            const fChIni = document.getElementById('liqChequeIni').value || "---";
+            const fChFin = document.getElementById('liqChequeFin').value || "---";
+            
+            const pNinos = document.getElementById('pobNinos').value || "0";
+            const pNinas = document.getElementById('pobNinas').value || "0";
+            const pTotal = parseInt(pNinos) + parseInt(pNinas);
+            const pMaestros = document.getElementById('pobMaestros').value || "0";
+            const pFamilias = document.getElementById('pobFamilias').value || "0";
+            const fBeneficios = document.getElementById('liqBeneficios').value.toUpperCase() || "---";
+            const fMetas = document.getElementById('liqMetas').value.toUpperCase() || "---";
+
+            const nomCE = ceData.nombre || "CENTRO ESCOLAR CANTÓN LOS PRADOS";
+            const codCE = ceData.codigo || "10856";
+            const dirCE = ceData.direccion || "Costado Este de iglesia catolica, Cantón Los Prados";
+            const depCE = ceData.departamento || "Chalatenango";
+            const munCE = ceData.municipio || "La Laguna, Chalatenango Sur";
+            const canCE = "Los Prados";
+
+            const getMember = (role) => {
+                if(!cdeData || !cdeData.miembros || !Array.isArray(cdeData.miembros)) return "___________________________";
+                const query = role.toLowerCase();
+                const m = cdeData.miembros.find(x => {
+                    const c1 = x.cargo ? x.cargo.toLowerCase() : "";
+                    const c2 = x.cargo2 ? x.cargo2.toLowerCase() : "";
+                    return (c1.includes(query) && !c1.includes("suplente")) || (c2.includes(query) && !c2.includes("suplente"));
+                });
+                return m ? m.nombre : "___________________________";
+            };
+            
+            const fPresi = getMember("presidente");
+            const fTeso = getMember("tesorero");
+            const fDocen = getMember("docente");
+
+            const fontName = "times";
+            const mLeft = 15;
+            const center = 105;
+            
+            // ==========================================
+            // PÁGINA 1: AUTOLIQUIDACIÓN (Parte 1)
+            // ==========================================
+            agregarEncabezado(docPDF, depCE);
+            
+            let y = 35;
+            docPDF.setFont(fontName, "bold"); docPDF.setFontSize(11);
+            docPDF.text("FORMULARIO DE AUTOLIQUIDACIÓN DE FONDOS TRANSFERIDOS POR EL MINED", center, y, {align: "center"}); y+=10;
+            
+            docPDF.setFontSize(10);
+            docPDF.text("PRESUPUESTO ESCOLAR:", mLeft, y); y+=6;
+            docPDF.setFont(fontName, "normal");
+            dibujarCampo(docPDF, "Rubro:", fRubro, mLeft, y, 120);
+            dibujarCampo(docPDF, "Año", fAno, 160, y, 190); y+=6;
+            dibujarCampo(docPDF, "FUENTE DE FINANCIAMIENTO :", fFuente, mLeft, y, 190); y+=10;
+            
+            docPDF.setFont(fontName, "bold"); docPDF.text("1. DATOS DEL ORGANISMO DE ADMINISTRACIÓN ESCOLAR:", mLeft, y); docPDF.setFont(fontName, "normal"); y+=8;
+            dibujarCampo(docPDF, "1.1 NOMBRE DEL CENTRO EDUCATIVO:", nomCE, mLeft, y, 190); y+=6;
+            dibujarCampo(docPDF, "1.2 CODIGO:", codCE, mLeft, y, 110); y+=6;
+            dibujarCampo(docPDF, "1.3 UBICACIÓN:", dirCE, mLeft, y, 190); y+=6;
+            dibujarCampo(docPDF, "1.4 NIT DEL ORGANISMO:", fNit, mLeft, y, 110); y+=10;
+
+            docPDF.setFont(fontName, "bold"); docPDF.text("2.     DIRECCIÓN:", mLeft, y); docPDF.setFont(fontName, "normal"); y+=8;
+            dibujarCampo(docPDF, "2.1  DEPARTAMENTO:", depCE, mLeft, y, 150); y+=6;
+            dibujarCampo(docPDF, "2.2  MUNICIPIO:", munCE, mLeft, y, 150); y+=6;
+            dibujarCampo(docPDF, "2.3  CANTÓN:", canCE, mLeft, y, 150); y+=6;
+            dibujarCampo(docPDF, "2.4  CASERÍO:", "---", mLeft, y, 150); y+=10;
+
+            docPDF.setFont(fontName, "bold"); docPDF.text("3.    DATOS BANCARIOS", mLeft, y); docPDF.setFont(fontName, "normal"); y+=8;
+            dibujarCampo(docPDF, "3.1  NOMBRE DEL BANCO:", fBanco, mLeft, y, 150); y+=6;
+            dibujarCampo(docPDF, "3.2  CUENTA CORRIENTE No :", fCuenta, mLeft, y, 150); y+=6;
+            dibujarCampo(docPDF, "3.3  NOMBRE DE LA CUENTA CORRIENTE:", fNomCuenta, mLeft, y, 190); y+=12;
+
+            docPDF.setFont(fontName, "bold"); docPDF.text("4.     NOMBRES Y FIRMAS AUTORIZADAS EN LA CUENTA CORRIENTE", mLeft, y); docPDF.setFont(fontName, "normal"); y+=15;
+            
+            docPDF.text(fPresi, mLeft, y); docPDF.text("F. ___________________________", 130, y); y+=5;
+            docPDF.text("PRESIDENTE", mLeft, y); y+=10;
+            docPDF.text(fTeso, mLeft, y); docPDF.text("F. ___________________________", 130, y); y+=5;
+            docPDF.text("TESORERO", mLeft, y); y+=10;
+            docPDF.text(fDocen, mLeft, y); docPDF.text("F. ___________________________", 130, y); y+=5;
+            docPDF.text("CONSEJAL DOCENTE", mLeft, y); docPDF.text("Sello", 100, y);
+
+            // ====== SALTO A PÁGINA 2 ======
+            docPDF.addPage();
+            agregarEncabezado(docPDF, depCE);
+            
+            y = 35;
+            docPDF.setFont(fontName, "bold"); docPDF.setFontSize(10);
+            docPDF.text("CHEQUES UTILIZADOS A LA FECHA DE LA ELABORACIÓN DE ESTA LIQUIDACIÓN:  DEL", mLeft, y);
+            docPDF.setFont(fontName, "normal");
+            docPDF.text(fChIni, 164, y); docPDF.line(162, y+1, 175, y+1);
+            docPDF.text("AL N°", 178, y); docPDF.text(fChFin, 189, y); docPDF.line(187, y+1, 200, y+1); y+=8;
+
+            dibujarCampo(docPDF, "FECHA DEL ÚLTIMO CHEQUE UTILIZADO EN ESTA LIQUIDACIÓN:", fUltimo, mLeft, y, 190); y+=8;
+            dibujarCampo(docPDF, "FONDOS TRANSFERIDOS, RECIBIDOS, INVERTIDOS Y LIQUIDADOS $", formatearMoneda(totalIngresos), mLeft, y, 190); y+=8;
+            dibujarCampo(docPDF, "CANTIDAD EN LETRAS:", "DÓLARES EXACTOS SEGÚN DESGLOSE EN TABLA", mLeft, y, 190); y+=12;
+
+            const totalR1 = rubrosTotales["1.1"]+rubrosTotales["1.2"]+rubrosTotales["1.3"]+rubrosTotales["1.5"]+rubrosTotales["1.6"];
+            const totalR2 = rubrosTotales["2.1"]+rubrosTotales["2.2"];
+
+            const t1Head = [
+                [
+                    {content: 'N° DE CUENTA', styles: {halign: 'center'}}, 
+                    {content: 'CONCEPTO', colSpan: 2, styles: {halign: 'center'}}, 
+                    {content: 'VALOR PARCIAL', styles: {halign: 'center'}}, 
+                    {content: 'VALOR TOTAL', styles: {halign: 'center'}}
+                ]
+            ];
+            
+            const t1Body = [];
+            t1Body.push([{content: '', styles: {lineWidth: 0}}, {content: 'MONTO RECIBIDO Y FECHA:', colSpan: 2, styles: {fontStyle: 'bold'}}, '', '']);
+            
+            if(window.listaIngresosGlobal && window.listaIngresosGlobal.length > 0) {
+                window.listaIngresosGlobal.forEach(ing => {
+                    t1Body.push([ '', `$${formatearMoneda(ing.monto)}`, `FECHA: ${formatDateShortStr(ing.fecha)}`, `$${formatearMoneda(ing.monto)}`, `$${formatearMoneda(ing.monto)}` ]);
+                });
+            } else { t1Body.push([ '', '---', 'FECHA: ---', '---', '---' ]); }
+
+            t1Body.push(['', {content: `TOTAL: $${formatearMoneda(totalIngresos)}`, colSpan: 2, styles: {fontStyle: 'bold'}}, {content: `$${formatearMoneda(totalIngresos)}`, styles: {fontStyle: 'bold'}}, {content: `$${formatearMoneda(totalIngresos)}`, styles: {fontStyle: 'bold'}}]);
+            t1Body.push([{content: 'MENOS RUBROS DE OPERACIÓN:', colSpan: 5, styles: {fontStyle: 'bold'}}]);
+            t1Body.push([{content: 'TOTAL MONTO INVERTIDO:', colSpan: 5, styles: {fontStyle: 'bold'}}]);
+            t1Body.push([{content: 'RUBRO Nº 1-GASTOS DE OPERACIÓN.', colSpan: 5, styles: {fontStyle: 'bold'}}]);
+            
+            t1Body.push(['1.1', {content: 'MATERIAL EDUCATIVO.', colSpan: 2}, '---', fR(rubrosTotales["1.1"])]);
+            t1Body.push(['1.2', {content: 'OPERACIÓN LOGÍSTICA DEL CENTRO.', colSpan: 2}, '---', fR(rubrosTotales["1.2"])]);
+            t1Body.push(['1.3', {content: 'ALIMENTACIÓN ESCOLAR.', colSpan: 2}, '---', fR(rubrosTotales["1.3"])]);
+            t1Body.push(['1.5', {content: 'REMUNERACIONES.', colSpan: 2}, '---', fR(rubrosTotales["1.5"])]);
+            t1Body.push(['1.6', {content: 'GASTOS DE GRADUACIÓN.', colSpan: 2}, '---', fR(rubrosTotales["1.6"])]);
+            t1Body.push(['', {content: 'TOTAL INVERTIDO EN RUBRO Nº 1', colSpan: 2, styles: {halign: 'right', fontStyle: 'bold'}}, '---', {content: fR(totalR1), styles: {fontStyle: 'bold'}}]);
+            
+            t1Body.push([{content: 'RUBRO Nº 2- INVERSIONES.', colSpan: 5, styles: {fontStyle: 'bold'}}]);
+            t1Body.push(['2.1', {content: 'ADQUISICIÓN DE EQUIPO.', colSpan: 2}, '---', fR(rubrosTotales["2.1"])]);
+            t1Body.push(['2.2', {content: 'ADQUISICIÓN DE MOBILIARIO', colSpan: 2}, '---', fR(rubrosTotales["2.2"])]);
+            t1Body.push(['', {content: 'TOTAL INVERTIDO EN RUBRO N°2', colSpan: 2, styles: {halign: 'right', fontStyle: 'bold'}}, '---', {content: fR(totalR2), styles: {fontStyle: 'bold'}}]);
+            
+            t1Body.push(['', {content: 'TOTAL INVERTIDO EN TODOS LOS RUBROS.', colSpan: 2, styles: {halign: 'right', fontStyle: 'bold'}}, '---', {content: fR(totalEgresos), styles: {fontStyle: 'bold'}}]);
+            t1Body.push(['', {content: 'SALDO: MONTO RECIBIDO MENOS MONTO INVERTIDO', colSpan: 2, styles: {halign: 'right', fontStyle: 'bold'}}, '---', {content: fR(saldoFinal), styles: {fontStyle: 'bold'}}]);
+
+            docPDF.autoTable({
+                startY: y, head: t1Head, body: t1Body, theme: 'plain',
+                styles: { font: fontName, fontSize: 8, textColor: 0, lineColor: 0, lineWidth: 0.2, cellPadding: {top: 1.5, bottom: 1.5, left: 2, right: 2} },
+                headStyles: { fontStyle: 'bold', fillColor: [255,255,255] }, 
+                columnStyles: { 0: {cellWidth: 25, halign: 'center'}, 1: {cellWidth: 40}, 2: {cellWidth: 60}, 3: {cellWidth: 30, halign: 'right'}, 4: {cellWidth: 30, halign: 'right'} }
+            });
+
+            y = docPDF.lastAutoTable.finalY + 15;
+            
+            docPDF.setFontSize(10); docPDF.setFont(fontName, "bold");
+            docPDF.text("NOMBRE Y FIRMAS AUTORIZADAS DE LOS MIEMBROS DEL ORGANISMO DE ADMINISTRACIÓN ESCOLAR LOCAL EN LA CUENTA CORRIENTE", center, y, {align: 'center', maxWidth: 170}); y+=15;
+            
+            docPDF.setFont("times", "normal");
+            docPDF.text(fPresi, mLeft, y); docPDF.text("F. ___________________________", 130, y); y+=5; docPDF.text("PRESIDENTE", mLeft, y); y+=12;
+            docPDF.text(fDocen, mLeft, y); docPDF.text("F. ___________________________", 130, y); y+=5; docPDF.text("CONSEJAL DOCENTE", mLeft, y); y+=12;
+            docPDF.text(fTeso, mLeft, y); docPDF.text("F. ___________________________", 130, y); y+=5; docPDF.text("TESORERO", mLeft, y); docPDF.text("Sello", 100, y);
+
+            // ====== SALTO PÁGINA 3 (LANDSCAPE) ======
+            docPDF.addPage("letter", "l");
+            agregarEncabezado(docPDF, depCE);
+
+            const cL = docPDF.internal.pageSize.width / 2;
+            docPDF.setFont("times", "bold"); docPDF.setFontSize(11);
+            docPDF.text("DIRECCIÓN DEPARTAMENTAL DE EDUCACIÓN DE CHALATENANGO", cL, 35, {align: "center"});
+            docPDF.text("CUADRO RESUMEN DE GASTOS", cL, 41, {align: "center"});
+            docPDF.setFont("times", "normal"); docPDF.setFontSize(10);
+            dibujarCampo(docPDF, "RUBRO:", fRubro, mLeft, 50, 130);
+            dibujarCampo(docPDF, "AÑO:", fAno, 200, 50, 230);
+
+            const t2Head = [
+                [
+                    {content: 'NO. CHEQUE', rowSpan: 4, styles: {valign: 'middle', halign: 'center'}},
+                    {content: 'FECHA', rowSpan: 4, styles: {valign: 'middle', halign: 'center'}},
+                    {content: 'CONCEPTO', rowSpan: 4, styles: {valign: 'middle', halign: 'center'}},
+                    {content: 'No. Factura\no Recibo', rowSpan: 4, styles: {valign: 'middle', halign: 'center'}},
+                    {content: 'COMPONENTES DE OPERACIÓN Y FUNCIONAMIENTOS, PROYECTOS Y OTROS.', colSpan: 7, styles: {halign: 'center'}},
+                    {content: 'TOTAL', rowSpan: 4, styles: {valign: 'middle', halign: 'center'}}
+                ],
+                [
+                    {content: 'No1       GASTOS CORRIENTES', colSpan: 5, styles: {halign: 'center'}},
+                    {content: 'No2 INVERSIONES', colSpan: 2, styles: {halign: 'center'}}
+                ],
+                [ '1.1', '1.2', '1.3', '1.5', '1.6', '2.1', '2.2' ],
+                [ 'Material\nEducativo', 'Operación\nLogística', 'Alimentación\nEscolar', 'Remunera-\nciones', 'Gastos de\nGraduación', 'Adq. de\nequipo', 'Adq. de\nMobiliario' ]
+            ];
+
+            let t2Body = listaCheques.map(c => [
+                c.cheque || '---', formatDateShortStr(c.fecha), c.concepto, c.factura || '---',
+                c.t11?`$${formatearMoneda(c.t11)}`:'---', c.t12?`$${formatearMoneda(c.t12)}`:'---', 
+                c.t13?`$${formatearMoneda(c.t13)}`:'---', c.t15?`$${formatearMoneda(c.t15)}`:'---', 
+                c.t16?`$${formatearMoneda(c.t16)}`:'---', c.t21?`$${formatearMoneda(c.t21)}`:'---', 
+                c.t22?`$${formatearMoneda(c.t22)}`:'---', `$${formatearMoneda(c.total)}`
+            ]);
+            while(t2Body.length < 12) t2Body.push(['---','---','---','---','---','---','---','---','---','---','---','---']);
+            
+            t2Body.push([{content: 'TRANSFERENCIA MINEDUCYT TOTAL POR COMPONENTE', colSpan: 12}]);
+            t2Body.push([ {content: 'TOTAL POR COMPONENTE', colSpan: 4, styles: {fontStyle: 'bold', halign: 'right'}}, 
+                fR(rubrosTotales["1.1"]), fR(rubrosTotales["1.2"]), fR(rubrosTotales["1.3"]),
+                fR(rubrosTotales["1.5"]), fR(rubrosTotales["1.6"]), fR(rubrosTotales["2.1"]),
+                fR(rubrosTotales["2.2"]), fR(totalEgresos) ]);
+            t2Body.push([{content: 'REINTEGRO', colSpan: 11, styles: {halign: 'right'}}, '---']);
+
+            docPDF.autoTable({
+                startY: 55, head: t2Head, body: t2Body, theme: 'grid',
+                styles: { font: fontName, fontSize: 7, textColor: 0, lineColor: [0,0,0], lineWidth: 0.2, cellPadding: 1.5, halign: 'center', valign: 'middle' },
+                headStyles: { fontStyle: 'bold', fillColor: [255,255,255] },
+                columnStyles: { 2: {halign: 'left', cellWidth: 45} }
+            });
+
+            docPDF.setFontSize(10);
+            docPDF.text("Sello", 30, docPDF.lastAutoTable.finalY + 15);
+
+            // ====== SALTO PÁGINA 4 (DDE Y JURAMENTO) ======
+            docPDF.addPage("letter", "p");
+            agregarEncabezado(docPDF, depCE);
+            y = 40;
+
+            docPDF.setFont(fontName, "bold"); docPDF.setFontSize(11);
+            docPDF.text("5. PARA USOS DE LA DIRECCIÓN DEPARTAMENTAL DE EDUCACIÓN:", mLeft, y); docPDF.setFont(fontName, "normal"); y+=10;
+            dibujarCampo(docPDF, "REEMBOLSO            $", "", mLeft, y, 70); dibujarCampo(docPDF, "N0.", "", 80, y, 120); y+=10;
+            dibujarCampo(docPDF, "DE CHEQUE", "", mLeft, y, 70); dibujarCampo(docPDF, "FECHA", "", 80, y, 120); y+=10;
+            dibujarCampo(docPDF, "REEMBOLSO            $", "", mLeft, y, 70); dibujarCampo(docPDF, "N0.", "", 80, y, 120); y+=10;
+            dibujarCampo(docPDF, "DE CHEQUE", "", mLeft, y, 70); dibujarCampo(docPDF, "FECHA", "", 80, y, 120); y+=15;
+
+            docPDF.autoTable({
+                startY: y, margin: {left: mLeft}, tableWidth: 100, theme: 'grid',
+                styles: { font: fontName, fontSize: 9, textColor: 0, lineColor: [0,0,0], lineWidth: 0.2 },
+                headStyles: { fontStyle: 'bold', halign: 'center', fillColor: [255,255,255] },
+                head: [['DESCRIPCIÓN DEL REEMBOLSO', 'VALOR ($)']],
+                body: [['---','---'], ['---','---'], ['---','---'], ['---','---']]
+            });
+            
+            y = docPDF.lastAutoTable.finalY + 15;
+            
+            docPDF.setFont("times", "bold"); docPDF.text("OBSERVACIONES:", mLeft, y); docPDF.line(55, y, 190, y); y+=10;
+            docPDF.line(mLeft, y, 190, y); y+=10; docPDF.line(mLeft, y, 190, y); y+=20;
+
+            docPDF.text("DECLARAMOS BAJO JURAMENTO QUE LOS DATOS EN LA PRESENTE LIQUIDACIÓN SON CIFRAS REALES, POR LO QUE ASUMIMOS LA RESPONSABILIDAD CORRESPONDIENTE.", mLeft, y, {maxWidth: 180}); y+=15;
+            docPDF.text(`RESPONSABLE: ${fPresi}`, mLeft, y); docPDF.text("F: ___________________________", 130, y); y+=8;
+            docPDF.text("PRESIDENTE DEL ORGANISMO", mLeft, y); docPDF.text("SELLO", 100, y); y+=25;
+
+            docPDF.text("6.     RECEPCIÓN DE FORMULARIO DE AUTOLIQUIDACIÓN", mLeft, y); y+=10;
+            docPDF.setFont("times", "normal");
+            dibujarCampo(docPDF, "RUBRO DE LIQUIDADO:", fRubro, mLeft, y, 120);
+            dibujarCampo(docPDF, "AÑO:", fAno, 125, y, 145);
+            dibujarCampo(docPDF, "MONTO $", formatearMoneda(totalEgresos), 150, y, 190); y+=15;
+            
+            dibujarCampo(docPDF, "RECIBIDA POR:", "", mLeft, y, 120); docPDF.text("SELLO DDE", 150, y); y+=8;
+            docPDF.text("NOMBRE Y FIRMA DEL TECNICO DE LA DDE", 30, y); y+=15;
+            dibujarCampo(docPDF, "FECHA DE LIQUIDACIÓN:", "", mLeft, y, 120);
+
+            // ====== SALTO PÁGINA 5 (RENDICIÓN) ======
+            docPDF.addPage("letter", "p");
+            agregarEncabezado(docPDF, depCE);
+
+            docPDF.setFont("times", "bold"); docPDF.setFontSize(12);
+            docPDF.text("INFORME DE RENDICIÓN DE CUENTAS", center, 40, {align: "center"});
+            docPDF.setFont("times", "normal"); docPDF.setFontSize(11);
+            
+            let pY = 50;
+            docPDF.text(`CENTRO ESCOLAR:   ${nomCE}`, mLeft, pY); pY+=8;
+            docPDF.text(`MUNICIPIO:  ${munCE}`, mLeft, pY); docPDF.text(`CÓDIGO:  ${codCE}`, 140, pY); pY+=8;
+            docPDF.text(`DEPARTAMENTO: ${depCE}`, mLeft, pY); pY+=15;
+
+            docPDF.setFont("times", "bold"); docPDF.text("DATOS GENERALES :", mLeft, pY); docPDF.setFont("times", "normal"); pY+=8;
+            dibujarCampo(docPDF, "Monto Recibido $", formatearMoneda(totalIngresos), mLeft, pY, 70); pY+=8;
+            dibujarCampo(docPDF, "Nombre del Banco", fBanco, mLeft, pY, 70); pY+=8;
+            dibujarCampo(docPDF, "Número de la Cuenta:", fCuenta, mLeft, pY, 80); pY+=15;
+
+            docPDF.setFont("times", "bold"); docPDF.text("BENEFICIOS  ALCANZADOS", mLeft, pY); docPDF.setFont("times", "normal"); pY+=8;
+            const splitBen = docPDF.splitTextToSize(fBeneficios || "---", 180);
+            for(let i=0; i<3; i++) { docPDF.text(splitBen[i] || "", mLeft, pY - 1); docPDF.line(mLeft, pY, 195, pY); pY += 8; }
+            pY+=5;
+
+            docPDF.setFont("times", "bold"); docPDF.text("CUMPLIMIENTO DE OBJETIVOS Y METAS", mLeft, pY); docPDF.setFont("times", "normal"); pY+=8;
+            const splitMetas = docPDF.splitTextToSize(fMetas || "---", 180);
+            for(let i=0; i<3; i++) { docPDF.text(splitMetas[i] || "", mLeft, pY - 1); docPDF.line(mLeft, pY, 195, pY); pY += 8; }
+            pY+=5;
+
+            docPDF.setFont("times", "bold"); docPDF.text("POBLACION BENEFICIADA", mLeft, pY); docPDF.setFont("times", "normal"); pY+=8;
+            dibujarCampo(docPDF, "NIÑOS:", pNinos, mLeft, pY, 40); pY+=8;
+            dibujarCampo(docPDF, "NIÑAS:", pNinas, mLeft, pY, 40); pY+=8;
+            dibujarCampo(docPDF, "TOTAL:", pTotal.toString(), mLeft, pY, 40); pY+=8;
+            dibujarCampo(docPDF, "MAESTROS:", pMaestros, mLeft, pY, 50); dibujarCampo(docPDF, "FAMILIAS:", pFamilias, 100, pY, 140); pY+=25;
+
+            const tFinal = `Y no habiendo más que hacer constar firmamos la presente Acta de Rendición de Cuentas a los ______ días del mes de ____________________ de ${fAno}`;
+            const sFinal = docPDF.splitTextToSize(tFinal, 180);
+            docPDF.text(sFinal, mLeft, pY); pY+=25;
+
+            docPDF.text("F. _______________________________", 20, pY); docPDF.text("F. ____________________________", 120, pY); pY+=6;
+            docPDF.text(`Nombre: ${fPresi}`, 20, pY); docPDF.text(`Nombre: ${fTeso}`, 120, pY); pY+=6;
+            docPDF.text("PRESIDENTE", 20, pY); docPDF.text("TESORERO", 120, pY); pY+=6;
+            docPDF.text("Sello", 20, pY); pY+=25;
+
+            docPDF.text("F. _______________________________", 20, pY); pY+=6;
+            docPDF.text(`Nombre: ${fDocen}`, 20, pY); pY+=6;
+            docPDF.text("CONSEJAL DE MAESTROS", 20, pY);
+
+            const prefijo = esPrueba ? "PRUEBA_" : "OFICIAL_";
+            docPDF.save(`${prefijo}Liquidacion_${fAno}.pdf`);
+        }
+    </script>
+</body>
+</html>

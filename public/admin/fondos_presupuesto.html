@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto Anual - Iconic Edition</title>
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <style>
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTE MÓDULO */
+        body { padding: var(--gap); overflow-y: auto; background: var(--bg-light); }
+        .container { max-width: 1400px; margin: 0 auto; min-height: 95vh; }
+
+        /* HEADER INTERNO */
+        .module-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: var(--gap); 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 1rem; 
+            flex-wrap: wrap; 
+            gap: var(--gap); 
+        }
+        .module-header h1 { 
+            font-size: 1.6rem; 
+            font-weight: 800; 
+            letter-spacing: -1px; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.8rem; 
+            margin: 0;
+            color: var(--primary-dark);
+        }
+        .header-actions { 
+            display: flex; 
+            gap: 0.8rem; 
+            align-items: center; 
+            flex-wrap: wrap;
+        }
+        .btn-header { 
+            background: white; 
+            color: var(--primary-dark); 
+            border: 1px solid var(--border); 
+            padding: 0.6rem 1rem; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            cursor: pointer; 
+        }
+        .btn-header:hover { background: var(--bg-light); border-color: var(--primary-steel); }
+        
+        .btn-back { color: var(--danger); border-color: #fecaca;}
+        .btn-back:hover { background: #fee2e2; }
+        
+        .btn-primary-header { background: var(--info); color: white; border-color: var(--info); }
+        .btn-primary-header:hover { background: #2563eb; color: white; border-color: #2563eb; }
+        
+        .btn-success-header { background: var(--success); color: white; border-color: var(--success); }
+        .btn-success-header:hover { background: #15803d; color: white; border-color: #15803d; }
+
+        /* VISTA DE SALDO */
+        .balance-big { font-size: 3rem; font-weight: 900; color: var(--primary-dark); font-family: monospace !important; margin-top: 0.5rem; }
+        .balance-label { font-size: 0.75rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 0.2rem; display: block; }
+        
+        /* FORMULARIO AGREGAR */
+        .form-add { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; align-items: flex-end; }
+        
+        .btn-add {
+            background: var(--primary-dark); 
+            color: white; 
+            border: none; 
+            padding: 0.75rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 0.5rem; 
+            transition: 0.2s; 
+        }
+        .btn-add:hover { background: var(--primary-steel); }
+
+        /* TABLA DE MOVIMIENTOS Y ESTILOS MONETARIOS */
+        .table-compras { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 800px; }
+        .table-compras th, .table-compras td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .table-compras th { background: #f8fafc; font-weight: 800; color: var(--primary-dark); text-transform: uppercase; font-size: 0.7rem; }
+        
+        .td-ingreso { color: var(--success); font-weight: 800; }
+        .td-egreso { color: var(--danger); font-weight: 800; }
+        .td-saldo { background: #f8fafc; font-weight: 900; font-family: monospace; text-align: right; }
+
+        /* PAGINACIÓN */
+        .pagination { display: flex; justify-content: space-between; align-items: center; background: white; padding: 0.8rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: var(--gap); }
+        .btn-page { background: white; border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.2s; color: var(--primary-dark); }
+        .btn-page:hover:not(:disabled) { background: var(--bg-light); color: var(--primary-steel); border-color: var(--primary-steel); }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* MODALES (Blindaje Móvil) */
+        .modal {
+            display: flex !important;
+            flex-direction: column !important;
+            max-height: 90vh !important;
+            overflow: hidden !important;
+            padding-bottom: 1.2rem !important;
+            box-shadow: var(--shadow-modal) !important;
+        }
+        .modal-header { flex-shrink: 0 !important; margin-bottom: 0.5rem; }
+        .modal-body {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            padding-right: 0.5rem !important;
+        }
+        .modal-actions {
+            flex-shrink: 0 !important;
+            background: white !important;
+            padding-top: 1rem !important;
+            margin-top: 0 !important;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* AJUSTES RESPONSIVOS */
+        @media (max-width: 768px) {
+            .header-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+            .btn-header { justify-content: center; font-size: 0.75rem; padding: 0.6rem 0.2rem; text-align: center;}
+            .btn-back { grid-column: 1 / -1; }
+            
+            .form-add { grid-template-columns: 1fr; }
+            .btn-add { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+        
+        <header class="module-header">
+            <h1><i class='bx bx-calendar-event'></i> Presupuesto Anual</h1>
+            <div class="header-actions" style="width: auto;">
+                <!-- NUEVO BOTÓN AGREGADO -->
+                <a href="presupuesto.html" class="btn-header" style="background: #e0f2fe; color: var(--info); border-color: #bae6fd;"><i class='bx bx-pie-chart-alt-2'></i> Ir a Presupuesto</a>
+                <a href="fondos_liquidacion.html" class="btn-header btn-success-header"><i class='bx bx-check-shield'></i> Liquidación</a>
+                <a href="fondos_compras.html" class="btn-header btn-primary-header"><i class='bx bx-cart-download'></i> Gestor de Compras</a>
+                <a href="fondos.html" class="btn-header btn-back"><i class='bx bx-chevron-left'></i> Volver a Fondos</a>
+            </div>
+        </header>
+
+        <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
+            <span class="balance-label">Monto Disponible Actual</span>
+            <div class="balance-big" id="dispTotal">$ 0.00</div>
+        </div>
+
+        <div class="card">
+            <span class="balance-label" style="margin-bottom: 1rem; text-align: left;"><i class='bx bx-list-plus'></i> Registrar Nuevo Movimiento</span>
+            <form id="formMov" class="form-add">
+                
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="movTipo" required onchange="evaluarTipoMovimiento()">
+                        <option value="ingreso">Ingreso (+)</option>
+                        <option value="gasto">Egreso (-)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="groupVinculo" style="display: none; flex: 1.5;">
+                    <label>Vincular a Compra Realizada</label>
+                    <select id="movCompraVinculada" onchange="aplicarMontoCompra()">
+                        <option value="">Ingreso Manual / Otros...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="flex: 2;">
+                    <label>Descripción del Movimiento</label>
+                    <input type="text" id="movDesc" placeholder="Concepto del movimiento" required>
+                </div>
+                
+                <div class="form-group">
+                    <label># Cheque (Opcional)</label>
+                    <input type="text" id="movCheque" placeholder="----">
+                </div>
+                
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" id="movFecha" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Monto ($)</label>
+                    <input type="number" id="movMonto" step="0.01" min="0.01" placeholder="0.00" required>
+                </div>
+                
+                <button type="submit" class="btn-add"><i class='bx bx-plus'></i> Agregar</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table class="table-compras" id="tablaFondos">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">N°</th>
+                        <th style="width: 12%;">Fecha</th>
+                        <th style="width: 12%;"># Cheque</th>
+                        <th style="width: 33%;">Descripción</th>
+                        <th style="width: 10%; text-align: right;">Ingreso</th>
+                        <th style="width: 10%; text-align: right;">Egreso</th>
+                        <th style="width: 13%; text-align: right;">Saldo</th>
+                        <th style="width: 5%; text-align: center;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyMovs">
+                    <tr><td colspan="8"><div class="empty-state"><i class='bx bx-loader bx-spin'></i> Cifrando movimientos...</div></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button class="btn-page" id="btnPrev" onclick="cambiarPagina(-1)"><i class='bx bx-chevron-left'></i> Anterior</button>
+            <span id="pageInfo" style="font-weight: 800; font-size: 0.8rem; color: var(--accent);">Página 1 de 1</span>
+            <button class="btn-page" id="btnNext" onclick="cambiarPagina(1)">Siguiente <i class='bx bx-chevron-right'></i></button>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="modalEdit">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="font-size: 1.2rem; font-weight: 800; margin: 0; color: var(--primary-dark);"><i class='bx bx-edit-alt'></i> Editar Movimiento</h2>
+            </div>
+            
+            <div class="modal-body">
+                <form id="formEdit">
+                    <input type="hidden" id="editId">
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                        <div class="form-group">
+                            <label>Fecha</label>
+                            <input type="date" id="editFecha" required>
+                        </div>
+                        <div class="form-group">
+                            <label># Cheque</label>
+                            <input type="text" id="editCheque">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 0.8rem;">
+                        <label>Descripción</label>
+                        <input type="text" id="editDesc" required>
+                    </div>
+                    <div class="form-group" style="margin-top: 0.8rem;">
+                        <label>Monto Actual ($)</label>
+                        <input type="number" id="editMonto" step="0.01" required>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-page" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" form="formEdit" class="btn-add" style="width: auto; padding: 0.6rem 1.5rem;"><i class='bx bx-save'></i> Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, onSnapshot, query, where, orderBy, doc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        let allMovs = [];
+        let comprasDisponibles = [];
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        let requiresAutoNav = true;
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const formatMoney = (n) => parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatDateShort = (str) => {
+            if(!str) return "Sin fecha";
+            const [y,m,d] = str.split('-'); return `${d}/${m}/${y}`;
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = '../index.html';
+        });
+
+        // 1. CARGAR LISTA DE COMPRAS GUARDADAS PARA EL SELECTOR (Del más reciente al más antiguo)
+        onSnapshot(query(collection(db, "compras_guardadas"), orderBy("timestamp", "desc")), (snap) => {
+            comprasDisponibles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            actualizarSelectCompras();
+        });
+
+        function actualizarSelectCompras() {
+            const select = document.getElementById('movCompraVinculada');
+            let html = '<option value="">Ingreso Manual / Otros...</option>';
+            comprasDisponibles.forEach(c => {
+                const prov = c.proveedor?.nombre || 'Proveedor Desconocido';
+                const total = c.total || 0;
+                
+                // Extraer fecha visual de forma segura
+                let fechaVisual = 'Sin fecha';
+                if(c.fechas?.acta && c.fechas.acta.includes('-')) {
+                    const [y, m, d] = c.fechas.acta.split('-');
+                    fechaVisual = `${d}/${m}/${y}`;
+                }
+
+                html += `<option value="${c.id}" data-total="${total}" data-prov="${prov}">[${fechaVisual}] ${prov} - $${formatMoney(total)}</option>`;
+            });
+            select.innerHTML = html;
+        }
+
+        // LÓGICA DE INTERFAZ DEL SELECTOR DE VÍNCULO
+        window.evaluarTipoMovimiento = () => {
+            const tipo = document.getElementById('movTipo').value;
+            const groupVinculo = document.getElementById('groupVinculo');
+            
+            if (tipo === 'gasto') {
+                groupVinculo.style.display = 'flex';
+            } else {
+                groupVinculo.style.display = 'none';
+                document.getElementById('movCompraVinculada').value = "";
+                document.getElementById('movMonto').readOnly = false;
+            }
+        };
+
+        window.aplicarMontoCompra = () => {
+            const select = document.getElementById('movCompraVinculada');
+            const montoInput = document.getElementById('movMonto');
+            const descInput = document.getElementById('movDesc');
+
+            if (select.value === "") {
+                montoInput.readOnly = false;
+                montoInput.value = "";
+            } else {
+                const option = select.options[select.selectedIndex];
+                const totalText = option.getAttribute('data-total');
+                const provText = option.getAttribute('data-prov');
+                
+                montoInput.value = totalText;
+                montoInput.readOnly = true; 
+                
+                // Autocompleta una descripción sugerida si está vacía
+                if(!descInput.value || descInput.value.startsWith("PAGO A ")) {
+                     descInput.value = `PAGO A ${provText.toUpperCase()}`;
+                }
+            }
+        };
+
+        // 2. CARGAR MOVIMIENTOS DEL LIBRO DIARIO
+        onSnapshot(query(collection(db, "fondos_movimientos"), where("fondoId", "==", "presupuesto_anual")), (snap) => {
+            let movsUnsorted = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // Ordenamos CRONOLÓGICAMENTE
+            allMovs = movsUnsorted.sort((a, b) => {
+                if (a.fecha < b.fecha) return -1;
+                if (a.fecha > b.fecha) return 1;
+                return a.timestamp - b.timestamp;
+            });
+            
+            procesarContabilidad();
+        });
+
+        // 3. PROCESADOR MATEMÁTICO
+        function procesarContabilidad() {
+            let currentSaldo = 0; 
+            
+            allMovs.forEach(m => {
+                if(m.tipo === 'ingreso') currentSaldo += m.monto;
+                else currentSaldo -= m.monto;
+                m.saldo_calculado = currentSaldo;
+            });
+
+            document.getElementById('dispTotal').innerText = `$ ${formatMoney(currentSaldo)}`;
+            actualizarSaldoMaestroEnFirestore(currentSaldo);
+
+            if (requiresAutoNav && allMovs.length > 0) {
+                currentPage = Math.ceil(allMovs.length / itemsPerPage);
+                requiresAutoNav = false;
+            }
+
+            renderTabla();
+        }
+
+        async function actualizarSaldoMaestroEnFirestore(saldoFinal) {
+            try {
+                await setDoc(doc(db, "fondos_saldos", "presupuesto_anual"), { saldo_actual: saldoFinal }, { merge: true });
+            } catch(e) { console.error("Error silencioso", e); }
+        }
+
+        // 4. RENDERIZADO CON PAGINACIÓN
+        window.renderTabla = () => {
+            const tbody = document.getElementById('tbodyMovs');
+            const total = allMovs.length;
+
+            if(total === 0) {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="bx bx-receipt"></i><p>No hay movimientos registrados en el Presupuesto.</p></div></td></tr>';
+                return;
+            }
+
+            const totalPages = Math.ceil(total / itemsPerPage);
+            if(currentPage > totalPages) currentPage = totalPages;
+            if(currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const items = allMovs.slice(start, end);
+
+            let html = '';
+            items.forEach((m, index) => {
+                const numFila = start + index + 1;
+                const vinculadoHTML = m.compraVinculadaId ? `<br><span style="font-size: 0.65rem; color: var(--primary-steel); font-weight: 700;"><i class='bx bx-link'></i> Vinculado a compra</span>` : '';
+                
+                // Formateo Local El Salvador para que no reste un día
+                let fechaFormateada = "---";
+                if(m.fecha && m.fecha.includes('-')) {
+                    const [y, mes, d] = m.fecha.split('-');
+                    fechaFormateada = `${d}/${mes}/${y}`;
+                }
+
+                html += `
+                    <tr>
+                        <td style="font-weight:800; color:var(--accent)">${numFila}</td>
+                        <td>${fechaFormateada}</td>
+                        <td style="font-family:monospace">${m.num_cheque || '---'}</td>
+                        <td>${m.descripcion} ${vinculadoHTML}</td>
+                        <td class="td-ingreso" style="text-align:right">${m.tipo === 'ingreso' ? '$'+formatMoney(m.monto) : '-'}</td>
+                        <td class="td-egreso" style="text-align:right">${m.tipo === 'gasto' ? '$'+formatMoney(m.monto) : '-'}</td>
+                        <td class="td-saldo">$ ${formatMoney(m.saldo_calculado)}</td>
+                        <td style="text-align:center">
+                            <button class="btn-sq btn-sq-edit" style="margin: 0 auto;" onclick="abrirModal('${m.id}', '${m.fecha}', '${m.num_cheque || ''}', '${m.descripcion.replace(/'/g, "\\'")}', ${m.monto})">
+                                <i class='bx bx-edit-alt'></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            document.getElementById('pageInfo').innerText = `Página ${currentPage} de ${totalPages}`;
+            document.getElementById('btnPrev').disabled = (currentPage === 1);
+            document.getElementById('btnNext').disabled = (currentPage === totalPages);
+        };
+
+        window.cambiarPagina = (dir) => { 
+            currentPage += dir; 
+            renderTabla(); 
+        };
+
+        // REGISTRAR MOVIMIENTO
+        document.getElementById('formMov').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i>";
+            btn.disabled = true;
+            
+            const selectVinculo = document.getElementById('movCompraVinculada');
+            const compraId = selectVinculo.value;
+
+            const data = {
+                fondoId: "presupuesto_anual",
+                tipo: document.getElementById('movTipo').value,
+                descripcion: document.getElementById('movDesc').value.toUpperCase().trim(),
+                num_cheque: document.getElementById('movCheque').value.trim(),
+                fecha: document.getElementById('movFecha').value,
+                monto: parseFloat(document.getElementById('movMonto').value),
+                compraVinculadaId: compraId || null, 
+                timestamp: Date.now()
+            };
+
+            try {
+                requiresAutoNav = true; 
+                await addDoc(collection(db, "fondos_movimientos"), data);
+                
+                // Limpiar formulario y resetear estados
+                document.getElementById('formMov').reset();
+                
+                // Recargar fecha correcta
+                const d = new Date();
+                const localDateStr = d.toLocaleDateString('es-SV', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+                document.getElementById('movFecha').value = localDateStr;
+                
+                evaluarTipoMovimiento(); // Esconde el campo de vínculo y desbloquea el monto
+                
+                showToast("Movimiento de presupuesto registrado con éxito.");
+            } catch(e) { 
+                showToast("Error al guardar.", "error"); 
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+
+        // EDICIÓN DE MOVIMIENTOS
+        window.abrirModal = (id, fecha, cheque, desc, monto) => {
+            document.getElementById('editId').value = id;
+            document.getElementById('editFecha').value = fecha;
+            document.getElementById('editCheque').value = cheque;
+            document.getElementById('editDesc').value = desc;
+            document.getElementById('editMonto').value = monto;
+            document.getElementById('modalEdit').classList.add('active');
+        };
+
+        window.cerrarModal = () => document.getElementById('modalEdit').classList.remove('active');
+
+        document.getElementById('formEdit').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i>";
+            btn.disabled = true;
+            
+            const id = document.getElementById('editId').value;
+            const data = {
+                fecha: document.getElementById('editFecha').value,
+                num_cheque: document.getElementById('editCheque').value.trim(),
+                descripcion: document.getElementById('editDesc').value.toUpperCase().trim(),
+                monto: parseFloat(document.getElementById('editMonto').value)
+            };
+
+            try {
+                await updateDoc(doc(db, "fondos_movimientos", id), data);
+                cerrarModal();
+                showToast("Cambios de presupuesto guardados con éxito.");
+            } catch(e) { 
+                showToast("Error de conexión al actualizar.", "error"); 
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+
+        // Init fecha local SV
+        const d = new Date();
+        const localDateStr = d.toLocaleDateString('es-SV', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+        document.getElementById('movFecha').value = localDateStr;
+
+    </script>
+</body>
+</html>

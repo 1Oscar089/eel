@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark:#243C4C; --primary-steel:#5289AD; 
+            --accent:#698696; --border:#ACBCBF; 
+            --bg-light:#F4FCFB; --danger:#dc2626; --success:#16a34a; --warning:#f59e0b; --info:#0284c7;
+            --gap:0.5rem; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        /* HEADER Y BIENVENIDA */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
+        .welcome-card { background: transparent; color: var(--primary-dark); display: flex; flex-direction: column; gap: 0.2rem; flex-shrink: 0; }
+        .welcome-card h2 { font-size: 1.6rem; font-weight: 800; margin: 0; letter-spacing: -0.5px;}
+        .welcome-card p { font-size: 0.85rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 0.4rem;}
+        
+        /* FILTRO DE DASHBOARD */
+        .dash-filter-container { background: white; padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 0.8rem; }
+        .dash-filter-container label { font-size: 0.75rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .dash-filter-container select { border: none; font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); outline: none; background: transparent; cursor: pointer; padding: 0.2rem 0; }
+
+        /* KPI GRID */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--gap); margin-bottom: 1.5rem; flex-shrink: 0; }
+        .kpi-card { background: white; border-radius: 12px; padding: 1.2rem; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; transition: 0.2s; position: relative; overflow: hidden; }
+        .kpi-card:hover { border-color: var(--primary-steel); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.04); }
+        .kpi-icon { position: absolute; right: -15px; bottom: -15px; font-size: 5rem; opacity: 0.05; }
+        .kpi-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; }
+        .kpi-header i { font-size: 1.4rem; }
+        .kpi-title { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .kpi-value { font-size: 1.6rem; font-weight: 900; color: var(--primary-dark); line-height: 1; margin-bottom: 0.4rem; }
+        .kpi-sub { font-size: 0.75rem; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 0.3rem;}
+        
+        .kpi-card.c-blue .kpi-header i { color: var(--info); }
+        .kpi-card.c-red .kpi-header i { color: var(--danger); }
+        .kpi-card.c-yellow .kpi-header i { color: var(--warning); }
+        .kpi-card.c-green .kpi-header i { color: var(--success); }
+
+        /* GRID INFERIOR (Agenda y Recursos) */
+        .dashboard-lower-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--gap); align-items: start; flex-shrink: 0; padding-bottom: 2rem; }
+        .panel-card { background: white; border-radius: var(--border-radius-lg); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); min-height: 350px;}
+        .panel-header { padding: 0.8rem 1rem; border-bottom: 1px solid var(--bg-light); background: #f8fafc; font-size: 0.9rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .panel-header i { color: var(--primary-steel); font-size: 1.3rem; }
+        
+        .panel-body { padding: 0.8rem; flex: 1; overflow-y: auto; -ms-overflow-style: none; scrollbar-width: none; }
+        .panel-body::-webkit-scrollbar { display: none; }
+
+        /* LISTA AGENDA */
+        .agenda-item { background: var(--bg-light); padding: 1rem; border-radius: var(--border-radius-md); border-left: 4px solid var(--primary-steel); display: flex; flex-direction: column; gap: 0.4rem; transition: 0.2s; margin-bottom: 0.8rem; cursor: pointer; }
+        .agenda-item.type-aviso { border-left-color: var(--warning); }
+        .agenda-item:last-child { margin-bottom: 0; }
+        .agenda-item:hover { background: white; border-color: var(--primary-dark); box-shadow: var(--shadow-sm); transform: translateX(2px);}
+        
+        .agenda-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;}
+        .agenda-date { font-size: 0.75rem; color: var(--accent); font-weight: 800; display: flex; align-items: center; gap: 0.3rem;}
+        .badge-type { font-size: 0.6rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 800; text-transform: uppercase; color: white;}
+        .bg-aviso { background: var(--warning); }
+        .bg-evento { background: var(--primary-steel); }
+        .agenda-title { font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); }
+        .agenda-desc { font-size: 0.85rem; color: #555; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* LISTA RECURSOS */
+        .resource-list { display: flex; flex-direction: column; gap: 0.6rem; }
+        .resource-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius-md); text-decoration: none; color: var(--primary-dark); font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
+        .resource-item:hover { background: white; border-color: var(--primary-steel); transform: translateX(4px); box-shadow: var(--shadow-sm);}
+        .resource-icon { font-size: 1.5rem; color: var(--primary-steel); flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 8px;}
+
+        /* MODAL LECTOR MÓVIL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 16px; width: 100%; max-width: 550px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; position: relative; box-shadow: var(--shadow-lg);}
+        .btn-close-absolute { position: absolute; top: 1rem; right: 1rem; background: #f1f5f9; border: none; font-size: 1.5rem; color: var(--accent); cursor: pointer; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: 0.2s; z-index: 10;}
+        .btn-close-absolute:hover { background: #e2e8f0; color: var(--danger); }
+        
+        .empty-state { text-align: center; padding: 2rem; color: var(--accent); font-style: italic; font-size: 0.85rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;}
+        .empty-state i { font-size: 2rem; color: var(--border); }
+
+        /* RESPONSIVIDAD */
+        @media (max-width: 900px) { .dashboard-lower-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .dashboard-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .dash-filter-container { width: 100%; justify-content: space-between; }
+            .welcome-card h2 { font-size: 1.4rem; }
+            .welcome-card p { font-size: 0.85rem;}
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="dashboard-header">
+                <div class="welcome-card">
+                    <h2 id="welcomeName">Cargando...</h2>
+                    <p><i class='bx bx-time'></i> <span id="currentDate">Obteniendo fecha...</span></p>
+                </div>
+                
+                <div class="dash-filter-container">
+                    <label><i class='bx bx-filter-alt'></i> Analizar Datos De:</label>
+                    <select id="dashScope" onchange="calcularIndicadores()">
+                        <option value="" disabled selected>Cargando filtros...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card c-blue">
+                    <i class='bx bx-group kpi-icon'></i>
+                    <div class="kpi-header"><i class='bx bxs-user-detail'></i> <span class="kpi-title">Total Estudiantes</span></div>
+                    <div class="kpi-value" id="kpiTotal">0</div>
+                    <div class="kpi-sub" id="kpiTotalSub"><i class='bx bx-male-sign'></i> M: 0 &nbsp;|&nbsp; <i class='bx bx-female-sign'></i> F: 0</div>
+                </div>
+
+                <div class="kpi-card c-red">
+                    <i class='bx bx-trending-down kpi-icon'></i>
+                    <div class="kpi-header"><i class='bx bx-book-reader'></i> <span class="kpi-title">% Reprobados</span></div>
+                    <div class="kpi-value" id="kpiReprobados">0%</div>
+                    <div class="kpi-sub" id="kpiReprobadosSub">Alumnos con nota < 4.95</div>
+                </div>
+
+                <div class="kpi-card c-yellow">
+                    <i class='bx bx-shield-x kpi-icon'></i>
+                    <div class="kpi-header"><i class='bx bx-error'></i> <span class="kpi-title">Riesgo Disciplinario</span></div>
+                    <div class="kpi-value" id="kpiDemeritos">0 Pts</div>
+                    <div class="kpi-sub" id="kpiDemeritosSub">0 estudiantes con 1 o más faltas</div>
+                </div>
+
+                <div class="kpi-card c-green">
+                    <i class='bx bx-calendar-x kpi-icon'></i>
+                    <div class="kpi-header"><i class='bx bx-user-x'></i> <span class="kpi-title">Riesgo Asistencia</span></div>
+                    <div class="kpi-value" id="kpiAsistencia">0</div>
+                    <div class="kpi-sub" id="kpiAsistenciaSub">Estudiantes con < 84.5% asist.</div>
+                </div>
+            </div>
+
+            <div class="dashboard-lower-grid">
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <span>Agenda Institucional</span>
+                        <i class='bx bxs-calendar-event'></i>
+                    </div>
+                    <div class="panel-body" id="agendaContainer">
+                        <div class="empty-state">
+                            <i class='bx bx-loader bx-spin'></i>
+                            <p>Sincronizando agenda...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <span>Recursos Compartidos</span>
+                        <i class='bx bx-folder-open'></i>
+                    </div>
+                    <div class="panel-body" id="recursosContainer">
+                        <div class="empty-state">
+                            <i class='bx bx-loader bx-spin'></i>
+                            <p>Sincronizando recursos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal Lector Aviso/Evento -->
+    <div id="modalAviso" class="modal-overlay">
+        <div class="modal">
+            <button class="btn-close-absolute" onclick="closeModalAviso()"><i class='bx bx-x'></i></button>
+            <div style="padding: 1.5rem 1.5rem 0 1.5rem; margin-bottom: 0.5rem; flex-shrink: 0;">
+                <h2 id="mAvisoTitle" style="padding-right: 2rem; font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); margin: 0; line-height: 1.3;"></h2>
+            </div>
+            <p id="mAvisoDate" style="font-size: 0.75rem; color: var(--accent); margin-bottom: 1rem; font-weight: 700; display:flex; align-items:center; gap:0.4rem; padding: 0 1.5rem; flex-shrink: 0;"></p>
+            <div style="padding: 0 1.5rem 1.5rem 1.5rem; overflow-y: auto; overflow-x: hidden; flex: 1;">
+                <div id="mAvisoDesc" style="background: var(--bg-light); padding: 1rem; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; color: var(--primary-dark); border: 1px solid var(--border); white-space: pre-wrap; word-break: break-word;"></div>
+                <div id="mAvisoLinkContainer" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        let curY = new Date().getFullYear();
+        let allStudents = [];
+        let allGrades = {};
+        let allSubs = {};
+        let userRole = 'docente';
+        let userGrades = [];
+        let isAdmin = false;
+
+        let avisosList = [];
+        let calendarioList = [];
+
+        // Inicializar Reloj y Saludo
+        const updateClockAndGreeting = () => {
+            const d = new Date();
+            const h = d.getHours();
+            let greeting = h >= 5 && h < 12 ? "Buenos días" : h >= 12 && h < 19 ? "Buenas tardes" : "Buenas noches";
+            
+            let firstName = "Docente";
+            try {
+                const cachedDataStr = localStorage.getItem('iconic_userData');
+                if (cachedDataStr) {
+                    const cachedData = JSON.parse(cachedDataStr);
+                    const fullName = cachedData.nombreCompleto || cachedData.nombre || cachedData.name || "";
+                    if(fullName) firstName = fullName.trim().split(' ')[0];
+                }
+            } catch(e) {}
+            
+            document.getElementById('welcomeName').innerText = `${greeting}, ${firstName}`;
+
+            const optsDate = { timeZone: 'America/El_Salvador', weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' };
+            const optsTime = { timeZone: 'America/El_Salvador', hour: '2-digit', minute: '2-digit', hour12: true };
+            let dateStr = d.toLocaleDateString('es-SV', optsDate);
+            dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+            const timeStr = d.toLocaleTimeString('es-SV', optsTime);
+            document.getElementById('currentDate').innerText = `${dateStr} | ${timeStr}`;
+        };
+        
+        updateClockAndGreeting();
+        setInterval(updateClockAndGreeting, 60000); // Actualizar cada minuto
+
+        const formatearFecha = (fechaStr) => {
+            if (!fechaStr) return '';
+            if (fechaStr.includes('-')) {
+                const partes = fechaStr.split('-');
+                if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+            return fechaStr;
+        };
+
+        const buildScopeDropdown = () => {
+            const sel = document.getElementById('dashScope');
+            let opts = '';
+
+            if (isAdmin) {
+                opts += `<option value="ALL" selected>General (Todo el Centro)</option>`;
+                opts += `<option disabled>───── POR NIVEL ─────</option>`;
+                opts += `<option value="CP">Parvularia (4, 5 y 6)</option>`;
+                opts += `<option value="C1">Primer Ciclo (1° a 3°)</option>`;
+                opts += `<option value="C2">Segundo Ciclo (4° a 6°)</option>`;
+                opts += `<option value="C3">Tercer Ciclo (7° a 9°)</option>`;
+                opts += `<option disabled>───── POR GRADO ─────</option>`;
+                
+                const sortedIds = Object.keys(allGrades).sort((a,b) => parseInt(a) - parseInt(b));
+                sortedIds.forEach(id => {
+                    opts += `<option value="G_${id}">${allGrades[id]?.nombre || `Grado ${id}`}</option>`;
+                });
+            } else {
+                opts += `<option value="ALL" selected>General (Mis Grados)</option>`;
+                opts += `<option disabled>───── MIS GRADOS ─────</option>`;
+                
+                const sortedIds = userGrades.sort((a,b) => parseInt(a) - parseInt(b));
+                sortedIds.forEach(id => {
+                    opts += `<option value="G_${id}">${allGrades[id]?.nombre || `Grado ${id}`}</option>`;
+                });
+            }
+            sel.innerHTML = opts;
+            window.calcularIndicadores();
+        };
+
+        onAuthStateChanged(auth, async (u) => {
+            if (!u) { window.location.href = '../index.html'; return; }
+            
+            // Perfil Docente
+            onSnapshot(query(collection(db, 'docentes'), where('correo', '==', u.email)), (s) => {
+                if(!s.empty){ 
+                    const ud = s.docs[0].data(); 
+                    userRole = (ud.cargo || '').toLowerCase(); 
+                    userGrades = (ud.grados || []).map(String); 
+                    isAdmin = ['director', 'subdirector'].includes(userRole); 
+                }
+            });
+
+            // Diccionarios Base
+            onSnapshot(doc(db, "control", "asignaturas"), (s) => { if(s.exists()) allSubs = s.data(); });
+            onSnapshot(doc(db, "control", "grados"), (s) => { 
+                if(s.exists()) { allGrades = s.data(); buildScopeDropdown(); }
+            });
+
+            // Estudiantes Base
+            onSnapshot(collection(db, "users"), (snap) => {
+                allStudents = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(s => s.nombreCompleto && !s.archivado);
+                if(Object.keys(allGrades).length > 0) window.calcularIndicadores();
+            });
+
+            // Agenda Institucional
+            onSnapshot(doc(db, "control", "avisos"), (snap) => {
+                avisosList = snap.exists() ? (snap.data().eventos || []).map(a => ({...a, tipoItem: 'aviso'})) : [];
+                renderAgenda();
+            });
+            onSnapshot(doc(db, "control", "calendario"), (snap) => {
+                calendarioList = snap.exists() ? (snap.data().eventos || []).map(e => ({...e, tipoItem: 'evento'})) : [];
+                renderAgenda();
+            });
+
+            // Recursos
+            onSnapshot(doc(db, "control", "recursos"), (snap) => {
+                const container = document.getElementById('recursosContainer');
+                const list = snap.exists() ? (snap.data().items || []) : [];
+                
+                if (list.length === 0) {
+                    container.innerHTML = `<div class="empty-state"><i class="bx bx-folder-minus"></i><p>No hay recursos publicados.</p></div>`;
+                    return;
+                }
+                container.innerHTML = `<div class="resource-list">` + list.map(i => {
+                    const esPDF = (i.tipo && i.tipo.toLowerCase().includes('pdf')) || (i.nombre && i.nombre.toLowerCase().includes('.pdf'));
+                    const iconClass = esPDF ? 'bxs-file-pdf' : 'bx-link-external';
+                    const customColor = i.color || (esPDF ? 'var(--danger)' : 'var(--primary-steel)');
+                    
+                    return `
+                        <a href="${i.url}" target="_blank" class="resource-item">
+                            <div class="resource-icon" style="color: ${customColor};"><i class='bx ${iconClass}'></i></div>
+                            <div style="flex:1;">
+                                <div style="font-size: 0.85rem; font-weight: 800;">${i.nombre}</div>
+                                <div style="font-size: 0.65rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">${i.tipo || 'Documento'}</div>
+                            </div>
+                        </a>
+                    `;
+                }).join('') + `</div>`;
+            });
+        });
+
+        // -------------------------------------------------------------------
+        // MOTOR DE CÁLCULO DE INDICADORES (KPIs) (Filtro Inteligente)
+        // -------------------------------------------------------------------
+        window.calcularIndicadores = async () => {
+            const scope = document.getElementById('dashScope').value;
+            if(!scope) return;
+
+            // Poner KPIs en carga
+            document.getElementById('kpiTotal').innerHTML = "<i class='bx bx-loader bx-spin' style='font-size:1.2rem;'></i>";
+            document.getElementById('kpiReprobados').innerHTML = "<i class='bx bx-loader bx-spin' style='font-size:1.2rem;'></i>";
+            document.getElementById('kpiDemeritos').innerHTML = "<i class='bx bx-loader bx-spin' style='font-size:1.2rem;'></i>";
+            document.getElementById('kpiAsistencia').innerHTML = "<i class='bx bx-loader bx-spin' style='font-size:1.2rem;'></i>";
+
+            // 1. Filtrar Cohorte de Estudiantes con Filtro Seguro para IDs Dinámicos
+            let cohort = [];
+            if (scope === 'ALL') {
+                const grs = isAdmin ? Object.keys(allGrades) : userGrades;
+                cohort = allStudents.filter(s => grs.includes(String(s.grade)));
+            } else if (scope === 'CP') {
+                const parvIds = Object.keys(allGrades).filter(id => {
+                    const n = (allGrades[id]?.nombre || allGrades[id] || '').toLowerCase();
+                    return n.includes('parvularia') || ['10','11','12'].includes(id);
+                });
+                cohort = allStudents.filter(s => parvIds.includes(String(s.grade)));
+            } else if (scope === 'C1') {
+                const c1Ids = Object.keys(allGrades).filter(id => {
+                    const n = (allGrades[id]?.nombre || allGrades[id] || '').toLowerCase();
+                    return n.includes('primer ciclo') || ['1','2','3'].includes(id) || n.includes('primer grado') || n.includes('segundo grado') || n.includes('tercer grado');
+                });
+                cohort = allStudents.filter(s => c1Ids.includes(String(s.grade)));
+            } else if (scope === 'C2') {
+                const c2Ids = Object.keys(allGrades).filter(id => {
+                    const n = (allGrades[id]?.nombre || allGrades[id] || '').toLowerCase();
+                    return n.includes('segundo ciclo') || ['4','5','6'].includes(id) || n.includes('cuarto') || n.includes('quinto') || n.includes('sexto');
+                });
+                cohort = allStudents.filter(s => c2Ids.includes(String(s.grade)));
+            } else if (scope === 'C3') {
+                const c3Ids = Object.keys(allGrades).filter(id => {
+                    const n = (allGrades[id]?.nombre || allGrades[id] || '').toLowerCase();
+                    return n.includes('tercer ciclo') || ['7','8','9'].includes(id) || n.includes('séptimo') || n.includes('octavo') || n.includes('noveno');
+                });
+                cohort = allStudents.filter(s => c3Ids.includes(String(s.grade)));
+            } else if (scope.startsWith('G_')) {
+                const targetG = scope.replace('G_', '');
+                cohort = allStudents.filter(s => String(s.grade) === String(targetG));
+            }
+
+            if(cohort.length === 0) {
+                document.getElementById('kpiTotal').innerText = "0";
+                document.getElementById('kpiTotalSub').innerHTML = `<i class='bx bx-male-sign'></i> M: 0 &nbsp;|&nbsp; <i class='bx bx-female-sign'></i> F: 0`;
+                document.getElementById('kpiReprobados').innerText = "0%";
+                document.getElementById('kpiDemeritos').innerText = "0 Pts";
+                document.getElementById('kpiDemeritosSub').innerText = "0 estudiantes con 1 o más faltas";
+                document.getElementById('kpiAsistencia').innerText = "0";
+                return;
+            }
+
+            // Descargar Asistencias Consolidadas (Optimización: Solo de los grados filtrados)
+            const gradosSet = new Set(cohort.map(s => String(s.grade)));
+            const asisMap = {};
+            await Promise.all(Array.from(gradosSet).map(async (g) => {
+                try {
+                    const snap = await getDoc(doc(db, "asistencia", `${curY}_grado_${g}`));
+                    if(snap.exists()) asisMap[g] = snap.data();
+                } catch(e){}
+            }));
+
+            // Descargar Metadatos de Estudiantes (Promesas en paralelo)
+            const studentMetas = await Promise.all(cohort.map(async (st) => {
+                let sDem = [], sRed = [], sCal = {};
+                try {
+                    const dDoc = await getDoc(doc(db, "users", st.id, "metadata", "demeritos"));
+                    if(dDoc.exists()) sDem = Object.values(dDoc.data());
+                    
+                    const rDoc = await getDoc(doc(db, "users", st.id, "metadata", "redenciones"));
+                    if(rDoc.exists()) sRed = Object.values(rDoc.data());
+
+                    const cDoc = await getDoc(doc(db, "users", st.id, "metadata", "calificaciones"));
+                    if(cDoc.exists()) sCal = cDoc.data()?.[String(curY)] || {};
+                } catch(e){}
+                
+                return {
+                    st: st,
+                    grade: String(st.grade),
+                    asis: asisMap[String(st.grade)]?.[st.id] || {},
+                    demeritos: sDem,
+                    redenciones: sRed,
+                    calificaciones: sCal
+                };
+            }));
+
+            // Variables Contadoras
+            let tM = 0, tF = 0;
+            let cReprobados = 0;
+            let sumDemGlobal = 0, cRiesgoDem = 0;
+            let cRiesgoAsis = 0;
+
+            studentMetas.forEach(meta => {
+                // Genero
+                const s = meta.st;
+                const sx = (s.sexo || s.gender || '').toLowerCase();
+                if (sx.startsWith('m') || sx === 'h' || sx === 'hombre') tM++; else tF++;
+
+                // Conducta (Saldo Neto y Alumnos con Riesgo)
+                let dC = 0, rC = 0;
+                meta.demeritos.forEach(d => { if(d.fecha && d.fecha.startsWith(String(curY))) dC++; });
+                meta.redenciones.forEach(r => { if(r.fecha && r.fecha.startsWith(String(curY))) rC++; });
+                const net = dC - rC;
+                if (net > 0) {
+                    sumDemGlobal += net;
+                    cRiesgoDem++; // El estudiante tiene al menos 1 falta sin redimir
+                }
+
+                // Asistencia (< 84.5%)
+                let a = 0, ij = 0, ii = 0;
+                Object.values(meta.asis).forEach(m => { a+=m.a||0; ij+=m.ij||0; ii+=m.ii||0; });
+                const tReg = a + ij + ii;
+                if (tReg > 0) {
+                    const pctAsis = ((a + ij) / tReg) * 100;
+                    if (pctAsis < 84.5) cRiesgoAsis++; 
+                }
+
+                // Calificaciones (Reprobados si tiene < 4.95 en al menos UNA materia)
+                const gradeIdStr = String(meta.grade);
+                const gradeName = (allGrades[gradeIdStr]?.nombre || allGrades[gradeIdStr] || '').toLowerCase();
+                const gNum = parseInt(gradeIdStr);
+                
+                let cyc = "tercer_ciclo"; // Fallback
+                if (gradeName.includes('parvularia') || ['10','11','12'].includes(gradeIdStr)) cyc = "parvularia";
+                else if (gradeName.includes('primer ciclo') || ['1','2','3'].includes(gradeIdStr)) cyc = "primer_ciclo";
+                else if (gradeName.includes('segundo ciclo') || ['4','5','6'].includes(gradeIdStr)) cyc = "segundo_ciclo";
+                else if (gradeName.includes('tercer ciclo') || ['7','8','9'].includes(gradeIdStr)) cyc = "tercer_ciclo";
+                else if (!isNaN(gNum)) {
+                    if (gNum <= 3) cyc = "primer_ciclo";
+                    else if (gNum <= 6) cyc = "segundo_ciclo";
+                    else if (gNum <= 9) cyc = "tercer_ciclo";
+                    else cyc = "parvularia";
+                }
+
+                const subjects = allSubs[cyc] || [];
+                let hasFailedSubject = false;
+
+                subjects.forEach(sub => {
+                    if (hasFailedSubject) return; // Romper ciclo si ya reprobó una
+
+                    const t1 = parseFloat(meta.calificaciones['1']?.[sub]?.total) || 0;
+                    const t2 = parseFloat(meta.calificaciones['2']?.[sub]?.total) || 0;
+                    const t3 = parseFloat(meta.calificaciones['3']?.[sub]?.total) || 0;
+                    const r1 = meta.calificaciones['r1']?.[sub]?.total;
+                    const r2 = meta.calificaciones['r2']?.[sub]?.total;
+
+                    let nf = null;
+                    if (meta.calificaciones['1']?.[sub]?.total !== undefined) {
+                        nf = (t1 + t2 + t3) / 3;
+                        if (r1 !== undefined && parseFloat(r1) > nf) nf = parseFloat(r1);
+                        if (r2 !== undefined && parseFloat(r2) > nf) nf = parseFloat(r2);
+                    }
+                    
+                    if (nf !== null && nf < 4.95) {
+                        hasFailedSubject = true;
+                    }
+                });
+
+                if (hasFailedSubject) cReprobados++;
+            });
+
+            // Pintar Resultados en DOM
+            const tTotal = cohort.length;
+            document.getElementById('kpiTotal').innerText = tTotal;
+            document.getElementById('kpiTotalSub').innerHTML = `<i class='bx bx-male-sign'></i> M: ${tM} &nbsp;|&nbsp; <i class='bx bx-female-sign'></i> F: ${tF}`;
+            
+            const pctReprobados = tTotal > 0 ? Math.round((cReprobados / tTotal) * 100) : 0;
+            document.getElementById('kpiReprobados').innerText = `${pctReprobados}%`;
+            
+            document.getElementById('kpiDemeritos').innerText = `${sumDemGlobal} Pts`;
+            document.getElementById('kpiDemeritosSub').innerText = `${cRiesgoDem} estudiantes con 1 o más faltas`;
+            
+            document.getElementById('kpiAsistencia').innerText = cRiesgoAsis;
+        };
+
+        // -------------------------------------------------------------------
+        // RENDERIZAR AGENDA UNIFICADA
+        // -------------------------------------------------------------------
+        window.renderAgenda = () => {
+            const container = document.getElementById('agendaContainer');
+            let agendaUnificada = [...avisosList, ...calendarioList];
+            
+            if (agendaUnificada.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class='bx bx-calendar-x'></i>
+                        <p>No hay avisos ni eventos programados.</p>
+                    </div>`;
+                return;
+            }
+
+            agendaUnificada.sort((a, b) => {
+                const timeA = a.timestamp || Date.parse(a.fecha) || 0;
+                const timeB = b.timestamp || Date.parse(b.fecha) || 0;
+                return timeB - timeA;
+            });
+
+            container.innerHTML = agendaUnificada.slice(0, 10).map(item => {
+                const isAviso = item.tipoItem === 'aviso';
+                const fechaVisual = formatearFecha(item.fecha);
+                const titulo = item.asunto || item.nombre || 'Sin Título';
+                const desc = item.descripcion || (isAviso ? 'Click para leer detalles...' : `Evento tipo: ${item.tipo}`);
+                const hr = item.hora ? ` - ${item.hora}` : '';
+                
+                const claseItem = isAviso ? 'type-aviso' : '';
+                const claseBadge = isAviso ? 'bg-aviso' : 'bg-evento';
+                const textBadge = isAviso ? 'Aviso' : 'Evento';
+                const jsonEncoded = encodeURIComponent(JSON.stringify(item));
+                
+                return `
+                    <div class="agenda-item ${claseItem}" onclick="abrirModalDetalle('${jsonEncoded}')">
+                        <div class="agenda-header">
+                            <span class="agenda-date"><i class='bx bx-time'></i> ${fechaVisual}${hr}</span>
+                            <span class="badge-type ${claseBadge}">${textBadge}</span>
+                        </div>
+                        <div class="agenda-title">${titulo}</div>
+                        <div class="agenda-desc">${desc}</div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        // -------------------------------------------------------------------
+        // MODAL LECTOR (Unificado para Aviso y Evento)
+        // -------------------------------------------------------------------
+        window.abrirModalDetalle = (jsonEncoded) => {
+            const item = JSON.parse(decodeURIComponent(jsonEncoded));
+            const isAviso = item.tipoItem === 'aviso';
+            
+            document.getElementById('mAvisoTitle').innerText = item.asunto || item.nombre || 'Detalle';
+            
+            const fechaVisual = formatearFecha(item.fecha);
+            const hrInfo = item.hora ? ` a las ${item.hora}` : '';
+            document.getElementById('mAvisoDate').innerHTML = `<i class='bx bx-calendar'></i> ${isAviso ? 'Publicado: ' : 'Fecha: '}${fechaVisual}${hrInfo}`;
+            
+            let desc = item.descripcion || '';
+            if(!isAviso) desc = `Clasificación del Evento: ${item.tipo || 'General'}\n\n${desc}`;
+            document.getElementById('mAvisoDesc').innerText = desc || 'Sin detalles adicionales.';
+            
+            const linkContainer = document.getElementById('mAvisoLinkContainer');
+            if (isAviso && item.enlace) {
+                linkContainer.innerHTML = `<a href="${item.enlace}" target="_blank" class="btn-primary" style="text-decoration: none; width: auto; display: inline-flex;"><i class='bx bx-link-external'></i> Abrir Enlace Adjunto</a>`;
+            } else {
+                linkContainer.innerHTML = '';
+            }
+            
+            document.getElementById('modalAviso').classList.add('active');
+        };
+
+        window.closeModalAviso = () => {
+            document.getElementById('modalAviso').classList.remove('active');
+        };
+    </script>
+</body>
+</html>

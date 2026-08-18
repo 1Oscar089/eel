@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificación de Acta - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <!-- LIBRERÍA PARA GENERACIÓN DIRECTA DE PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        
+        /* CONTENEDOR DEL FORMULARIO */
+        #formSection { height: calc(100vh - 60px); width: 100vw; margin: 0; padding: 1.5rem; overflow-y: auto; overflow-x: hidden; display: block; -ms-overflow-style: none; scrollbar-width: none; }
+        #formSection::-webkit-scrollbar { display: none; }
+        @media (max-width: 1024px) { #formSection { padding-bottom: 80px; } }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; margin-top: 0; flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; display: flex; align-items: center; gap: 0.5rem; margin-top: 0;}
+        
+        .header-actions { display: flex; gap: 0.5rem; }
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-primary:hover:not(:disabled) { background: var(--primary-steel); }
+        .btn-secondary { background: #e0f2fe; color: var(--primary-steel); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: 1px solid #bae6fd; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-secondary:hover { background: #bae6fd; color: var(--primary-dark); }
+
+        .card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .card-title { font-size: 1rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1.2rem; border-bottom: 2px solid var(--bg-light); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;}
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: start; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; position: relative;}
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; font-family: inherit; transition: 0.2s;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+        .form-group input:read-only, .form-group select:disabled { background: #f8fafc; color: var(--accent); cursor: not-allowed; border-color: #cbd5e1; opacity: 1; }
+        .full-width { grid-column: 1 / -1; }
+
+        /* BLOQUE OCULTO PARA CONSTRUCCIÓN DEL PDF */
+        #printSection { position: absolute; top: -9999px; left: -9999px; display: none; background: white; }
+
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .header-actions { width: 100%; justify-content: space-between; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <!-- SECCIÓN 1: FORMULARIO -->
+        <main id="formSection">
+            <div class="page-header">
+                <h1><i class='bx bx-award'></i> Certificación de Acta</h1>
+                <div class="header-actions">
+                    <a href="generador.html" class="btn-secondary"><i class='bx bx-arrow-back'></i> Volver</a>
+                </div>
+            </div>
+
+            <div id="formContainer">
+                
+                <!-- DATOS DEL SECRETARIO Y ESCUELA -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bxs-institution'></i> Datos de la Institución y CDE</div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Nombre del Secretario/a (CDE)</label>
+                            <input type="text" id="secNombre" placeholder="Cargando desde base de datos...">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Centro Educativo</label>
+                            <input type="text" id="escNombre" readonly placeholder="Cargando...">
+                        </div>
+                        <div class="form-group">
+                            <label>Código de Infraestructura</label>
+                            <input type="text" id="escCode" readonly placeholder="Cargando...">
+                        </div>
+                        <div class="form-group">
+                            <label>Caserío</label>
+                            <input type="text" id="escCaserio" placeholder="Especifique el caserío">
+                        </div>
+                        <div class="form-group">
+                            <label>Cantón</label>
+                            <input type="text" id="escCanton" placeholder="Especifique el cantón">
+                        </div>
+                        <div class="form-group">
+                            <label>Municipio</label>
+                            <input type="text" id="escMuni" readonly placeholder="Cargando...">
+                        </div>
+                        <div class="form-group">
+                            <label>Departamento</label>
+                            <input type="text" id="escDepto" readonly placeholder="Cargando...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DATOS DEL ACTA A CERTIFICAR -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bx-file'></i> Detalles del Acta a Certificar</div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Tipo / Motivo del Acta (Ej: TOMA DE POSESIÓN, ASAMBLEA GENERAL)</label>
+                            <input type="text" id="actaTipo" placeholder="Escriba el tipo de acta a certificar">
+                        </div>
+                        <div class="form-group">
+                            <label>Número de Acta Original</label>
+                            <input type="text" id="actaNum" placeholder="Ej: 100001">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Celebración del Acta Original</label>
+                            <input type="date" id="actaFecha">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DATOS DE LA EMISIÓN -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bx-calendar-event'></i> Datos de Emisión de la Certificación</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Ciudad de Emisión</label>
+                            <input type="text" id="emisionCiudad" placeholder="Ej: Chalatenango">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Emisión</label>
+                            <input type="date" id="emisionFecha">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BOTÓN DE DESCARGA DIRECTA -->
+                <div style="margin-top: 1rem; margin-bottom: 2rem; display: flex; justify-content: flex-end;">
+                    <button class="btn-primary" style="font-size: 1rem; padding: 0.8rem 1.5rem;" onclick="descargarPDF()">
+                        <i class='bx bx-download'></i> Generar y Descargar PDF
+                    </button>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- CAJA OCULTA DONDE SE CONSTRUYE EL HTML PURO PARA EL PDF -->
+        <div id="printSection">
+            <div id="pdfData" style="font-family: Arial, sans-serif; font-size: 12pt; color: #000; width: 100%; position: relative; line-height: 2;">
+                
+                <!-- ENCABEZADO INSTITUCIONAL MINEDUCYT (LOGO LOCAL) -->
+                <div style="text-align: right; margin-bottom: 2rem;">
+                    <img src="../img/logo_mined.png" alt="Ministerio de Educación, Ciencia y Tecnología" style="height: 55px; object-fit: contain;">
+                </div>
+
+                <!-- TÍTULO PRINCIPAL -->
+                <div style="text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 2.5rem; text-decoration: underline;">
+                    CERTIFICACION DE ACTA VENCIMIENTO
+                </div>
+                
+                <!-- PÁRRAFO PRINCIPAL -->
+                <div style="text-align: justify; margin-bottom: 2rem;" id="pvCuerpo1"></div>
+                
+                <!-- PÁRRAFO DE CIERRE -->
+                <div style="text-align: justify; margin-bottom: 5rem;" id="pvCuerpo2"></div>
+                
+                <!-- FIRMA -->
+                <div style="display: flex; justify-content: center; page-break-inside: avoid; margin-top: 5rem;">
+                    <div style="width: 60%; text-align: center;">
+                        <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 5px; width: 100%; display: flex; align-items: flex-end; justify-content: space-between;">
+                            <span>F:</span>
+                            <span style="font-size: 10pt;">(SELLO)</span>
+                        </div>
+                        <div style="font-weight: normal; margin-top: 5px;" id="pvFirmaSec"></div>
+                        <div style="font-weight: bold;">Nombre y firma del Secretario</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        let escuelaData = {};
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const cap = (s) => (s || '').toUpperCase();
+
+        // FECHAS INICIALES (Formato dd/mm/aaaa)
+        const tzDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/El_Salvador" }));
+        const yyyy = tzDate.getFullYear();
+        const mm = String(tzDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(tzDate.getDate()).padStart(2, '0');
+        const defaultDate = `${yyyy}-${mm}-${dd}`;
+        
+        document.getElementById('actaFecha').value = defaultDate;
+        document.getElementById('emisionFecha').value = defaultDate;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            await cargarDatosBase();
+        });
+
+        async function cargarDatosBase() {
+            try {
+                // Escuela
+                const escSnap = await getDoc(doc(db, "control", "escuela"));
+                if(escSnap.exists()) {
+                    escuelaData = escSnap.data();
+                    document.getElementById('escNombre').value = escuelaData.name || '';
+                    document.getElementById('escCode').value = escuelaData.code || '';
+                    document.getElementById('escMuni').value = escuelaData.municipio || '';
+                    document.getElementById('escDepto').value = escuelaData.departamento || '';
+                    document.getElementById('emisionCiudad').value = escuelaData.municipio || '';
+                }
+
+                // Extraer Secretario del CDE (Firebase -> centroescolar/cde)
+                const cdeSnap = await getDoc(doc(db, "centroescolar", "cde"));
+                if(cdeSnap.exists()) {
+                    const cdeData = cdeSnap.data();
+                    for(const key in cdeData) {
+                        const integrante = cdeData[key];
+                        // Busca cualquier mención de "Secretario" en el cargo (Ej: "Secretario/a propietario")
+                        if(integrante && integrante.cargo && integrante.cargo.toLowerCase().includes('secretario')) {
+                            document.getElementById('secNombre').value = integrante.nombre || '';
+                            break; 
+                        }
+                    }
+                }
+
+            } catch (e) {
+                console.error("Error al cargar datos base", e);
+                showToast("Error al conectar con la base de datos.", "error");
+            }
+        }
+
+        // CONVERSORES DE TEXTO (Para convertir "2" a "dos", "2026" a "dos mil veintiséis", etc.)
+        const unidadesTxt = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
+        const decenasTxt = ['', 'diez', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+        const centenasTxt = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+        const mesesTxt = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+        function num2Text(n) {
+            if (n < 30) return unidadesTxt[n];
+            if (n < 100) {
+                let dec = Math.floor(n / 10);
+                let uni = n % 10;
+                return uni === 0 ? decenasTxt[dec] : `${decenasTxt[dec]} y ${unidadesTxt[uni]}`;
+            }
+            if (n === 100) return 'cien';
+            if (n < 1000) {
+                let cen = Math.floor(n / 100);
+                let rest = n % 100;
+                if (cen === 5) return rest === 0 ? 'quinientos' : `quinientos ${num2Text(rest)}`;
+                if (cen === 7) return rest === 0 ? 'setecientos' : `setecientos ${num2Text(rest)}`;
+                if (cen === 9) return rest === 0 ? 'novecientos' : `novecientos ${num2Text(rest)}`;
+                return rest === 0 ? centenasTxt[cen] : `${centenasTxt[cen]} ${num2Text(rest)}`;
+            }
+            if (n === 1000) return 'mil';
+            if (n < 2000) {
+                let rest = n % 1000;
+                return rest === 0 ? 'mil' : `mil ${num2Text(rest)}`;
+            }
+            if (n < 1000000) {
+                let miles = Math.floor(n / 1000);
+                let rest = n % 1000;
+                let milesTxt = (miles === 1) ? 'un mil' : `${num2Text(miles)} mil`;
+                return rest === 0 ? milesTxt : `${milesTxt} ${num2Text(rest)}`;
+            }
+            return n.toString();
+        }
+
+        function extractDateText(dateStr) {
+            if(!dateStr) return { d: '__________', m: '__________', y: '__________', rawStr: '__________' };
+            const [y, m, d] = dateStr.split('-');
+            const dStr = num2Text(parseInt(d));
+            const mStr = mesesTxt[parseInt(m) - 1];
+            const yStr = num2Text(parseInt(y));
+            return {
+                d: dStr,
+                m: mStr,
+                y: yStr,
+                rawStr: `${d}/${m}/${y}`
+            };
+        }
+
+        // =========================================================
+        // MOTOR DE GENERACIÓN DE PDF DIRECTA (HTML2PDF)
+        // =========================================================
+        window.descargarPDF = () => {
+            if (!document.getElementById('actaTipo').value || !document.getElementById('actaNum').value) {
+                showToast("Por favor ingrese el tipo de acta y el número.", "warning");
+                return;
+            }
+
+            showToast("Generando certificación, por favor espere...", "info");
+
+            // --- RECOGER VARIABLES ---
+            const secNombre = cap(document.getElementById('secNombre').value || '___________________________');
+            const escNombre = cap(document.getElementById('escNombre').value || '___________________________');
+            const escCode = cap(document.getElementById('escCode').value || '__________');
+            const escCaserio = cap(document.getElementById('escCaserio').value || '___________________________');
+            const escCanton = cap(document.getElementById('escCanton').value || '___________________________');
+            const escMuni = cap(document.getElementById('escMuni').value || '___________________________');
+            const escDepto = cap(document.getElementById('escDepto').value || '___________________________');
+
+            const actaTipo = cap(document.getElementById('actaTipo').value || '___________________________');
+            const actaNum = document.getElementById('actaNum').value || '___________';
+            const actaF = extractDateText(document.getElementById('actaFecha').value);
+            
+            const emisionCiudad = cap(document.getElementById('emisionCiudad').value || '___________________________');
+            const emisionF = extractDateText(document.getElementById('emisionFecha').value);
+
+            // --- INYECTAR TEXTO AL MOLDE HTML (Basado estrictamente en [source: 2]) ---
+            
+            document.getElementById('pvCuerpo1').innerHTML = `El(la) Infrascrito(a) Secretario(a) del Consejo Directivo Escolar, CERTIFICA: Que la copia fotostática del ACTA DE <span style="font-weight: bold; text-decoration: underline;">${actaTipo}</span> NUMERO <span style="font-weight: bold; text-decoration: underline;">${actaNum}</span>, de los miembros del Consejo Directivo Escolar <span style="font-weight: bold;">${escNombre}</span>, con código <span style="font-weight: bold;">${escCode}</span>, ubicado en el Caserío <span style="font-weight: bold;">${escCaserio}</span>, Cantón <span style="font-weight: bold;">${escCanton}</span>, Municipio de: <span style="font-weight: bold;">${escMuni}</span>, Departamento de <span style="font-weight: bold;">${escDepto}</span>; con fecha <span style="font-weight: bold;">${actaF.rawStr}</span>, es conforme y fidedigna con su original con la cual fue debidamente confrontada.`;
+
+            // Procesar el año para no repetir "dos mil" si ya viene en el texto de conversión
+            let yearTxt = emisionF.y;
+            if (yearTxt.startsWith("dos mil ")) {
+                yearTxt = yearTxt.replace("dos mil ", "");
+            }
+
+            document.getElementById('pvCuerpo2').innerHTML = `Y para los usos que el interesado estime conveniente, se extiende la presente certificación, en la ciudad de <span style="font-weight: bold;">${emisionCiudad}</span>, a los <span style="font-weight: bold;">${emisionF.d}</span> días del mes de <span style="font-weight: bold;">${emisionF.m}</span> del año dos mil <span style="font-weight: bold;">${yearTxt}</span>.`;
+
+            document.getElementById('pvFirmaSec').innerText = secNombre;
+
+            // --- EJECUTAR HTML2PDF ---
+            const printSec = document.getElementById('printSection');
+            const pdfData = document.getElementById('pdfData');
+            
+            printSec.style.display = 'block';
+
+            const opt = {
+                margin:       1, // 1 pulgada estricta en todos los lados
+                filename:     `Certificacion_Acta_${actaNum}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opt).from(pdfData).save().then(() => {
+                    printSec.style.display = 'none';
+                    showToast("Certificación generada y descargada.");
+                }).catch(err => {
+                    console.error(err);
+                    printSec.style.display = 'none';
+                    showToast("Error al generar PDF", "error");
+                });
+            }, 200);
+        };
+
+    </script>
+</body>
+</html>

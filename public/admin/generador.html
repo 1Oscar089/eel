@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Documentos - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark: #243C4C; 
+            --primary-steel: #5289AD; 
+            --accent: #698696; 
+            --border: #ACBCBF; 
+            --bg-light: #F4FCFB;
+            --success: #16a34a;
+            --warning: #f59e0b;
+            --info: #0284c7;
+            --danger: #dc2626;
+            --gap: 0.5rem;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+        
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; display: flex; align-items: center; gap: 0.5rem;}
+        .page-header p { font-size: 0.85rem; color: var(--accent); margin-top: 0.2rem; font-weight: 600;}
+
+        /* GRID DE TARJETAS DE DOCUMENTOS */
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .doc-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-steel);
+            box-shadow: 0 10px 15px -3px rgba(82, 137, 173, 0.1);
+        }
+
+        .doc-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--primary-steel);
+            opacity: 0.8;
+        }
+
+        .doc-icon {
+            width: 50px;
+            height: 50px;
+            background: #e0f2fe;
+            color: var(--info);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .doc-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .doc-desc {
+            font-size: 0.8rem;
+            color: var(--accent);
+            line-height: 1.4;
+            font-weight: 500;
+            flex-grow: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-generate {
+            background: white;
+            color: var(--primary-steel);
+            border: 1px solid var(--primary-steel);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            width: 100%;
+        }
+
+        .btn-generate:hover {
+            background: var(--primary-steel);
+            color: white;
+        }
+
+        /* RESPONSIVIDAD */
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .doc-grid { grid-template-columns: 1fr; }
+            .doc-card { padding: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <div>
+                    <h1><i class='bx bxs-file-doc'></i> Generador de Documentos</h1>
+                    <p>Seleccione el formato que desea autocompletar e imprimir.</p>
+                </div>
+            </div>
+
+            <!-- Contenedor donde se renderizarán las tarjetas dinámicamente -->
+            <div class="doc-grid" id="docGridContainer">
+                <div style="text-align:center; padding:2rem; color:var(--accent); grid-column: 1 / -1;">
+                    <i class='bx bx-loader bx-spin' style="font-size: 2rem;"></i>
+                    <p style="margin-top: 0.5rem; font-weight: 700;">Cargando formatos disponibles...</p>
+                </div>
+            </div>
+            
+            <div style="height: 3rem;"></div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+        // Inicialización de la UI
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        // Verificación de Autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            renderDocumentos();
+        });
+
+        // ---------------------------------------------------------
+        // ARREGLO DINÁMICO DE DOCUMENTOS DISPONIBLES
+        // ---------------------------------------------------------
+        const listaDocumentos = [
+            {
+                id: 'cde',
+                title: 'Actas del CDE',
+                icon: 'bx-group',
+                desc: 'Genera las actas formales para las reuniones y acuerdos del Consejo Directivo Escolar.',
+                action: 'cde_formato.html'
+            },
+            {
+                id: 'conciliacion',
+                title: 'Conciliación Bancaria',
+                icon: 'bx-receipt',
+                desc: 'Reporte mensual de saldos, ingresos y egresos según estado de cuenta e historial de fondos.',
+                action: 'conciliacion_formato.html'
+            },
+            {
+                id: 'rendicion',
+                title: 'Rendición de Cuentas',
+                icon: 'bx-bar-chart-square',
+                desc: 'Documento consolidado de gastos e inversiones para presentar a la comunidad educativa.',
+                action: 'rendicion_formato.html'
+            },
+            {
+                id: 'cae',
+                title: 'Comité de Alimentación (CAE)',
+                icon: 'bx-restaurant',
+                desc: 'Formatos para la recepción, distribución y control de los insumos de alimentación escolar.',
+                action: 'cae_formato.html'
+            },
+            {
+                id: 'tomas_posesion',
+                title: 'Tomas de Posesión',
+                icon: 'bx-id-card',
+                desc: 'Acta formal de toma de posesión para nuevos miembros del CDE o personal contratado.',
+                action: 'posesion_formato.html'
+            },
+            {
+                id: 'certificacion_acta',
+                title: 'Certificación de Acta',
+                icon: 'bx-award',
+                desc: 'Generación y descarga directa en PDF de la certificación oficial de actas.',
+                action: 'certificacion_acta_formato.html'
+            },
+            {
+                id: 'aviso_conapina',
+                title: 'Aviso Conapina',
+                icon: 'bx-shield-quarter',
+                desc: 'Generación y descarga directa en PDF de avisos formales para CONAPINA.',
+                action: 'aviso_conapina_formato.html'
+            }
+        ];
+
+        // ---------------------------------------------------------
+        // FUNCIÓN PARA RENDERIZAR LAS TARJETAS
+        // ---------------------------------------------------------
+        function renderDocumentos() {
+            const container = document.getElementById('docGridContainer');
+            
+            if (listaDocumentos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:3rem; color:var(--accent); grid-column: 1 / -1;">
+                        <i class='bx bx-folder-minus' style="font-size: 3rem;"></i>
+                        <p style="margin-top: 0.5rem; font-weight: 700;">No hay formatos configurados.</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            listaDocumentos.forEach(doc => {
+                html += `
+                    <div class="doc-card">
+                        <div class="doc-icon">
+                            <i class='bx ${doc.icon}'></i>
+                        </div>
+                        <h2 class="doc-title">${doc.title}</h2>
+                        <p class="doc-desc">${doc.desc}</p>
+                        <button class="btn-generate" onclick="abrirGenerador('${doc.action}')">
+                            <i class='bx bx-edit'></i> Completar y Generar
+                        </button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Función que redirige al formato correspondiente
+        window.abrirGenerador = (url) => {
+            window.location.href = url;
+        };
+
+    </script>
+</body>
+</html>

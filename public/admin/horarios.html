@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horarios - Iconic & Performance Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark: #243C4C; --primary-steel: #5289AD; 
+            --accent: #698696; --border: #ACBCBF; 
+            --bg-light: #F4FCFB; --danger: #ef4444; --warning: #f59e0b; --success: #16a34a; --info: #3b82f6;
+            --gap: 0.5rem;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* BLOQUEO DE DESBORDAMIENTO Y AJUSTE EXACTO DE MÁRGENES ESTRUCTURALES */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTE MÓDULO */
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; }
+
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+        .btn-primary:hover { background: var(--primary-steel); }
+
+        .selector-box { 
+            background: white; 
+            padding: 1rem; 
+            border-radius: var(--border-radius-lg); 
+            border: 1px solid var(--border); 
+            margin-bottom: 1rem; 
+            display: grid; 
+            grid-template-columns: 1fr 2fr; 
+            gap: 1rem; 
+            box-shadow: var(--shadow-sm); 
+            flex-shrink: 0;
+        }
+
+        .sel-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .sel-group label { font-weight: 800; font-size: 0.65rem; color: var(--accent); text-transform: uppercase; }
+        .sel-group select, .sel-group input { 
+            padding: 0.7rem; 
+            border-radius: 8px; 
+            border: 1px solid var(--border); 
+            outline: none; 
+            font-size: 0.95rem; 
+            background: white; 
+            font-weight: 700;
+            color: var(--primary-dark);
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .sel-group select:focus, .sel-group input:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+
+        /* TABLA DE HORARIOS Y SCROLL MÓVIL FORZADO */
+        .table-container { 
+            width: 100%; 
+            flex-shrink: 0; 
+            margin-bottom: 1rem; 
+            overflow-x: auto; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            background: white; 
+            -webkit-overflow-scrolling: touch; 
+            display: block; 
+        }
+        .list-table { 
+            width: max-content; 
+            min-width: 100%;    
+            border-collapse: collapse; 
+        }
+        
+        .list-table th, .list-table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap !important; }
+        .list-table th { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; background: #f8fafc; text-align: center; }
+
+        .hour-text { font-weight: 800; color: var(--primary-steel); font-size: 0.75rem; white-space: nowrap; }
+        
+        .subject-tag { 
+            font-weight: 700; 
+            color: var(--primary-dark); 
+            background: var(--bg-light); 
+            padding: 6px 10px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            display: inline-block; 
+            white-space: nowrap; 
+            border: 1px solid #e2e8f0;
+        }
+
+        .actions-cell { 
+            display: flex; 
+            gap: 0.4rem; 
+            justify-content: flex-end; 
+            align-items: center; 
+            padding-right: 0.5rem;
+        }
+
+        .btn-sq { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-sq-edit { background: #e0f2fe; color: var(--info); }
+        .btn-sq-edit:hover { background: #bae6fd; transform: scale(1.05); }
+        .btn-sq-delete { background: #fef2f2; color: var(--danger); }
+        .btn-sq-delete:hover { background: #fee2e2; transform: scale(1.05); }
+
+        /* Time Picker Custom Control */
+        .time-picker-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.2rem; 
+            background: var(--bg-light); 
+            padding: 0.4rem; 
+            border-radius: 8px; 
+            border: 1px solid var(--border); 
+        }
+        .time-picker-group select { 
+            border: none; 
+            background: transparent; 
+            font-weight: 800; 
+            flex: 1; 
+            text-align: center; 
+            font-size: 0.9rem;
+            color: var(--primary-dark);
+            outline: none;
+            cursor: pointer;
+            padding: 0.3rem 0;
+        }
+        .time-picker-group span { font-weight: 900; color: var(--accent); }
+
+        .swipe-hint { display: none; text-align: center; font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-top: 0.5rem; }
+
+        /* MODALES (Blindaje Móvil) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: white; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 550px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex !important;
+            flex-direction: column !important;
+            max-height: 90vh !important; 
+            overflow: hidden !important; 
+            padding: 1.8rem;
+        }
+        
+        .modal-header { flex-shrink: 0 !important; margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center;}
+        
+        .modal-body {
+            flex: 1 1 auto !important; 
+            min-height: 0 !important; 
+            overflow-y: auto !important; 
+            padding-right: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .modal-actions {
+            flex-shrink: 0 !important; 
+            background: white !important;
+            padding-top: 1rem !important;
+            border-top: 1px solid var(--bg-light);
+            margin-top: 0 !important;
+            position: relative !important;
+            z-index: 10 !important;
+            display: flex; 
+            gap: 0.5rem; 
+            justify-content: flex-end; 
+            align-items: center;
+        }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem; }
+        
+        /* FIX DE CORTES EN SELECTS */
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 0.7rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            background: white;
+            font-family: inherit;
+            min-height: 44px; /* Obliga a la caja a no aplastar el texto en celulares */
+        }
+        
+        .btn-save-text { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: 0.2s;}
+        .btn-save-text:hover { background: var(--primary-steel); }
+
+        .empty-state { text-align: center; padding: 2rem; color: var(--accent); font-style: italic; font-size: 0.85rem;}
+
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .page-header .btn-primary { width: 100%; justify-content: center; }
+            
+            .selector-box { grid-template-columns: 1fr; padding: 1rem; gap: 0.8rem;}
+            
+            .swipe-hint { display: block; }
+            .form-grid { grid-template-columns: 1fr; }
+            
+            .modal { padding: 1.2rem; border-radius: 0; max-height: 100vh;}
+            .modal-actions { flex-direction: column-reverse; gap: 0.5rem; }
+            .modal-actions .btn-save-text { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bx-time'></i> Configuración de Horarios</h1>
+                <button class="btn-primary" onclick="openRowModal()">
+                    <i class='bx bx-plus'></i> Añadir Franja
+                </button>
+            </div>
+            
+            <div class="selector-box">
+                <div class="sel-group">
+                    <label>Año Lectivo</label>
+                    <input type="number" id="yearSelector" onchange="loadHorario()" title="Puede ingresar cualquier año">
+                </div>
+                <div class="sel-group">
+                    <label>Grado Escolar</label>
+                    <select id="gradoSelector" onchange="loadHorario()">
+                        <option value="">Cargando información de grados...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="horarioDisplay" style="display: none;">
+                <h3 id="currentViewName" style="font-weight:800; font-size:1rem; margin-bottom:1rem; color:var(--primary-dark); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class='bx bxs-graduation' style="color: var(--primary-steel);"></i> <span id="currentViewText"></span>
+                </h3>
+                
+                <div class="table-container">
+                    <table class="list-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center;">Horario</th>
+                                <th style="text-align: center;">Lunes</th>
+                                <th style="text-align: center;">Martes</th>
+                                <th style="text-align: center;">Miércoles</th>
+                                <th style="text-align: center;">Jueves</th>
+                                <th style="text-align: center;">Viernes</th>
+                                <th style="text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="horario-body"></tbody>
+                    </table>
+                </div>
+                <div class="swipe-hint">← Desliza la tabla horizontalmente para ver todo →</div>
+            </div>
+            
+            <div style="height: 3rem;"></div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="rowModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); margin: 0;">Nueva Franja</h2>
+                <button class="btn-sq" style="background: transparent; color: var(--accent);" onclick="closeRowModal()"><i class='bx bx-x'></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-grid" style="margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label>Hora de Inicio</label>
+                        <div class="time-picker-group">
+                            <select id="hStart"></select><span>:</span>
+                            <select id="mStart"></select>
+                            <select id="pStart"><option value="AM">AM</option><option value="PM">PM</option></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Hora de Finalización</label>
+                        <div class="time-picker-group">
+                            <select id="hEnd"></select><span>:</span>
+                            <select id="mEnd"></select>
+                            <select id="pEnd"><option value="AM">AM</option><option value="PM">PM</option></select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-grid" id="subjectsGrid"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border);" onclick="closeRowModal()">Cancelar</button>
+                <button class="btn-save-text" id="btnSaveRow" onclick="saveRow()"><i class='bx bx-save'></i> Guardar Franja</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmOverlay" style="z-index: 4000;">
+        <div class="modal" style="text-align:center; max-width: 350px;">
+            <div style="color:var(--danger); margin-bottom:1rem; margin-top: 1rem;">
+                <i class='bx bx-error-circle' style="font-size: 3rem;"></i>
+            </div>
+            <h2 style="font-weight:800; font-size:1.2rem; color:var(--primary-dark);">¿Eliminar Franja?</h2>
+            <p style="font-size: 0.85rem; color: var(--accent); margin-top: 0.5rem; margin-bottom: 1.5rem;">Esta acción eliminará el horario para todos los días en esta franja.</p>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem;">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border); display: block; width: 100%; justify-content: center;" onclick="closeConfirm()">Cancelar</button>
+                <button class="btn-save-text" style="background:var(--danger); display: block; width: 100%; justify-content: center;" onclick="deleteRow()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { doc, setDoc, collection, query, where, getDocs, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+        
+        try { await enableIndexedDbPersistence(db); } catch(e) {} 
+
+        let userPerms = [], isDir = false, currentRows = [], allGrades = {}, allSubs = {}, currentUnsub = null, editingIdx = -1, pendingDelete = -1;
+        
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+
+        // --- SISTEMA DE TOAST ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const initUI = () => {
+            const curYear = new Date().getFullYear();
+            // Iniciar el input numérico con el año actual
+            document.getElementById('yearSelector').value = curYear;
+            
+            const h = document.querySelectorAll('#hStart, #hEnd'), m = document.querySelectorAll('#mStart, #mEnd');
+            h.forEach(s => { for(let i=1; i<=12; i++) s.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}</option>`; });
+            m.forEach(s => { for(let i=0; i<60; i+=5) s.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}</option>`; });
+            
+            const daysMap = [
+                { id: 'lun', label: 'Lunes' },
+                { id: 'mar', label: 'Martes' },
+                { id: 'mie', label: 'Miércoles' },
+                { id: 'jue', label: 'Jueves' },
+                { id: 'vie', label: 'Viernes' }
+            ];
+            
+            // Ya no usamos estilos en línea conflictivos en los selectores. Solo las clases base.
+            document.getElementById('subjectsGrid').innerHTML = daysMap.map(d => `
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>${d.label}</label>
+                    <select id="${d.id}Input" class="subject-select"></select>
+                </div>
+            `).join('');
+        };
+        initUI();
+
+        onAuthStateChanged(auth, async (u) => {
+            if (!u) { window.location.href = '../index.html'; return; }
+            
+            onSnapshot(doc(db, "control", "asignaturas"), (s) => { 
+                if(s.exists()) allSubs = s.data(); 
+            });
+            
+            const dSnap = await getDocs(query(collection(db, "docentes"), where("correo", "==", u.email)));
+            if(!dSnap.empty){ 
+                const d = dSnap.docs[0].data(); 
+                userPerms = d.grados || []; 
+                isDir = d.cargo === 'director'; 
+            }
+            
+            onSnapshot(doc(db, "control", "grados"), (s) => {
+                if(!s.exists()) return; 
+                allGrades = s.data();
+                const sel = document.getElementById('gradoSelector'), prev = sel.value;
+                
+                sel.innerHTML = '<option value="" disabled selected>Elegir grado de la lista...</option>' + 
+                    Object.keys(allGrades)
+                    .sort((a,b)=>parseInt(a)-parseInt(b))
+                    .filter(id => isDir || userPerms.includes(id.toString()))
+                    .map(id => `<option value="${id}">${cap(allGrades[id].nombre || allGrades[id])}</option>`)
+                    .join('');
+                
+                if (prev) sel.value = prev;
+            });
+        });
+
+        window.loadHorario = () => {
+            const year = document.getElementById('yearSelector').value;
+            const gId = document.getElementById('gradoSelector').value;
+            
+            if(!gId || !year) { 
+                document.getElementById('horarioDisplay').style.display = 'none'; 
+                if(currentUnsub) currentUnsub(); 
+                return; 
+            }
+            
+            const cyc = parseInt(gId) <= 3 ? "primer_ciclo" : parseInt(gId) <= 6 ? "segundo_ciclo" : "tercer_ciclo";
+            
+            document.querySelectorAll('.subject-select').forEach(s => { 
+                s.innerHTML = '<option value="">(Receso / Libre)</option>' + 
+                (allSubs[cyc] || []).map(sub => `<option value="${sub}">${cap(sub)}</option>`).join(''); 
+            });
+            
+            document.getElementById('currentViewText').innerText = `${cap(allGrades[gId]?.nombre || allGrades[gId])} (${year})`;
+            document.getElementById('horarioDisplay').style.display = 'block';
+            
+            if(currentUnsub) currentUnsub(); 
+            
+            currentUnsub = onSnapshot(doc(db, "control", "horarios"), (s) => { 
+                const key = `${year}_grado_${gId}`;
+                currentRows = s.exists() && s.data()[key] ? s.data()[key].filas : []; 
+                renderTable(); 
+            });
+        };
+
+        function renderTable() {
+            const b = document.getElementById('horario-body');
+            
+            if(currentRows.length === 0) { 
+                b.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class='bx bx-calendar-x' style="font-size: 2rem; color: var(--border);"></i><p>Aún no hay franjas de horario configuradas.</p></div></td></tr>`; 
+                return; 
+            }
+            
+            b.innerHTML = currentRows.map((r, i) => {
+                const actionsHtml = `<div class="actions-cell">
+                    <button class="btn-sq btn-sq-edit" onclick="openRowModal(${i})" title="Editar"><i class='bx bx-edit-alt'></i></button>
+                    <button class="btn-sq btn-sq-delete" onclick="triggerDelete(${i})" title="Eliminar"><i class='bx bx-trash'></i></button>
+                </div>`;
+
+                return `<tr>
+                    <td style="text-align: center;"><span class="hour-text">${r.hora}</span></td>
+                    ${['lun','mar','mie','jue','vie'].map(d => `<td style="text-align: center;">${r[d] ? `<span class="subject-tag">${cap(r[d])}</span>` : '<span style="color:var(--border);">—</span>'}</td>`).join('')}
+                    <td>${actionsHtml}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        window.openRowModal = (idx = -1) => {
+            const gId = document.getElementById('gradoSelector').value;
+            if(!gId) {
+                showToast("Por favor selecciona un grado primero.", "warning");
+                return;
+            }
+
+            editingIdx = idx;
+            document.getElementById('modalTitle').innerText = idx === -1 ? 'Registrar Nueva Franja' : 'Editar Franja';
+            
+            if(idx !== -1) {
+                const r = currentRows[idx], p = r.hora.split(' - ');
+                if(p.length === 2) {
+                    ['hStart','mStart','pStart'].forEach((id, k) => document.getElementById(id).value = p[0].split(/:| /)[k]);
+                    ['hEnd','mEnd','pEnd'].forEach((id, k) => document.getElementById(id).value = p[1].split(/:| /)[k]);
+                }
+                ['lun','mar','mie','jue','vie'].forEach(d => document.getElementById(d+'Input').value = r[d] || '');
+            } else { 
+                document.querySelectorAll('.subject-select').forEach(s => s.value = ''); 
+            }
+            
+            document.getElementById('rowModalOverlay').classList.add('active');
+        };
+
+        window.closeRowModal = () => document.getElementById('rowModalOverlay').classList.remove('active');
+
+        window.saveRow = async () => {
+            const btn = document.getElementById('btnSaveRow');
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Guardando...";
+
+            const year = document.getElementById('yearSelector').value;
+            const gId = document.getElementById('gradoSelector').value;
+            
+            const time = `${document.getElementById('hStart').value}:${document.getElementById('mStart').value} ${document.getElementById('pStart').value} - ${document.getElementById('hEnd').value}:${document.getElementById('mEnd').value} ${document.getElementById('pEnd').value}`;
+            const row = { 
+                hora: time, 
+                lun: document.getElementById('lunInput').value, 
+                mar: document.getElementById('marInput').value, 
+                mie: document.getElementById('mieInput').value, 
+                jue: document.getElementById('jueInput').value, 
+                vie: document.getElementById('vieInput').value 
+            };
+            
+            let tmp = [...currentRows]; 
+            
+            if(editingIdx === -1) {
+                tmp.push(row); 
+            } else {
+                tmp[editingIdx] = row;
+            }
+            
+            // Reordenar por hora (Logica básica para AM/PM)
+            tmp.sort((a, b) => {
+                const getTime = str => {
+                    const [t, p] = str.split(' - ')[0].split(' ');
+                    let [h, m] = t.split(':');
+                    h = parseInt(h);
+                    if(p === 'PM' && h !== 12) h += 12;
+                    if(p === 'AM' && h === 12) h = 0;
+                    return h * 60 + parseInt(m);
+                };
+                return getTime(a.hora) - getTime(b.hora);
+            });
+            
+            const key = `${year}_grado_${gId}`;
+            
+            try {
+                await setDoc(doc(db, "control", "horarios"), { [key]: { filas: tmp } }, { merge: true }); 
+                showToast("Franja guardada correctamente.");
+                closeRowModal();
+            } catch(e) {
+                showToast("Error de conexión al guardar.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bx-save'></i> Guardar Franja";
+            }
+        };
+
+        window.triggerDelete = (idx) => { 
+            pendingDelete = idx; 
+            document.getElementById('confirmOverlay').classList.add('active'); 
+        };
+        
+        window.closeConfirm = () => document.getElementById('confirmOverlay').classList.remove('active');
+        
+        window.deleteRow = async () => {
+            const year = document.getElementById('yearSelector').value;
+            const gId = document.getElementById('gradoSelector').value;
+            
+            let tmp = currentRows.filter((_, i) => i !== pendingDelete);
+            const key = `${year}_grado_${gId}`;
+            
+            try {
+                await setDoc(doc(db, "control", "horarios"), { [key]: { filas: tmp } }, { merge: true });
+                showToast("Franja eliminada exitosamente.");
+                closeConfirm();
+            } catch(e) {
+                showToast("Error al eliminar.", "error");
+            }
+        };
+    </script>
+</body>
+</html>

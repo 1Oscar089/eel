@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menciones Honoríficas - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --success:#16a34a; --warning:#d97706; --danger:#dc2626; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* LAYOUT DE VENTANA ENFOCADA (Sin Sidebar) */
+        body { 
+            background: var(--bg-light); 
+            color: var(--primary-dark); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 1rem; 
+        }
+
+        .focused-window { 
+            width: 100%; 
+            max-width: 800px; 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: var(--border-radius-xl); 
+            border: 1px solid var(--border); 
+            box-shadow: var(--shadow-lg); 
+            display: flex; 
+            flex-direction: column; 
+            max-height: 95vh; 
+            animation: slideUp 0.4s ease; 
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .window-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid var(--bg-light); padding-bottom: 1rem; flex-shrink: 0; }
+        .window-header h1 { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; color: var(--primary-dark);}
+        .window-header h1 i { color: var(--warning); font-size: 1.6rem; }
+        
+        .btn-back { background: var(--bg-light); color: var(--accent); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; transition: 0.2s; border: 1px solid transparent; }
+        .btn-back:hover { background: #f1f5f9; color: var(--danger); border-color: #fecaca; }
+
+        .info-msg { background: #fffbeb; color: var(--warning); font-size: 0.8rem; font-weight: 700; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid #fde68a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;}
+
+        /* FORMULARIO Y CONTROLES */
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; flex-shrink: 0; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group label { font-size: 0.7rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.9rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; transition: 0.2s; font-family: inherit;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+        .full-width { grid-column: 1 / -1; }
+
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.8rem 1rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; border: none; width: 100%; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-steel); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(82, 137, 173, 0.3); }
+
+        .btn-success { background: var(--success); }
+        .btn-success:hover:not(:disabled) { background: #15803d; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3); }
+
+        /* ÁREA DE RESULTADOS */
+        .results-area { flex: 1; overflow-y: auto; padding: 1.5rem; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; min-height: 150px; scrollbar-width: thin; }
+        
+        .student-chip { background: white; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.85rem; color: var(--primary-dark); font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.3rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .student-chip i { color: var(--warning); font-size: 1.2rem; }
+
+        /* PANEL DIRECTOR */
+        .action-area { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 12px; display: none; flex-shrink: 0; animation: fadeIn 0.3s; margin-top: 0.5rem; }
+        .empty-state { text-align: center; color: var(--accent); font-style: italic; font-size: 0.9rem; font-weight: 600; padding: 2rem 0; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 768px) {
+            body { background: white; padding: 0; }
+            .focused-window { padding: 1.5rem; max-height: 100vh; border-radius: 0; border: none; box-shadow: none; }
+            
+            .form-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+            .form-group select, .form-group input { padding: 0.6rem; font-size: 0.85rem; min-height: 44px;}
+            
+            .action-area { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <div class="focused-window">
+        <div class="window-header">
+            <h1><i class='bx bxs-medal'></i> Menciones Honoríficas</h1>
+            <!-- Botón para regresar al módulo base (NO SIDEBAR) -->
+            <a href="demeritos.html" class="btn-back"><i class='bx bx-arrow-back'></i> Volver</a>
+        </div>
+
+        <div class="info-msg">
+            <i class='bx bxs-info-circle'></i> 
+            Este módulo es exclusivo para estudiantes de 3° a 9° Grado. Parvularia, 1° y 2° Grado no aplican a este sistema de conducta.
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Año</label>
+                <input type="number" id="fAnio" value="2026">
+            </div>
+            <div class="form-group">
+                <label>Mes</label>
+                <select id="fMes" onchange="limpiarPanel()">
+                    <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Grado (3° en adelante)</label>
+                <select id="fGrado" onchange="limpiarPanel()">
+                    <option value="" disabled selected>Cargando...</option>
+                </select>
+            </div>
+            <div class="full-width" style="display:flex; gap:0.5rem;">
+                <button class="btn-primary" onclick="consultarSolventes()" style="flex:1;"><i class='bx bx-search-alt'></i> Validar Solvencias</button>
+                <button class="btn-primary" id="btnDescargar" onclick="descargarMenciones()" style="flex:1; background:var(--primary-steel);"><i class='bx bxs-file-pdf'></i> Exportar Listado</button>
+            </div>
+        </div>
+
+        <div id="resultsArea" class="results-area">
+            <div class="empty-state">Realice una búsqueda para generar el listado de alumnos solventes.</div>
+        </div>
+
+        <div id="directorPanel" class="action-area">
+            <h3 style="color: #166534; font-size: 1rem; margin-bottom: 1rem; font-weight: 800;"><i class='bx bx-check-shield'></i> Autorización de Dirección</h3>
+            <div class="form-grid" style="grid-template-columns: 1fr 2fr;">
+                <div class="form-group">
+                    <label>Fecha de Entrega</label>
+                    <input type="date" id="fechaRec">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Reconocimiento</label>
+                    <select id="tipoRec" onchange="validarDisponibilidadPanel()">
+                        <option value="A">A) Diplomas</option>
+                        <option value="B">B) Menciones en Murales</option>
+                    </select>
+                </div>
+            </div>
+            <button id="btnAplicar" class="btn-primary btn-success" style="margin-top: 0.5rem;" onclick="aplicarReconocimientos()"><i class='bx bxs-award'></i> Otorgar Mención a Estudiantes Visibles</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, setDoc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const { jsPDF } = window.jspdf;
+        const gradeLabels = { '10': 'Parvularia 4', '11': 'Parvularia 5', '12': 'Parvularia 6', '1': 'Primer Grado', '2': 'Segundo Grado', '3': 'Tercer Grado', '4': 'Cuarto Grado', '5': 'Quinto Grado', '6': 'Sexto Grado', '7': 'Séptimo Grado', '8': 'Octavo Grado', '9': 'Noveno Grado' };
+        
+        // RESTRICCIÓN ESTRICTA: Solo TERCER GRADO en adelante
+        const gradeOrder = ['3', '4', '5', '6', '7', '8', '9']; 
+        
+        const MESES_LISTA = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        let allStudents = [], userRole = '', userGrades = [], solventCached = [], isPrivileged = false;
+        let solventesOriginales = [];
+
+        const getKeys = (fn) => { const w = (fn || '').toLowerCase().split(/\s+/).filter(x => !['de','del','la','las','los','y'].includes(x)); return { a1: w[w.length-2]||w[0]||'', a2: w[w.length-1]||'', n1: w[0]||'' }; };
+
+        // SISTEMA DE TOAST
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        window.limpiarPanel = () => {
+            document.getElementById('resultsArea').innerHTML = '<div class="empty-state">Realice una búsqueda para generar el listado de alumnos solventes.</div>';
+            document.getElementById('directorPanel').style.display = 'none';
+            solventCached = [];
+            solventesOriginales = [];
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const anioActual = new Date().getFullYear();
+            document.getElementById('fAnio').value = anioActual;
+            document.getElementById('fMes').value = String(new Date().getMonth() + 1).padStart(2, '0');
+            document.getElementById('fechaRec').value = new Date().toISOString().split('T')[0];
+
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) return window.location.href = '../index.html';
+                
+                try {
+                    const qU = await getDocs(query(collection(db, "docentes"), where("correo", "==", user.email)));
+                    if (!qU.empty) {
+                        const d = qU.docs[0].data();
+                        userRole = (d.cargo || '').toLowerCase();
+                        userGrades = (d.grados || []).map(String);
+                        isPrivileged = ['director', 'subdirector'].includes(userRole);
+                    }
+                    initGrados();
+                    onSnapshot(collection(db, "users"), (s) => allStudents = s.docs.map(d => ({id:d.id, ...d.data()})).filter(x => x.nombreCompleto && !x.archivado));
+                } catch(e) { console.error("Error al iniciar: ", e); }
+            });
+        });
+
+        function initGrados() {
+            const sel = document.getElementById('fGrado');
+            let opts = isPrivileged ? '<option value="ALL">-- Todos los Grados (3° a 9°) --</option>' : '';
+            
+            // Solo insertar los grados que estén en la variable "gradeOrder" (De 3 a 9)
+            const list = isPrivileged ? gradeOrder : userGrades.filter(g => gradeOrder.includes(g));
+            
+            if(list.length === 0 && !isPrivileged) {
+                opts = '<option value="" disabled selected>Sin grados de 3° a 9° asignados</option>';
+            }
+            
+            sel.innerHTML = opts + list.map(g => `<option value="${g}">${gradeLabels[g]}</option>`).join('');
+        }
+
+        window.consultarSolventes = async () => {
+            const anio = document.getElementById('fAnio').value;
+            const mes = document.getElementById('fMes').value;
+            const grado = document.getElementById('fGrado').value;
+            const res = document.getElementById('resultsArea');
+            const pnl = document.getElementById('directorPanel');
+            
+            if(!grado) {
+                showToast("Seleccione un grado válido.", "warning");
+                return;
+            }
+            
+            res.innerHTML = '<div class="empty-state"><i class="bx bx-loader bx-spin"></i> Procesando expedientes disciplinarios...</div>';
+            pnl.style.display = 'none'; 
+            solventCached = [];
+            solventesOriginales = [];
+
+            let cohort = [];
+            if (grado === 'ALL') {
+                cohort = allStudents.filter(st => gradeOrder.includes(String(st.grade)));
+            } else {
+                cohort = allStudents.filter(st => String(st.grade) === String(grado));
+            }
+            
+            if(cohort.length === 0) { 
+                res.innerHTML = '<div class="empty-state">No hay alumnos registrados en el criterio seleccionado.</div>'; 
+                return; 
+            }
+
+            // Validar Solvencia Acumulada (Desde inicio de año hasta el mes seleccionado inclusive)
+            await Promise.all(cohort.map(async (st) => {
+                let dCount = 0, rCount = 0;
+                try {
+                    const dDoc = await getDoc(doc(db, "users", st.id, "metadata", "demeritos"));
+                    if(dDoc.exists()) {
+                        Object.values(dDoc.data()).forEach(x => { 
+                            if(x.fecha && x.fecha.startsWith(String(anio))) {
+                                const mesReg = parseInt(x.fecha.split('-')[1]);
+                                if (mesReg <= parseInt(mes)) dCount++;
+                            }
+                        });
+                    }
+                    
+                    const rDoc = await getDoc(doc(db, "users", st.id, "metadata", "redenciones"));
+                    if(rDoc.exists()) {
+                        Object.values(rDoc.data()).forEach(x => { 
+                            if(x.fecha && x.fecha.startsWith(String(anio))) {
+                                const mesReg = parseInt(x.fecha.split('-')[1]);
+                                if (mesReg <= parseInt(mes)) rCount++;
+                            }
+                        });
+                    }
+                } catch(e) {}
+                
+                // Solo si el balance TOTAL histórico del año hasta ese mes es 0 o menor, es solvente
+                if ((dCount - rCount) <= 0) {
+                    solventCached.push(st);
+                    solventesOriginales.push(st);
+                }
+            }));
+
+            if(solventCached.length === 0) { 
+                res.innerHTML = '<div class="empty-state"><i class="bx bx-shield-x"></i> Ningún estudiante logró la solvencia acumulada hasta este mes en la selección.</div>'; 
+                return; 
+            }
+
+            solventCached.sort((a,b) => {
+                // Si es ALL, primero agrupa por grado
+                if(grado === 'ALL' && a.grade !== b.grade) return parseInt(a.grade) - parseInt(b.grade);
+                const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); 
+                return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1);
+            });
+
+            res.innerHTML = solventCached.map(st => {
+                const gradeLabelHtml = grado === 'ALL' ? ` <span style="opacity:0.6; font-size:0.75rem;">(${gradeLabels[st.grade]})</span>` : '';
+                return `<div class="student-chip"><i class='bx bxs-medal'></i> ${st.nombreCompleto} ${gradeLabelHtml}</div>`;
+            }).join('');
+            
+            if(isPrivileged) { 
+                pnl.style.display = 'block'; 
+                validarDisponibilidadPanel();
+            }
+        };
+
+        window.validarDisponibilidadPanel = async () => {
+            const anio = document.getElementById('fAnio').value;
+            const mes = document.getElementById('fMes').value;
+            const tipo = document.getElementById('tipoRec').value;
+            
+            if (solventesOriginales.length === 0) return;
+
+            let yaRegistrado = false;
+            
+            // Validar si al menos UNO de los alumnos visibles ya tiene el reconocimiento
+            await Promise.all(solventesOriginales.map(async (st) => {
+                if (yaRegistrado) return;
+                try {
+                    const recDoc = await getDoc(doc(db, "users", st.id, "metadata", "reconocimientos"));
+                    if(recDoc.exists()) {
+                        const recId = `rec_${anio}_${mes}_${tipo}`;
+                        if (recDoc.data()[recId]) yaRegistrado = true;
+                    }
+                } catch(e){}
+            }));
+
+            if (yaRegistrado) {
+                document.getElementById('directorPanel').style.display = 'none';
+                document.getElementById('resultsArea').innerHTML = `<div class="empty-state" style="color: var(--danger);"><i class='bx bx-error-circle'></i> Las Menciones Honoríficas tipo ${tipo} correspondientes a ${mes}/${anio} ya fueron aplicadas para este grupo. Genera el PDF para ver el listado.</div>`;
+            }
+        };
+
+        window.aplicarReconocimientos = async () => {
+            const btn = document.getElementById('btnAplicar');
+            const anio = document.getElementById('fAnio').value;
+            const mes = document.getElementById('fMes').value;
+            const tipo = document.getElementById('tipoRec').value;
+            const desc = document.getElementById('tipoRec').options[document.getElementById('tipoRec').selectedIndex].text;
+            const fechaRec = document.getElementById('fechaRec').value;
+
+            if(!fechaRec) {
+                showToast("Especifique la fecha de entrega.", "warning");
+                return;
+            }
+            if(!confirm(`¿Aplicar el reconocimiento "${desc}" a los ${solventCached.length} estudiantes listados?`)) return;
+            
+            btn.disabled = true; 
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Aplicando en lote...";
+            
+            try {
+                const batch = writeBatch(db);
+                
+                solventCached.forEach(st => {
+                    const recId = `rec_${anio}_${mes}_${tipo}`;
+                    
+                    const payload = { 
+                        fecha: fechaRec, 
+                        tipo: "Reconocimiento", 
+                        letra: tipo, 
+                        descripcion: desc, 
+                        mesAsociado: mes, 
+                        anioAsociado: anio, 
+                        timestamp: Date.now() 
+                    };
+
+                    batch.set(doc(db, "users", st.id, "metadata", "reconocimientos"), { [recId]: payload }, { merge: true });
+                    batch.update(doc(db, "users", st.id), { [`reconocimientos_history.${anio}`]: st.grade });
+                });
+
+                await batch.commit(); 
+                showToast("Menciones honoríficas otorgadas con éxito."); 
+                document.getElementById('resultsArea').innerHTML = '<div class="empty-state">Operación finalizada exitosamente.</div>';
+                document.getElementById('directorPanel').style.display = 'none';
+                solventCached = [];
+                solventesOriginales = [];
+            } catch(e) {
+                console.error(e);
+                showToast("Error de conexión al guardar los reconocimientos.", "error");
+            } finally {
+                btn.disabled = false; 
+                btn.innerHTML = "<i class='bx bxs-award'></i> Otorgar Mención a Estudiantes Visibles";
+            }
+        };
+
+        window.descargarMenciones = async () => {
+            const anio = document.getElementById('fAnio').value;
+            const mes = document.getElementById('fMes').value;
+            const gradoSel = document.getElementById('fGrado').value;
+            
+            if(!gradoSel) {
+                showToast("Seleccione un grado.", "warning");
+                return;
+            }
+
+            const btn = document.getElementById('btnDescargar'); 
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Generando...";
+            
+            const docPdf = new jsPDF('p', 'mm', 'letter');
+            let y = 30, gradosProc = gradoSel === 'ALL' ? gradeOrder : [gradoSel];
+            const mesNombre = MESES_LISTA[parseInt(mes)-1];
+            
+            docPdf.setFontSize(16); docPdf.setFont("helvetica", "bold"); docPdf.text("INFORME DE MENCIONES HONORÍFICAS", 105, 15, {align:'center'});
+            docPdf.setFontSize(12); docPdf.text(`Mes: ${mesNombre} ${anio}`, 105, 22, {align:'center'});
+            docPdf.setDrawColor(0,0,0); docPdf.line(14, 25, 202, 25);
+
+            let seEncontraronDatos = false;
+
+            for(const g of gradosProc) {
+                const listG = allStudents.filter(s => String(s.grade) === String(g));
+                let solventesConReconocimiento = [];
+                
+                await Promise.all(listG.map(async (st) => {
+                    try {
+                        const recDoc = await getDoc(doc(db, "users", st.id, "metadata", "reconocimientos"));
+                        if(recDoc.exists()) {
+                            const recs = Object.values(recDoc.data());
+                            if(recs.some(r => String(r.anioAsociado) === String(anio) && String(r.mesAsociado) === String(mes))) {
+                                solventesConReconocimiento.push(st);
+                            }
+                        }
+                    } catch(e){}
+                }));
+
+                if(solventesConReconocimiento.length > 0) {
+                    seEncontraronDatos = true;
+                    if (y > 240) { docPdf.addPage(); y = 20; }
+                    
+                    solventesConReconocimiento.sort((a,b) => {
+                        const kA = getKeys(a.nombreCompleto), kB = getKeys(b.nombreCompleto); 
+                        return kA.a1.localeCompare(kB.a1) || kA.a2.localeCompare(kB.a2) || kA.n1.localeCompare(kB.n1);
+                    });
+
+                    docPdf.setFontSize(12); docPdf.setFont("helvetica", "bold"); 
+                    docPdf.text(`Grado: ${gradeLabels[g]}`, 14, y); y += 4;
+                    
+                    docPdf.autoTable({ 
+                        startY: y, 
+                        head: [['#', 'Nombre Completo del Estudiante', 'NIE']], 
+                        body: solventesConReconocimiento.map((s, i) => [i+1, s.nombreCompleto, s.NIE||s.nie||'-']), 
+                        theme: 'grid', 
+                        headStyles: {fillColor: [36, 60, 76]},
+                        styles: {fontSize: 10, cellPadding: 2},
+                        columnStyles: { 0: {cellWidth: 15}, 2: {cellWidth: 40} }
+                    });
+                    
+                    y = docPdf.lastAutoTable.finalY + 10;
+                }
+            }
+            
+            if(!seEncontraronDatos) {
+                showToast("No existen reconocimientos aplicados para este periodo.", "error");
+            } else {
+                docPdf.save(`Menciones_Honorificas_${mesNombre}_${anio}.pdf`);
+                showToast("PDF generado y descargado exitosamente.");
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = "<i class='bx bxs-file-pdf'></i> Exportar Listado";
+        };
+    </script>
+</body>
+</html>

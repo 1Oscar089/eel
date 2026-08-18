@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Respaldos del Sistema - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --info:#3b82f6; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+
+        /* BLOQUEO DE DESBORDAMIENTO Y AJUSTE EXACTO DE MÁRGENES ESTRUCTURALES */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        /* REGLAS GLOBALES */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;}
+
+        /* ESTILOS ESPECÍFICOS PARA LAS TARJETAS DE RESPALDO */
+        .grid-cards { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 1rem; 
+            max-width: 100%; 
+        }
+        
+        .backup-card { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: var(--border-radius-xl); 
+            border: 1px solid var(--border); 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            overflow: hidden; 
+            transition: 0.2s;
+        }
+        .backup-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08);
+        }
+        
+        .backup-card::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; left: 0; right: 0; 
+            height: 4px; 
+            background: transparent; 
+            transition: 0.3s ease; 
+        }
+        
+        .card-export::before { background: var(--info); }
+        .card-import::before { background: var(--warning); }
+        
+        .icon-wrapper { 
+            width: 60px; height: 60px; 
+            border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 2.2rem; 
+            margin-bottom: 1rem; 
+            flex-shrink: 0;
+        }
+        .card-export .icon-wrapper { background: #e0f2fe; color: var(--info); }
+        .card-import .icon-wrapper { background: #fef3c7; color: var(--warning); }
+        
+        .backup-card h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--primary-dark); }
+        .backup-card p { font-size: 0.85rem; color: var(--accent); margin-bottom: 1.5rem; line-height: 1.5; flex-grow: 1; font-weight: 500;}
+        
+        /* INPUT DE ARCHIVO Y BOTONES GRANDES */
+        .file-upload-wrapper { position: relative; margin-bottom: 1.5rem; }
+        .file-upload-input { 
+            width: 100%; 
+            padding: 1rem; 
+            border: 2px dashed var(--border); 
+            border-radius: 8px; 
+            cursor: pointer; 
+            text-align: center; 
+            color: var(--accent); 
+            font-weight: 700; 
+            transition: 0.2s; 
+            background: var(--bg-light); 
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .file-upload-input:hover { border-color: var(--primary-steel); background: white; color: var(--primary-steel); }
+        
+        .btn-action-large { 
+            width: 100%; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            border: none; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 0.5rem; 
+            font-size: 0.95rem; 
+        }
+        .btn-export { background: var(--primary-dark); color: white; }
+        .btn-export:hover { background: var(--primary-steel); }
+        .btn-import { background: #fffbeb; color: var(--warning); border: 1px solid #fde68a; }
+        .btn-import:hover { background: #fde68a; color: #b45309; }
+        
+        /* OVERLAY DE CARGA */
+        .loader-overlay { 
+            position: absolute; inset: 0; 
+            background: rgba(255,255,255,0.9); 
+            display: none; 
+            align-items: center; justify-content: center; 
+            flex-direction: column; 
+            z-index: 10; 
+            border-radius: inherit;
+        }
+        .loader-overlay.active { display: flex; }
+        .loader-overlay i { font-size: 3rem; color: var(--primary-steel); margin-bottom: 0.5rem; }
+        .loader-overlay span { font-weight: 800; color: var(--primary-dark); font-size: 0.9rem; }
+        
+        @media (max-width: 768px) {
+            .backup-card { padding: 1.5rem; }
+            .grid-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        
+        <main class="admin-main">
+            <div class="page-header">
+                <div>
+                    <h1><i class='bx bx-data'></i> Módulo de Respaldos</h1>
+                    <p style="color: var(--accent); font-size: 0.85rem; font-weight: 500; margin-top: 0.2rem;">Protege la información de la institución generando copias de seguridad.</p>
+                </div>
+            </div>
+
+            <div class="grid-cards">
+                
+                <div class="backup-card card-export">
+                    <div class="loader-overlay" id="loaderExport">
+                        <i class='bx bx-loader-circle bx-spin'></i>
+                        <span>Empaquetando datos...</span>
+                    </div>
+                    <div class="icon-wrapper">
+                        <i class='bx bx-cloud-download'></i>
+                    </div>
+                    <h2>Descargar Respaldo</h2>
+                    <p>Genera un archivo seguro (.json) con la información actual de estudiantes, docentes, configuraciones, calificaciones y todos los módulos de inventario.</p>
+                    <button class="btn-action-large btn-export" onclick="exportarBackup()">
+                        <i class='bx bx-download'></i> Generar Copia de Seguridad
+                    </button>
+                </div>
+
+                <div class="backup-card card-import">
+                    <div class="loader-overlay" id="loaderImport">
+                        <i class='bx bx-loader-circle bx-spin'></i>
+                        <span>Restaurando sistema...</span>
+                    </div>
+                    <div class="icon-wrapper">
+                        <i class='bx bx-cloud-upload'></i>
+                    </div>
+                    <h2>Restaurar Sistema</h2>
+                    <p>Sube un archivo de respaldo previo para restaurar la base de datos. <br><strong style="color: var(--danger);">Advertencia:</strong> Esta acción sobrescribirá los datos actuales.</p>
+                    
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="backupFile" accept=".json" class="file-upload-input" title="Seleccionar archivo JSON">
+                    </div>
+                    
+                    <button class="btn-action-large btn-import" onclick="importarBackup()">
+                        <i class='bx bx-upload'></i> Restaurar Base de Datos
+                    </button>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, getDocs, doc, writeBatch } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        // Inicialización de la UI
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        // --- SISTEMA DE TOAST GLOBALES ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${
+                type === 'success' ? 'bx-check-circle' : 
+                type === 'error' ? 'bx-error-circle' : 
+                type === 'warning' ? 'bx-error' : 'bx-info-circle'
+            }'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        // --- SEGURIDAD: SOLO DIRECCIÓN ---
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            // Solo Administradores deben tener acceso al routing de este archivo.
+        });
+
+        // Colecciones que se incluirán en el backup
+        const coleccionesRespaldar = [
+            'users', 
+            'docentes', 
+            'control',
+            'inv_alimentos_productos',
+            'inv_alimentos_movimientos',
+            'inv_educativo_productos',
+            'inv_limpieza_productos',
+            'inv_mobiliario_productos',
+            'asistencia',
+            'calificaciones',
+            'fondos_saldos',
+            'fondos_movimientos'
+        ];
+
+        // --- EXPORTAR BACKUP ---
+        window.exportarBackup = async () => {
+            const loader = document.getElementById('loaderExport');
+            loader.classList.add('active');
+            
+            try {
+                let backupData = {};
+                
+                for (const colName of coleccionesRespaldar) {
+                    const querySnapshot = await getDocs(collection(db, colName));
+                    backupData[colName] = {};
+                    querySnapshot.forEach((docSnap) => {
+                        backupData[colName][docSnap.id] = docSnap.data();
+                    });
+                }
+
+                // Obtener Fecha local de El Salvador para el nombre del archivo
+                const date = new Date();
+                const opcionesFecha = { timeZone: 'America/El_Salvador', year: 'numeric', month: '2-digit', day: '2-digit' };
+                // hack simple para obtener YYYYMMDD
+                const parts = new Intl.DateTimeFormat('es-SV', opcionesFecha).formatToParts(date);
+                const day = parts.find(p => p.type === 'day').value;
+                const month = parts.find(p => p.type === 'month').value;
+                const year = parts.find(p => p.type === 'year').value;
+                const fechaStr = `${year}${month}${day}`;
+                
+                // Generar y descargar el archivo
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+                const dlAnchorElem = document.createElement('a');
+                
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", `Backup_Institucional_${fechaStr}.json`);
+                document.body.appendChild(dlAnchorElem); // requerido para firefox
+                dlAnchorElem.click();
+                dlAnchorElem.remove();
+                
+                showToast("Copia de seguridad generada y descargada exitosamente.");
+            } catch (error) {
+                console.error("Error al exportar:", error);
+                showToast("Ocurrió un error al generar la copia.", "error");
+            } finally {
+                loader.classList.remove('active');
+            }
+        };
+
+        // --- IMPORTAR BACKUP ---
+        window.importarBackup = async () => {
+            const fileInput = document.getElementById('backupFile');
+            if (!fileInput.files.length) {
+                showToast("Por favor, selecciona un archivo .json primero.", "warning");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (file.type !== "application/json" && !file.name.endsWith('.json')) {
+                showToast("El archivo debe ser formato JSON válido.", "error");
+                return;
+            }
+
+            if (!confirm("¡ADVERTENCIA CRÍTICA!\n\nEstás a punto de restaurar la base de datos. Los datos actuales podrían ser sobrescritos por los del archivo. ¿Estás absolutamente seguro de continuar?")) {
+                return;
+            }
+
+            const loader = document.getElementById('loaderImport');
+            loader.classList.add('active');
+
+            const reader = new FileReader();
+            
+            reader.onload = async (e) => {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    let batch = writeBatch(db);
+                    let operationCount = 0;
+
+                    for (const colName in backupData) {
+                        // Verificar que sea una colección válida de nuestro sistema
+                        if (coleccionesRespaldar.includes(colName)) {
+                            const docs = backupData[colName];
+                            for (const docId in docs) {
+                                const docRef = doc(db, colName, docId);
+                                batch.set(docRef, docs[docId]);
+                                operationCount++;
+
+                                // Firestore permite un máximo de 500 operaciones por batch
+                                if (operationCount === 490) {
+                                    await batch.commit();
+                                    batch = writeBatch(db); // Iniciar nuevo lote
+                                    operationCount = 0;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Ejecutar el lote restante
+                    if (operationCount > 0) {
+                        await batch.commit();
+                    }
+
+                    showToast("Base de datos restaurada correctamente.", "success");
+                    fileInput.value = ""; // Limpiar input
+                } catch (error) {
+                    console.error("Error al restaurar:", error);
+                    showToast("Error al procesar el archivo. El JSON podría estar corrupto.", "error");
+                } finally {
+                    loader.classList.remove('active');
+                }
+            };
+            
+            reader.onerror = () => {
+                showToast("Error al leer el archivo en el navegador.", "error");
+                loader.classList.remove('active');
+            };
+            
+            reader.readAsText(file);
+        };
+    </script>
+</body>
+</html>

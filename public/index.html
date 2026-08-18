@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CE Cantón Los Prados</title>
+    <style>
+        :root {
+            --primary-dark: #243C4C;
+            --primary-steel: #5289AD;
+            --accent: #698696;
+            --border: #ACBCBF;
+            --bg-light: #F4FCFB;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--primary-dark);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(36, 60, 76, 0.12);
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--primary-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .logo-icon svg {
+            width: 34px;
+            height: 34px;
+            fill: white;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            margin: 0;
+            color: var(--primary-dark);
+            line-height: 1.3;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--accent);
+            margin-top: 0.4rem;
+            margin-bottom: 0;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 2rem 0;
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 12px;
+            background-color: white;
+            color: var(--primary-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            font-family: inherit;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .btn-google:hover:not(:disabled) {
+            background-color: #f8fafc;
+            border-color: var(--primary-steel);
+            box-shadow: 0 4px 12px rgba(82, 137, 173, 0.1);
+        }
+
+        .btn-google:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+        
+        .btn-google:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-google svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #error-msg {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-size: 0.85rem;
+            text-align: center;
+            border: 1px solid #fecaca;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="header">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+                </svg>
+            </div>
+            <h1>Centro Escolar Cantón Los Prados</h1>
+            <h2>Expediente en línea</h2>
+        </div>
+
+        <div id="error-msg"></div>
+
+        <button id="btnGoogle" class="btn-google">
+            <svg viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Acceder con Google
+        </button>
+
+        <div class="divider"></div>
+        <p style="font-size: 0.8rem; color: var(--accent); margin: 0;">Para ingresar, usa tu cuenta de @clases.edu.sv o la proporcionada por la dirección.</p>
+
+        <div class="footer-note">© 2026 CE Cantón Los Prados &mdash; Todos los derechos reservados</div>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, db } from './js/initFirebase.js';
+    import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+    const btnGoogle = document.getElementById('btnGoogle');
+    const errorMsg = document.getElementById('error-msg');
+    const provider = new GoogleAuthProvider();
+
+    // Función principal para validar existencia en BD y redirigir
+    async function validarYRedirigir(user) {
+        const email = user.email;
+        const userPart = email.split('@')[0];
+        
+        // Regla matemática: si lo que está antes del @ son solo números = es estudiante
+        const isStudent = /^\d+$/.test(userPart);
+        
+        try {
+            const collectionName = isStudent ? 'users' : 'docentes';
+            // Algunos registros antiguos podrían usar "email" en vez de "correo"
+            const searchField = isStudent ? 'email' : 'correo'; 
+            
+            let q = query(collection(db, collectionName), where(searchField, '==', email));
+            let snap = await getDocs(q);
+            
+            // Fallback por seguridad si el campo de búsqueda es el otro
+            if (snap.empty && isStudent) {
+                q = query(collection(db, collectionName), where('correo', '==', email));
+                snap = await getDocs(q);
+            }
+
+            if (!snap.empty) {
+                // El usuario EXISTE, se le permite pasar
+                window.location.href = isStudent ? "pages/home.html" : "admin/admin.html";
+            } else {
+                // El usuario NO EXISTE en la base de datos
+                throw new Error("No registrado");
+            }
+        } catch (error) {
+            console.error("Validación fallida:", error);
+            
+            // Destruimos la sesión inmediatamente
+            await signOut(auth);
+            
+            errorMsg.innerText = "Este correo no está autorizado ni registrado en el sistema. Contacta con la dirección.";
+            errorMsg.style.display = 'block';
+            resetBtn();
+        }
+    }
+
+    function resetBtn() {
+        btnGoogle.disabled = false;
+        btnGoogle.innerHTML = `
+            <svg viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Acceder con Google
+        `;
+    }
+
+    // DISPARADOR 1: Si ya estaba logueado de antes, validarlo.
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            btnGoogle.disabled = true;
+            btnGoogle.innerHTML = `<i class='bx bx-loader-alt bx-spin' style='font-size: 1.2rem;'></i> Verificando credenciales...`;
+            await validarYRedirigir(user);
+        }
+    });
+
+    // DISPARADOR 2: Botón Manual
+    btnGoogle.addEventListener('click', async () => {
+        errorMsg.style.display = 'none';
+        btnGoogle.disabled = true;
+        btnGoogle.innerHTML = `<i class='bx bx-loader-alt bx-spin' style='font-size: 1.2rem;'></i> Conectando...`;
+        
+        try {
+            await signInWithPopup(auth, provider);
+            // Si el popup es exitoso, el onAuthStateChanged se disparará automáticamente 
+            // y ejecutará validarYRedirigir(user)
+        } catch (error) {
+            console.error("Error de login:", error);
+            errorMsg.style.display = 'block';
+            errorMsg.innerText = "Se canceló la autenticación o falló la conexión.";
+            resetBtn();
+        }
+    });
+</script>
+
+</body>
+</html>

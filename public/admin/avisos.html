@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Institucional - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+
+        /* BLOQUEO DE DESBORDAMIENTO Y AJUSTE EXACTO DE MÁRGENES ESTRUCTURALES */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+
+        /* REGLAS GLOBALES */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; }
+
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+        .btn-primary:hover { background: var(--primary-steel); }
+
+        /* CARD PRINCIPAL (Distribución Corregida) */
+        .card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); flex-shrink: 0;}
+        .card h2 { font-size: 1.1rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1rem; }
+
+        /* AJUSTE DEL BUSCADOR */
+        .search-wrapper { position: relative; width: 100%; margin-bottom: 1.5rem; height: 45px; flex-shrink: 0;}
+        .search-wrapper i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 1.2rem; }
+        .search-wrapper input { 
+            width: 100%; 
+            height: 100%;
+            padding: 0 1rem 0 2.5rem; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            outline: none; 
+            font-size: 0.95rem; 
+            font-weight: 700; 
+            color: var(--primary-dark); 
+            background: white; 
+            transition: 0.2s; 
+        }
+        .search-wrapper input:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+
+        /* ESTILOS DE LA LISTA DE AGENDA */
+        .agenda-list { display: flex; flex-direction: column; gap: 0.8rem; }
+        
+        .agenda-item { 
+            background: var(--bg-light); 
+            padding: 1rem; 
+            border-radius: 8px; 
+            border-left: 4px solid var(--primary-steel); 
+            display: flex; 
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: 0.2s;
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .agenda-item.type-aviso { border-left-color: var(--warning); }
+        .agenda-item:hover { background: white; border-color: var(--primary-dark); box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px);}
+        
+        .agenda-content { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+        
+        .agenda-header { display: flex; align-items: center; flex-wrap: wrap; gap: 0.8rem;}
+        .badge-type { font-size: 0.6rem; padding: 0.3rem 0.6rem; border-radius: 4px; font-weight: 800; text-transform: uppercase; color: white;}
+        .bg-aviso { background: var(--warning); }
+        .bg-evento { background: var(--primary-steel); }
+        
+        .agenda-date { font-size: 0.75rem; color: var(--accent); font-weight: 800; display: flex; align-items: center; gap: 0.3rem;}
+        
+        .agenda-title { font-size: 1rem; font-weight: 800; color: var(--primary-dark); word-break: break-word; line-height: 1.2;}
+        .agenda-desc { font-size: 0.85rem; color: #555; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+        
+        .agenda-link { font-size: 0.75rem; color: var(--primary-steel); text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.2rem; word-break: break-all; }
+        .agenda-link:hover { text-decoration: underline; }
+
+        .btn-sq-delete { background: #fef2f2; color: var(--danger); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; transition: 0.2s; flex-shrink: 0;}
+        .btn-sq-delete:hover { background: #fee2e2; transform: scale(1.05); }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: white; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 500px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 1.8rem;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header { flex-shrink: 0 !important; margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center;}
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select, .form-group textarea { padding: 0.7rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); background: white; outline: none; transition: 0.2s; width: 100%; font-family: inherit;}
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary-steel); }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        .modal-actions {
+            flex-shrink: 0 !important; 
+            background: white !important;
+            padding-top: 1rem !important;
+            border-top: 1px solid var(--bg-light);
+            margin-top: 0.5rem !important;
+            display: flex; 
+            gap: 0.5rem; 
+            justify-content: flex-end; 
+            align-items: center;
+        }
+        
+        .btn-save-text { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: 0.2s;}
+        .btn-save-text:hover { background: var(--primary-steel); }
+        .btn-save-text:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .empty-state { text-align: center; padding: 2rem; color: var(--accent); font-style: italic; font-size: 0.85rem;}
+
+        @media (max-width: 768px) {
+            .agenda-item { padding: 0.8rem; gap: 0.8rem; flex-direction: column;}
+            .agenda-content { width: 100%; }
+            .btn-sq-delete { align-self: flex-end; width: 100%; border: 1px solid #fecaca;}
+            .form-grid { grid-template-columns: 1fr; gap: 0;}
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bxs-calendar-event'></i> Agenda Institucional</h1>
+                <button class="btn-primary" onclick="abrirModalPub()">
+                    <i class='bx bx-plus'></i> Nueva Publicación
+                </button>
+            </div>
+
+            <div class="card">
+                <h2>Publicaciones Activas (Avisos y Eventos)</h2>
+                
+                <div class="search-wrapper">
+                    <i class='bx bx-search'></i>
+                    <input type="text" id="searchAgenda" placeholder="Buscar por asunto, fecha o descripción..." oninput="renderAgenda()">
+                </div>
+                
+                <div class="agenda-list" id="agendaContainer">
+                    <div class="empty-state">
+                        <i class='bx bx-loader bx-spin'></i>
+                        <p>Sincronizando base de datos...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height: 2rem;"></div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modalPublicacion">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); margin: 0;">Nueva Publicación</h2>
+                <button class="btn-sq-delete" style="background: transparent; color: var(--accent); border: none; font-size: 1.5rem; cursor: pointer;" onclick="cerrarModalPub()"><i class='bx bx-x'></i></button>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Tipo de Publicación *</label>
+                <select id="pubTipo" style="border-width: 2px; font-weight: 800; color: var(--primary-dark);">
+                    <option value="aviso">Aviso Institucional (Urgente/Notificación)</option>
+                    <option value="evento">Evento de Calendario (Actividad/Reunión)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Asunto / Título *</label>
+                <input type="text" id="pubAsunto" placeholder="Ej: Reunión general de padres" autocomplete="off">
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Fecha *</label>
+                    <input type="date" id="pubFecha">
+                </div>
+                <div class="form-group">
+                    <label>Hora</label>
+                    <input type="time" id="pubHora">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Enlace Adjunto (Opcional)</label>
+                <input type="url" id="pubEnlace" placeholder="https://enlace-al-documento.com" autocomplete="off">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Descripción detallada</label>
+                <textarea id="pubDesc" placeholder="Escriba aquí los detalles..." autocomplete="off"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border);" onclick="cerrarModalPub()">Cancelar</button>
+                <button id="btnGuardar" class="btn-save-text" style="flex: 2;" onclick="guardarPublicacion()">
+                    <i class='bx bx-send'></i> Publicar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+
+        let avisosList = [];
+        let calendarioList = [];
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const formatearFecha = (fechaStr) => {
+            if (!fechaStr) return '';
+            if (fechaStr.includes('-')) {
+                const partes = fechaStr.split('-');
+                if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+            return fechaStr;
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            
+            // LECTURA DE AVISOS
+            onSnapshot(doc(db, "control", "avisos"), (snap) => {
+                if (snap.exists() && snap.data().eventos) {
+                    avisosList = snap.data().eventos.map(a => ({...a, tipoDoc: 'aviso'}));
+                } else {
+                    avisosList = [];
+                }
+                renderAgenda();
+            });
+
+            // LECTURA DE EVENTOS (CALENDARIO)
+            onSnapshot(doc(db, "control", "calendario"), (snap) => {
+                if (snap.exists() && snap.data().eventos) {
+                    calendarioList = snap.data().eventos.map(e => ({...e, tipoDoc: 'evento'}));
+                } else {
+                    calendarioList = [];
+                }
+                renderAgenda();
+            });
+        });
+
+        // --------------------------------------------------------
+        // RENDERIZAR AGENDA UNIFICADA
+        // --------------------------------------------------------
+        window.renderAgenda = () => {
+            const container = document.getElementById('agendaContainer');
+            const query = document.getElementById('searchAgenda').value.toLowerCase().trim();
+            
+            // Unir ambos arrays
+            let agendaUnificada = [...avisosList, ...calendarioList];
+
+            // Ordenar de más reciente a más antiguo (Descendente)
+            agendaUnificada.sort((a, b) => {
+                const timeA = a.timestamp || Date.parse(a.fecha) || 0;
+                const timeB = b.timestamp || Date.parse(b.fecha) || 0;
+                return timeB - timeA;
+            });
+
+            // Filtrar por búsqueda
+            const filtrados = agendaUnificada.filter(item => {
+                if (!query) return true;
+                const matchAsunto = (item.asunto || item.titulo || item.nombre || '').toLowerCase().includes(query);
+                const matchDesc = (item.descripcion || '').toLowerCase().includes(query);
+                const matchFecha = formatearFecha(item.fecha).includes(query);
+                return matchAsunto || matchDesc || matchFecha;
+            });
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class='bx bx-calendar-x' style="font-size: 2rem; color: var(--border); margin-bottom: 0.5rem;"></i>
+                        <p>No se encontraron publicaciones ni eventos.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtrados.map(item => {
+                const isAviso = item.tipoDoc === 'aviso';
+                const fechaVisual = formatearFecha(item.fecha);
+                const titulo = item.asunto || item.titulo || item.nombre || 'Sin Título';
+                const desc = item.descripcion || '';
+                const hr = item.hora ? ` - ${item.hora}` : '';
+                
+                const claseItem = isAviso ? 'type-aviso' : '';
+                const claseBadge = isAviso ? 'bg-aviso' : 'bg-evento';
+                const textBadge = isAviso ? 'Aviso' : 'Evento';
+                const iconBadge = isAviso ? 'bx-megaphone' : 'bx-calendar-star';
+
+                let linkHtml = '';
+                if (item.enlace) {
+                    linkHtml = `<a href="${item.enlace}" target="_blank" class="agenda-link"><i class='bx bx-link-external'></i> Abrir Enlace Adjunto</a>`;
+                }
+
+                return `
+                    <div class="agenda-item ${claseItem}">
+                        <div class="agenda-content">
+                            <div class="agenda-header">
+                                <span class="badge-type ${claseBadge}">${textBadge}</span>
+                                <span class="agenda-date"><i class='bx ${iconBadge}'></i> ${fechaVisual}${hr}</span>
+                            </div>
+                            <div class="agenda-title">${titulo}</div>
+                            ${desc ? `<div class="agenda-desc">${desc}</div>` : ''}
+                            ${linkHtml}
+                        </div>
+                        <button class="btn-sq-delete" onclick="borrarPublicacion('${item.id}', '${item.tipoDoc}')" title="Eliminar ${textBadge}">
+                            <i class='bx bx-trash'></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        // --------------------------------------------------------
+        // FUNCIONES DEL MODAL
+        // --------------------------------------------------------
+        window.abrirModalPub = () => {
+            document.getElementById('pubTipo').value = 'aviso';
+            document.getElementById('pubAsunto').value = '';
+            document.getElementById('pubFecha').value = new Date().toISOString().split('T')[0];
+            document.getElementById('pubHora').value = '';
+            document.getElementById('pubEnlace').value = '';
+            document.getElementById('pubDesc').value = '';
+            
+            document.getElementById('modalPublicacion').classList.add('active');
+            setTimeout(() => document.getElementById('pubAsunto').focus(), 100);
+        };
+
+        window.cerrarModalPub = () => {
+            document.getElementById('modalPublicacion').classList.remove('active');
+        };
+
+        // --------------------------------------------------------
+        // GUARDAR PUBLICACIÓN
+        // --------------------------------------------------------
+        window.guardarPublicacion = async () => {
+            const tipo = document.getElementById('pubTipo').value;
+            const asunto = document.getElementById('pubAsunto').value.trim();
+            const fecha = document.getElementById('pubFecha').value;
+            const hora = document.getElementById('pubHora').value;
+            const enlace = document.getElementById('pubEnlace').value.trim();
+            const descripcion = document.getElementById('pubDesc').value.trim();
+
+            if (!asunto || !fecha) {
+                showToast("Por favor, completa el Asunto y la Fecha.", "warning");
+                return;
+            }
+
+            const btn = document.getElementById('btnGuardar');
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Guardando...";
+            btn.disabled = true;
+
+            const nuevaPub = {
+                id: 'pub_' + Date.now().toString(),
+                asunto: asunto,
+                fecha: fecha,
+                hora: hora,
+                enlace: enlace,
+                descripcion: descripcion,
+                timestamp: Date.now() 
+            };
+
+            try {
+                if (tipo === 'aviso') {
+                    const nuevaLista = [...avisosList.map(a => { const {tipoDoc, ...rest} = a; return rest; }), nuevaPub];
+                    await setDoc(doc(db, "control", "avisos"), { eventos: nuevaLista }, { merge: true });
+                } else {
+                    const nuevaLista = [...calendarioList.map(c => { const {tipoDoc, ...rest} = c; return rest; }), nuevaPub];
+                    await setDoc(doc(db, "control", "calendario"), { eventos: nuevaLista }, { merge: true });
+                }
+                
+                showToast(`${tipo === 'aviso' ? 'Aviso' : 'Evento'} publicado correctamente.`);
+                cerrarModalPub();
+                
+            } catch (error) {
+                console.error("Error al guardar:", error);
+                showToast("Ocurrió un error al intentar publicar.", "error");
+            } finally {
+                btn.innerHTML = "<i class='bx bx-send'></i> Publicar";
+                btn.disabled = false;
+            }
+        };
+
+        // --------------------------------------------------------
+        // BORRAR PUBLICACIÓN
+        // --------------------------------------------------------
+        window.borrarPublicacion = async (id, tipoDoc) => {
+            if (!confirm(`¿Estás completamente seguro de que deseas eliminar este ${tipoDoc === 'aviso' ? 'Aviso' : 'Evento'}?`)) return;
+            
+            try {
+                if (tipoDoc === 'aviso') {
+                    const listaFiltrada = avisosList.filter(item => item.id !== id).map(a => { const {tipoDoc, ...rest} = a; return rest; });
+                    await setDoc(doc(db, "control", "avisos"), { eventos: listaFiltrada }, { merge: true });
+                } else {
+                    const listaFiltrada = calendarioList.filter(item => item.id !== id).map(c => { const {tipoDoc, ...rest} = c; return rest; });
+                    await setDoc(doc(db, "control", "calendario"), { eventos: listaFiltrada }, { merge: true });
+                }
+                showToast("Publicación eliminada correctamente.");
+            } catch (error) {
+                console.error("Error al eliminar:", error);
+                showToast("Ocurrió un error al intentar eliminar.", "error");
+            }
+        };
+    </script>
+</body>
+</html>

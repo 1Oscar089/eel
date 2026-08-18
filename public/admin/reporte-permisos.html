@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Permisos (PDF) - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTA VISTA ENFOCADA */
+        body { 
+            background: var(--bg-light); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 1rem; 
+        }
+        
+        .focused-window { 
+            width: 100%; 
+            max-width: 650px; 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: var(--border-radius-xl); 
+            border: 1px solid var(--border); 
+            box-shadow: var(--shadow-lg); 
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .window-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            border-bottom: 2px solid var(--bg-light); 
+            padding-bottom: 1rem; 
+        }
+        .window-header h1 { 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            color: var(--primary-dark);
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin: 0;
+        }
+        .window-header h1 i { color: var(--primary-steel); font-size: 1.6rem; }
+        
+        .btn-back { 
+            background: var(--bg-light); 
+            color: var(--accent); 
+            padding: 0.5rem 1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            border: 1px solid transparent; 
+        }
+        .btn-back:hover { background: #f1f5f9; color: var(--danger); border-color: #fecaca; }
+
+        .info-msg { 
+            background: #e0f2fe; 
+            color: var(--primary-steel); 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            border: 1px solid #bae6fd; 
+            text-align: center; 
+            margin-bottom: 1.5rem; 
+            line-height: 1.4;
+        }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group.full-width { grid-column: span 2; }
+        .form-group label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; transition: 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+
+        .btn-actions-group { display: flex; gap: 1rem; margin-top: 1rem; }
+        
+        .btn-pdf { 
+            background: var(--danger); 
+            color: white; 
+            padding: 1.1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            border: none; 
+            width: 100%; 
+            transition: 0.2s; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 0.5rem; 
+        }
+        .btn-pdf:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .btn-pdf:hover:not(:disabled) { 
+            background: #b91c1c; 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(220, 38, 38, 0.2); 
+        }
+
+        .loading-screen { 
+            position: fixed; 
+            inset: 0; 
+            background: var(--bg-light); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000; 
+            font-weight: 800; 
+            color: var(--primary-steel); 
+            font-size: 1.2rem; 
+            gap: 1rem; 
+        }
+
+        /* Contenedor Oculto para Renderizado de Tabla PDF */
+        #hiddenTableContainerPDF { display: none; }
+
+        @media (max-width: 768px) {
+            .focused-window { padding: 1.5rem; }
+            .window-header h1 { font-size: 1.1rem; }
+            .form-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+            .form-group.full-width { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div id="loadingScreen" class="loading-screen">
+        <i class='bx bx-loader-alt bx-spin' style="font-size: 3rem;"></i>
+        Cargando datos del centro y docentes...
+    </div>
+
+    <div id="mainContent" class="focused-window" style="display: none;">
+        <div class="window-header">
+            <h1><i class='bx bxs-report'></i> Reporte de Permisos</h1>
+            <a href="permisos.html" class="btn-back"><i class='bx bx-x'></i> Cancelar</a>
+        </div>
+
+        <div class="info-msg">
+            Seleccione los parámetros. El sistema generará el archivo PDF oficial con la estructura, encabezados y matriz exacta.
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Tipo de Reporte</label>
+                <select id="tipoReporte" onchange="toggleFiltros()">
+                    <option value="general">Matriz General (Todos los docentes)</option>
+                    <option value="docente">Reporte Individual (Por Docente)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="colFiltroTiempo">
+                <label>Filtro de Tiempo</label>
+                <select id="filtroTiempo" onchange="toggleFiltros()">
+                    <option value="mes">Mensual</option>
+                    <option value="anio">Anual</option>
+                </select>
+            </div>
+
+            <div class="form-group full-width" id="colDocente" style="display: none;">
+                <label>Seleccione el Docente</label>
+                <select id="docenteSelect">
+                    <option value="">Cargando docentes...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="colAnio">
+                <label>Año Lectivo</label>
+                <input type="number" id="filtroAnio" value="2026">
+            </div>
+
+            <div class="form-group" id="colMes">
+                <label id="lblMes">Mes de Reporte</label>
+                <select id="filtroMes">
+                    <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+                    <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+                    <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+                    <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="btn-actions-group">
+            <button class="btn-pdf" onclick="exportarPDF()" id="btnPdf">
+                <i class='bx bxs-file-pdf'></i> Exportar Matriz a PDF
+            </button>
+        </div>
+    </div>
+
+    <div id="hiddenTableContainerPDF"></div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const { jsPDF } = window.jspdf;
+        const LOGO_URL = "../img/logo_mined.png"; 
+
+        let allDocentes = [];
+        let escuelaData = { name: "Centro Escolar Cantón Los Prados", distrito: "La Laguna" };
+        let reportDataRows = []; 
+        let currentHeaderMode = ""; 
+        let mesNombre = "";
+
+        // Límites Anuales Oficiales MINED
+        const LIMITES = { personales: 5, incapacidad: 90, duelo: 20, sinsueldo: 60, maternidad: 112, paternidad: 3 };
+
+        // SISTEMA DE TOAST
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const date = new Date();
+            document.getElementById('filtroAnio').value = date.getFullYear();
+            const currentMonth = String(date.getMonth() + 1).padStart(2, '0');
+            document.getElementById('filtroMes').value = currentMonth;
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    await verificarAcceso(user.email);
+                } else {
+                    window.location.href = '../index.html';
+                }
+            });
+        });
+
+        async function verificarAcceso(email) {
+            try {
+                const snap = await getDocs(collection(db, "docentes"));
+                allDocentes = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.nombre || s.name);
+                
+                const myDoc = allDocentes.find(d => d.correo === email);
+                if(myDoc) {
+                    const cargo = (myDoc.cargo || '').toLowerCase();
+                    if(cargo !== 'director' && !cargo.includes('subdirector')) {
+                        window.location.href = 'permisos.html';
+                        return;
+                    }
+                }
+
+                // Extrayendo el nombre de la escuela inteligentemente
+                const docEscuela = await getDoc(doc(db, "control", "escuela"));
+                if (docEscuela.exists()) {
+                    const dE = docEscuela.data();
+                    escuelaData.name = dE.name || dE.nombre || dE.Nombre || escuelaData.name;
+                    escuelaData.distrito = dE.distrito || dE.Distrito || escuelaData.distrito;
+                }
+
+                allDocentes.sort((a,b) => {
+                    const nameA = a.nombre || a.name || '';
+                    const nameB = b.nombre || b.name || '';
+                    return nameA.localeCompare(nameB);
+                });
+
+                const selectDocente = document.getElementById('docenteSelect');
+                selectDocente.innerHTML = '<option value="" disabled selected>-- Seleccione un Docente --</option>' + 
+                    allDocentes.map(d => `<option value="${d.id}">${d.nombre||d.name}</option>`).join('');
+
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+
+            } catch (error) { console.error("Error de acceso:", error); }
+        }
+
+        window.toggleFiltros = () => {
+            const tipo = document.getElementById('tipoReporte').value;
+            const tiempo = document.getElementById('filtroTiempo').value;
+
+            if (tipo === 'docente') {
+                document.getElementById('colFiltroTiempo').style.display = 'none';
+                document.getElementById('colDocente').style.display = 'flex';
+                document.getElementById('colMes').style.display = 'flex'; 
+                document.getElementById('lblMes').innerText = 'Hasta el mes de';
+            } else {
+                document.getElementById('colFiltroTiempo').style.display = 'flex';
+                document.getElementById('colDocente').style.display = 'none';
+                document.getElementById('colMes').style.display = tiempo === 'mes' ? 'flex' : 'none';
+                document.getElementById('lblMes').innerText = 'Mes de Reporte';
+            }
+        };
+
+        function categorizarPermiso(tipoString) {
+            if (!tipoString) return "otros";
+            const t = tipoString.toLowerCase();
+            if(t.includes("personal (con goce")) return "personales";
+            if(t.includes("incapacidad") || t.includes("certificado médico")) return "incapacidad";
+            if(t.includes("duelo") || t.includes("parientes")) return "duelo";
+            if(t.includes("sin goce")) return "sinsueldo";
+            if(t.includes("maternidad")) return "maternidad";
+            if(t.includes("paternidad")) return "paternidad";
+            return "otros";
+        }
+
+        function sumarPermisos(lista) {
+            let res = { personales: {d:0, h:0}, incapacidad: {d:0, h:0}, duelo: 0, sinsueldo: 0, maternidad: 0, paternidad: 0 };
+            lista.forEach(p => {
+                const cat = categorizarPermiso(p.tipo);
+                if(cat === 'otros') return;
+                const cant = parseFloat(p.cantidadCalculada) || 0;
+                
+                if (cat === 'personales' || cat === 'incapacidad') {
+                    if(p.unidad === 'dias') res[cat].d += cant; else res[cat].h += cant;
+                } else {
+                    if(p.unidad === 'dias') res[cat] += cant;
+                }
+            });
+            return res;
+        }
+
+        function calcularSaldos(utilizadosAcumulados) {
+            let u = utilizadosAcumulados;
+            return {
+                personales: { d: LIMITES.personales - u.personales.d, h: u.personales.h },
+                incapacidad: { d: LIMITES.incapacidad - u.incapacidad.d, h: u.incapacidad.h },
+                duelo: LIMITES.duelo - u.duelo,
+                sinsueldo: LIMITES.sinsueldo - u.sinsueldo,
+                maternidad: LIMITES.maternidad - u.maternidad,
+                paternidad: LIMITES.paternidad - u.paternidad
+            };
+        }
+
+        window.exportarPDF = async () => {
+            const tipoReporte = document.getElementById('tipoReporte').value;
+            const filtroTiempo = document.getElementById('filtroTiempo').value;
+            const anio = document.getElementById('filtroAnio').value;
+            const mesSelect = document.getElementById('filtroMes');
+            const mesStr = mesSelect.value;
+            mesNombre = mesSelect.options[mesSelect.selectedIndex].text;
+            const docenteId = document.getElementById('docenteSelect').value;
+
+            if (tipoReporte === 'docente' && !docenteId) {
+                showToast("Por favor, seleccione un docente para continuar.", "warning");
+                return;
+            }
+
+            const btnPdf = document.getElementById('btnPdf');
+            btnPdf.disabled = true;
+            const textoOriginal = btnPdf.innerHTML;
+            btnPdf.innerHTML = "<i class='bx bx-loader bx-spin'></i> Construyendo Matriz PDF...";
+
+            try {
+                reportDataRows = [];
+                currentHeaderMode = (tipoReporte === 'general' && filtroTiempo === 'anio') ? "AÑO" : "MES";
+
+                let targetUsers = tipoReporte === 'general' ? allDocentes : allDocentes.filter(d => d.id === docenteId);
+                const limiteMes = tipoReporte === 'docente' ? parseInt(mesStr) : 12;
+
+                for (let i = 0; i < targetUsers.length; i++) {
+                    const user = targetUsers[i];
+                    let permisosAnio = [];
+
+                    try {
+                        const docRef = await getDoc(doc(db, "docentes", user.id, "metadata", "permisos"));
+                        if(docRef.exists()) {
+                            permisosAnio = Object.values(docRef.data()).filter(p => p.fechaInicio && p.fechaInicio.startsWith(anio));
+                        }
+                    } catch(e) { console.warn("Error leyendo metadatos del usuario " + user.id); }
+
+                    if (tipoReporte === 'general') {
+                        let pMes = permisosAnio;
+                        let pAcumulados = permisosAnio; 
+
+                        if (filtroTiempo === 'mes') {
+                            pMes = permisosAnio.filter(p => p.fechaInicio.split('-')[1] === mesStr);
+                            pAcumulados = permisosAnio.filter(p => parseInt(p.fechaInicio.split('-')[1]) <= parseInt(mesStr));
+                        }
+
+                        const tUtil = sumarPermisos(pMes);
+                        const tAcum = sumarPermisos(pAcumulados); 
+                        const saldos = calcularSaldos(tAcum);
+
+                        reportDataRows.push({
+                            no: i + 1,
+                            nip: user.nip || user.NIE || user.nie || 'N/A',
+                            nombre: user.nombre || user.name || 'Desconocido',
+                            mesStr: null,
+                            utilizado: tUtil,
+                            saldo: saldos
+                        });
+
+                    } else {
+                        const mesesArray = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+                        // Lógica ajustada para mantener TODAS las 12 filas
+                        for (let m = 1; m <= 12; m++) {
+                            const strM = String(m).padStart(2, '0');
+                            
+                            if (m <= limiteMes) {
+                                // Realizar cálculos normales si estamos dentro del límite
+                                const pMes = permisosAnio.filter(p => p.fechaInicio.split('-')[1] === strM);
+                                const pAcum = permisosAnio.filter(p => parseInt(p.fechaInicio.split('-')[1]) <= m);
+                                
+                                const tUtil = sumarPermisos(pMes);
+                                const tAcum = sumarPermisos(pAcum);
+                                let saldos = calcularSaldos(tAcum);
+
+                                // LÓGICA DE LIMPIEZA DE CELDAS VACÍAS
+                                if (pMes.length === 0) {
+                                    saldos = {
+                                        personales: { d: '', h: '' },
+                                        incapacidad: { d: '', h: '' },
+                                        duelo: '',
+                                        sinsueldo: '',
+                                        maternidad: '',
+                                        paternidad: ''
+                                    };
+                                }
+
+                                reportDataRows.push({
+                                    no: m,
+                                    nip: user.nip || user.NIE || user.nie || 'N/A',
+                                    nombre: user.nombre || user.name || 'Desconocido',
+                                    mesStr: mesesArray[m-1],
+                                    utilizado: tUtil,
+                                    saldo: saldos
+                                });
+                            } else {
+                                // Para los meses futuros: Generar la fila completamente en blanco
+                                const emptyVals = {
+                                    personales: { d: '', h: '' },
+                                    incapacidad: { d: '', h: '' },
+                                    duelo: '',
+                                    sinsueldo: '',
+                                    maternidad: '',
+                                    paternidad: ''
+                                };
+                                reportDataRows.push({
+                                    no: m,
+                                    nip: user.nip || user.NIE || user.nie || 'N/A',
+                                    nombre: user.nombre || user.name || 'Desconocido',
+                                    mesStr: mesesArray[m-1],
+                                    utilizado: emptyVals,
+                                    saldo: emptyVals
+                                });
+                            }
+                        }
+                    }
+                }
+
+                generarTablaOculta(tipoReporte);
+                await descargarArchivoPDF(tipoReporte, anio);
+
+            } catch (error) {
+                console.error(error); 
+                showToast("Ocurrió un error al generar la matriz PDF.", "error");
+            } finally {
+                btnPdf.disabled = false;
+                btnPdf.innerHTML = textoOriginal;
+            }
+        };
+
+        function generarTablaOculta(tipoReporte) {
+            const containerPDF = document.getElementById('hiddenTableContainerPDF');
+            
+            const isDocente = tipoReporte === 'docente';
+            const extraCol = isDocente ? `<th rowspan="3">MES</th>` : '';
+            const descCols = !isDocente ? `<th rowspan="3">NIP</th><th rowspan="3">NOMBRE COMPLETO</th>` : '';
+
+            let htmlPDF = `
+                <table id="tablePDF">
+                    <thead>
+                        <tr>
+                            <th rowspan="3">N°</th>
+                            ${extraCol} ${descCols}
+                            <th colspan="8">PERMISOS UTILIZADOS EN EL ${currentHeaderMode}</th>
+                            <th colspan="8">SALDOS A LA FECHA</th>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Personales (5 días/año)</th>
+                            <th colspan="2">Incapacidad médico (90 días/año)</th>
+                            <th>Duelo y enfermedad grave de parientes (20 días/año)</th>
+                            <th>Permiso personales sin sueldo (60 días al año)</th>
+                            <th>MATERNIDA D (112 días al año)</th>
+                            <th>Paternidad (3 días/año)</th>
+                            <th colspan="2">Personales (5 días/año)</th>
+                            <th colspan="2">Incapacidad médico (90 días/año)</th>
+                            <th>Duelo y enfermedad grave de parientes (20 días/año)</th>
+                            <th>Permiso personales sin sueldo (60 días al año)</th>
+                            <th>MATERNIDA D (112 días al año)</th>
+                            <th>Paternidad (3 días/año)</th>
+                        </tr>
+                        <tr>
+                            <th>D</th><th>H</th><th>D</th><th>H</th><th>D</th><th>D</th><th>D</th><th>D</th>
+                            <th>D</th><th>H</th><th>D</th><th>H</th><th>D</th><th>D</th><th>D</th><th>D</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let rowsHtml = "";
+            reportDataRows.forEach(row => {
+                const u = row.utilizado; const s = row.saldo;
+                rowsHtml += `<tr>
+                    <td>${row.no}</td>
+                    ${isDocente ? `<td>${row.mesStr}</td>` : ''}
+                    ${!isDocente ? `<td>${row.nip}</td><td style="text-align:left;">${row.nombre}</td>` : ''}
+                    
+                    <td>${u.personales.d || ''}</td><td>${u.personales.h || ''}</td>
+                    <td>${u.incapacidad.d || ''}</td><td>${u.incapacidad.h || ''}</td>
+                    <td>${u.duelo || ''}</td><td>${u.sinsueldo || ''}</td>
+                    <td>${u.maternidad || ''}</td><td>${u.paternidad || ''}</td>
+                    
+                    <td>${s.personales.d !== undefined ? s.personales.d : ''}</td><td>${s.personales.h || ''}</td>
+                    <td>${s.incapacidad.d !== undefined ? s.incapacidad.d : ''}</td><td>${s.incapacidad.h || ''}</td>
+                    <td>${s.duelo !== undefined ? s.duelo : ''}</td><td>${s.sinsueldo !== undefined ? s.sinsueldo : ''}</td>
+                    <td>${s.maternidad !== undefined ? s.maternidad : ''}</td><td>${s.paternidad !== undefined ? s.paternidad : ''}</td>
+                </tr>`;
+            });
+
+            htmlPDF += rowsHtml + `</tbody></table>`;
+            containerPDF.innerHTML = htmlPDF;
+        }
+
+        async function descargarArchivoPDF(tipoReporte, anio) {
+            const docPdf = new jsPDF('l', 'mm', 'letter'); 
+            const width = docPdf.internal.pageSize.getWidth();
+            const isDocente = tipoReporte === 'docente';
+
+            try { 
+                const response = await fetch(LOGO_URL); const blob = await response.blob();
+                const logoData = await new Promise((res) => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(blob); });
+                docPdf.addImage(logoData, 'PNG', 12, 10, 45, 15); 
+            } catch(e){}
+
+            // AJUSTE DE TITULO
+            docPdf.setFont("helvetica", "bold");
+            docPdf.setFontSize(10);
+            docPdf.text("CONTROL MENSUAL DE PERMISOS DEL PERSONAL DOCENTE Y ADMINISTRATIVO DE LOS CENTROS ESCOLARES", width/2, 28, { align: 'center' });
+            
+            docPdf.setFontSize(8);
+            docPdf.setFont("helvetica", "normal");
+            
+            let lineaCentro = `CENTRO ESCOLAR: ${escuelaData.name}`;
+            let lineaDistrito = `DISTRITO: ${escuelaData.distrito || '_______'}`;
+            let lineaReporte = "";
+
+            if (isDocente) {
+                const select = document.getElementById('docenteSelect');
+                const nDoc = select.options[select.selectedIndex].text;
+                lineaReporte = `DOCENTE: ${nDoc}     AÑO: ${anio}`;
+            } else {
+                lineaReporte = document.getElementById('filtroTiempo').value === 'mes' ? `MES DE REPORTE: ${mesNombre.toUpperCase()} ${anio}` : `AÑO DE REPORTE: ${anio}`;
+            }
+
+            // AJUSTE DE COORDENADAS 
+            docPdf.text(lineaCentro, 12, 38);
+            docPdf.text(lineaDistrito, 120, 38);
+            docPdf.text(lineaReporte, width - 12, 38, { align: 'right' });
+
+            const cStyles = {};
+            if (isDocente) {
+                cStyles[0] = { cellWidth: 10, halign: 'center' };
+                cStyles[1] = { cellWidth: 25.4, halign: 'center' };
+                for(let i=2; i<=17; i++) cStyles[i] = { cellWidth: 14, halign: 'center' };
+            } else {
+                cStyles[0] = { cellWidth: 8, halign: 'center' };
+                cStyles[1] = { cellWidth: 17, halign: 'center' };
+                cStyles[2] = { cellWidth: 34.4, halign: 'left' };
+                for(let i=3; i<=18; i++) cStyles[i] = { cellWidth: 12.5, halign: 'center' };
+            }
+
+            // AJUSTE DE LA TABLA
+            docPdf.autoTable({
+                html: '#tablePDF',
+                startY: 44,
+                theme: 'grid',
+                styles: { 
+                    fontSize: 5.5, 
+                    cellPadding: 0.8, 
+                    halign: 'center', 
+                    valign: 'middle', 
+                    textColor: [0,0,0], 
+                    lineColor: [0,0,0], 
+                    lineWidth: 0.1,
+                    overflow: 'linebreak'
+                },
+                headStyles: { 
+                    fillColor: [255, 255, 255], 
+                    textColor: [0,0,0], 
+                    fontStyle: 'bold' 
+                },
+                columnStyles: cStyles,
+                margin: { left: 10, right: 10 }
+            });
+
+            const prefix = isDocente ? 'Docente' : (document.getElementById('filtroTiempo').value === 'mes' ? `Mes_${mesNombre}` : 'General_Anual');
+            docPdf.save(`Control_Permisos_${prefix}_${anio}.pdf`);
+            
+            showToast("Reporte PDF generado exitosamente.");
+        }
+    </script>
+</body>
+</html>

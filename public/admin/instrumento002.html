@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imprimir Instrumento 002 - Consolidado Mensual - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/styles.css" as="style">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* ESTILOS ESTRICTAMENTE ESPECÍFICOS PARA ESTA VISTA ENFOCADA */
+        body { 
+            background: var(--bg-light); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 1rem; 
+        }
+        
+        .focused-window { 
+            width: 100%; 
+            max-width: 550px; 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: var(--border-radius-xl); 
+            border: 1px solid var(--border); 
+            box-shadow: var(--shadow-lg); 
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .window-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            border-bottom: 2px solid var(--bg-light); 
+            padding-bottom: 1rem; 
+        }
+        .window-header h1 { 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            color: var(--primary-dark);
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin: 0;
+        }
+        
+        .btn-back { 
+            background: var(--bg-light); 
+            color: var(--accent); 
+            padding: 0.5rem 1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            transition: 0.2s; 
+            border: 1px solid transparent; 
+        }
+        .btn-back:hover { background: #f1f5f9; color: var(--danger); border-color: #fecaca; }
+
+        .info-msg { 
+            background: #e0f2fe; 
+            color: var(--primary-steel); 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            border: 1px solid #bae6fd; 
+            text-align: center; 
+            margin-bottom: 1.5rem; 
+            line-height: 1.4;
+        }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+        .form-group label { font-size: 0.7rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; transition: 0.2s; font-family: inherit;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+
+        .btn-imprimir { 
+            background: var(--primary-dark); 
+            color: white; 
+            padding: 1.1rem; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            border: none; 
+            width: 100%; 
+            transition: 0.2s; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 0.5rem; 
+            margin-top: 1.5rem; 
+        }
+        .btn-imprimir:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .btn-imprimir:hover:not(:disabled) { 
+            background: var(--primary-steel); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(82, 137, 173, 0.3); 
+        }
+
+        .redirect-msg { 
+            text-align: center; 
+            color: var(--primary-steel); 
+            font-size: 0.85rem; 
+            font-weight: 800; 
+            margin-top: 1.5rem; 
+            display: none; 
+            padding: 1rem; 
+            background: #e0f2fe; 
+            border-radius: 8px; 
+        }
+
+        @media (max-width: 768px) {
+            .focused-window { padding: 1.5rem; }
+            .window-header h1 { font-size: 1.1rem; }
+            .form-grid { grid-template-columns: 1fr; gap: 0.5rem;}
+            
+            /* FIX CORTES EN MÓVIL */
+            .form-group select, .form-group input { 
+                font-size: 0.85rem; 
+                padding: 0.6rem 0.8rem; 
+                min-height: 44px; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="focused-window">
+        <div class="window-header">
+            <h1><i class='bx bxs-file-pdf'></i> Instrumento 002</h1>
+            <a href="demeritos.html" class="btn-back"><i class='bx bx-x'></i> Cancelar</a>
+        </div>
+
+        <div class="info-msg" id="statusMsg">
+            <i class='bx bx-loader bx-spin'></i> Sincronizando plataforma...
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Año Lectivo</label>
+                <input type="number" id="filtroAnio" value="2026">
+            </div>
+
+            <div class="form-group">
+                <label>Generar hasta el Mes</label>
+                <select id="filtroMes">
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Seleccione Grado</label>
+            <select id="selGrado" onchange="validarGrado()">
+                <option value="" disabled selected>Cargando información de grados...</option>
+            </select>
+        </div>
+
+        <button id="btnImprimir" class="btn-imprimir" onclick="generarInstrumento002()" disabled>
+            <i class='bx bxs-download'></i> Descargar Consolidado
+        </button>
+
+        <div id="redirectMsg" class="redirect-msg">
+            <i class='bx bx-loader bx-spin'></i> Descarga iniciada. Regresando a Deméritos...
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const { jsPDF } = window.jspdf;
+        const LOGO_URL = "../img/logo_mined.png"; 
+
+        const gradeLabels = { '10': 'Parvularia 4', '11': 'Parvularia 5', '12': 'Parvularia 6', '1': 'Primer Grado', '2': 'Segundo Grado', '3': 'Tercer Grado', '4': 'Cuarto Grado', '5': 'Quinto Grado', '6': 'Sexto Grado', '7': 'Séptimo Grado', '8': 'Octavo Grado', '9': 'Noveno Grado' };
+        const gradeOrder = ['3', '4', '5', '6', '7', '8', '9']; // Instrumentos aplican de 3ro a 9no
+        const MESES_LISTA = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"];
+
+        // CACHÉ EN MEMORIA
+        let allStudents = [];
+        let allDocentes = [];
+        let escuelaData = { name: "Centro Educativo", code: "00000", departamento: "", municipio: "", distrito: "" };
+        let esDirector = false;
+        let userGrades = [];
+
+        // SISTEMA DE TOAST
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('filtroAnio').value = new Date().getFullYear();
+            
+            // Autoseleccionar mes actual
+            let mesActual = new Date().getMonth() + 1;
+            if (mesActual > 11) mesActual = 11; // Limitar a Noviembre
+            document.getElementById('filtroMes').value = mesActual;
+            
+            onAuthStateChanged(auth, (user) => {
+                if (!user) return window.location.href = '../index.html';
+                
+                // 1. Sincronización de Docentes
+                onSnapshot(collection(db, "docentes"), (snap) => {
+                    allDocentes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    const miPerfil = allDocentes.find(d => d.correo === user.email);
+                    if (miPerfil) {
+                        esDirector = ['director', 'subdirector'].includes((miPerfil.cargo || '').toLowerCase());
+                        userGrades = (miPerfil.grados || []).map(String);
+                    }
+                    llenarSelectGrados();
+                });
+
+                // 2. Sincronización de Centro Escolar
+                onSnapshot(doc(db, "control", "escuela"), (snap) => {
+                    if (snap.exists()) escuelaData = snap.data();
+                });
+
+                // 3. Sincronización del Listado de Alumnos
+                onSnapshot(collection(db, "users"), (snap) => {
+                    allStudents = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(s => s.nombreCompleto && !s.archivado);
+                    document.getElementById('statusMsg').innerHTML = "<i class='bx bx-check-shield'></i> Base de datos sincronizada correctamente.";
+                });
+            });
+        });
+
+        function llenarSelectGrados() {
+            const sel = document.getElementById('selGrado');
+            if (esDirector) {
+                sel.innerHTML = '<option value="" disabled selected>-- Seleccione Grado --</option>' + gradeOrder.map(g => `<option value="${g}">${gradeLabels[g]}</option>`).join('');
+            } else {
+                const misGradosAplicables = userGrades.filter(g => gradeOrder.includes(String(g)));
+                if(misGradosAplicables.length === 0) {
+                    sel.innerHTML = '<option value="" disabled selected>Sin grados asignados aplicables</option>';
+                } else {
+                    sel.innerHTML = '<option value="" disabled selected>-- Seleccione Grado --</option>' + misGradosAplicables.map(g => `<option value="${g}">${gradeLabels[g]}</option>`).join('');
+                }
+            }
+        }
+
+        window.validarGrado = () => {
+            document.getElementById('btnImprimir').disabled = document.getElementById('selGrado').value === '';
+        };
+
+        // --- HELPERS PARA EL PDF ---
+        function dibujarCampoConLinea(doc, etiqueta, valor, x, y, anchoTotal) {
+            doc.setFont("helvetica", "normal"); doc.text(etiqueta, x, y);
+            const anchoEtiqueta = doc.getTextWidth(etiqueta);
+            const xValor = x + anchoEtiqueta + 1; const xFin = x + anchoTotal;
+            if (valor) doc.text(String(valor), xValor, y);
+            doc.setLineWidth(0.1); doc.setDrawColor(0, 0, 0); doc.setLineDashPattern([1, 1], 0);
+            doc.line(xValor, y + 1, xFin, y + 1); doc.setLineDashPattern([], 0);
+        }
+
+        function determinarSexoH(rawSexo) {
+            if (typeof rawSexo === 'string' && rawSexo.trim() !== '') {
+                const val = rawSexo.trim().toLowerCase();
+                if (val === 'h' || val === 'hombre' || val === 'masculino' || val === 'varon' || val === 'varón' || val === 'niño') {
+                    return true;
+                }
+            }
+            return false; 
+        }
+
+        const formatCero = (val) => val === 0 ? '-' : val;
+
+        // --- GENERACIÓN AVANZADA ---
+        window.generarInstrumento002 = async () => {
+            const gradoCode = document.getElementById('selGrado').value;
+            const anio = parseInt(document.getElementById('filtroAnio').value);
+            const mesLimite = parseInt(document.getElementById('filtroMes').value);
+            
+            if(!gradoCode || !anio) {
+                showToast("Seleccione grado y año.", "warning");
+                return;
+            }
+
+            const btn = document.getElementById('btnImprimir');
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Evaluando registros de conducta...";
+
+            try {
+                // Variables Administrativas cacheadas en RAM
+                const nombreEscuela = escuelaData.name || escuelaData.nombre || escuelaData.Nombre || '';
+                const codigoEscuela = escuelaData.code || escuelaData.codigo || escuelaData.Codigo || '';
+                
+                let nombreDirector = "__________________________";
+                const dir = allDocentes.find(d => d.cargo && d.cargo.toLowerCase().trim() === 'director');
+                if (dir) nombreDirector = dir.nombre || dir.name || nombreDirector;
+
+                let nombreDocente = "__________________________";
+                const docenteEncargado = allDocentes.find(u => (u.grados || []).map(String).includes(String(gradoCode)));
+                if (docenteEncargado) nombreDocente = docenteEncargado.nombre || docenteEncargado.name || docenteEncargado.correo;
+
+                const studentsInGrade = allStudents.filter(s => String(s.grade) === String(gradoCode));
+
+                if(studentsInGrade.length === 0) {
+                    showToast("No hay estudiantes registrados en este grado.", "warning");
+                    btn.disabled = false; btn.innerHTML = "<i class='bx bxs-download'></i> Descargar Consolidado";
+                    return;
+                }
+
+                // Extracción de datos de conducta de la BD + Fecha de Creación
+                const studentMetadata = await Promise.all(studentsInGrade.map(async (st) => {
+                    let dem = [], red = [], rec = [];
+                    try {
+                        const dSnap = await getDoc(doc(db, "users", st.id, "metadata", "demeritos"));
+                        if(dSnap.exists()) dem = Object.values(dSnap.data());
+                        
+                        const rSnap = await getDoc(doc(db, "users", st.id, "metadata", "redenciones"));
+                        if(rSnap.exists()) red = Object.values(rSnap.data());
+                        
+                        const recSnap = await getDoc(doc(db, "users", st.id, "metadata", "reconocimientos"));
+                        if(recSnap.exists()) rec = Object.values(recSnap.data());
+                    } catch(e) {}
+                    
+                    return {
+                        isH: determinarSexoH(st.sexo || st.Sexo || st.genero || st.gender || ''),
+                        createdAt: st.createdAt || st.timestamp || null, // Se recupera la fecha de matrícula
+                        demeritos: dem, redenciones: red, reconocimientos: rec
+                    };
+                }));
+
+                const tablaMeses = [];
+                const totals = { demH:0, demM:0, cauA:0, cauB:0, cauC:0, cauD:0, redH:0, redM:0, rCauA:0, rCauB:0, rCauC:0, recH:0, recM:0 };
+
+                let matHFinal = 0, matMFinal = 0; 
+
+                // ITERAMOS TODOS LOS MESES (1 A 11 PARA MOSTRAR LA TABLA COMPLETA)
+                for (let m = 1; m <= 11; m++) {
+                    const mesStr = String(m).padStart(2, '0');
+                    const mesNombre = MESES_LISTA[m-1];
+                    const searchPrefix = `${anio}-${mesStr}`;
+
+                    // Solo calcular si el mes es menor o igual al límite seleccionado
+                    if (m <= mesLimite) {
+                        let matH_Mes = 0, matM_Mes = 0;
+                        
+                        studentMetadata.forEach(sd => {
+                            let cuentaEsteMes = true;
+                            
+                            if (sd.createdAt) {
+                                const cDate = new Date(sd.createdAt);
+                                const cYear = cDate.getFullYear();
+                                const cMonth = cDate.getMonth() + 1; // 1 a 12
+                                
+                                if (cYear > anio) {
+                                    cuentaEsteMes = false;
+                                } 
+                                else if (cYear === anio && cMonth > m) {
+                                    cuentaEsteMes = false;
+                                }
+                            }
+
+                            if (cuentaEsteMes) {
+                                if (sd.isH) matH_Mes++; else matM_Mes++;
+                            }
+                        });
+
+                        // Actualizar última matrícula calculada
+                        matHFinal = matH_Mes;
+                        matMFinal = matM_Mes;
+
+                        let cDemH=0, cDemM=0, cCauA=0, cCauB=0, cCauC=0, cCauD=0;
+                        let cRedH=0, cRedM=0, cRCauA=0, cRCauB=0, cRCauC=0;
+                        let cRecH=0, cRecM=0;
+
+                        studentMetadata.forEach(sd => {
+                            sd.demeritos.forEach(r => {
+                                if(r.fecha && r.fecha.startsWith(searchPrefix)) {
+                                    if(sd.isH) cDemH++; else cDemM++;
+                                    if(r.letra === 'A') cCauA++; else if(r.letra === 'B') cCauB++; else if(r.letra === 'C') cCauC++; else if(r.letra === 'D') cCauD++;
+                                }
+                            });
+                            sd.redenciones.forEach(r => {
+                                if(r.fecha && r.fecha.startsWith(searchPrefix)) {
+                                    if(sd.isH) cRedH++; else cRedM++;
+                                    if(r.letra === 'A') cRCauA++; else if(r.letra === 'B') cRCauB++; else if(r.letra === 'C') cRCauC++;
+                                }
+                            });
+                            sd.reconocimientos.forEach(r => {
+                                const rAnio = r.anioAsociado || (r.fecha ? r.fecha.split('-')[0] : '');
+                                const rMes = r.mesAsociado || (r.fecha ? r.fecha.split('-')[1] : '');
+                                if (String(rAnio) === String(anio) && String(rMes) === String(mesStr)) {
+                                    if(sd.isH) cRecH++; else cRecM++;
+                                }
+                            });
+                        });
+
+                        totals.demH += cDemH; totals.demM += cDemM; totals.cauA += cCauA; totals.cauB += cCauB; totals.cauC += cCauC; totals.cauD += cCauD;
+                        totals.redH += cRedH; totals.redM += cRedM; totals.rCauA += cRCauA; totals.rCauB += cRCauB; totals.rCauC += cRCauC;
+                        totals.recH += cRecH; totals.recM += cRecM;
+                        
+                        tablaMeses.push([
+                            mesNombre, 
+                            formatCero(matH_Mes), formatCero(matM_Mes), formatCero(matH_Mes+matM_Mes),
+                            formatCero(cDemH), formatCero(cDemM), formatCero(cDemH+cDemM),
+                            formatCero(cCauA), formatCero(cCauB), formatCero(cCauC), formatCero(cCauD), formatCero(cCauA+cCauB+cCauC+cCauD),
+                            formatCero(cRedH), formatCero(cRedM), formatCero(cRedH+cRedM),
+                            formatCero(cRCauA), formatCero(cRCauB), formatCero(cRCauC), formatCero(cRCauA+cRCauB+cRCauC),
+                            formatCero(cRecH), formatCero(cRecM), formatCero(cRecH+cRecM)
+                        ]);
+                    } else {
+                        // MESES FUTUROS (Más allá del límite seleccionado) - Se llenan con guiones
+                        tablaMeses.push([
+                            mesNombre, 
+                            '-', '-', '-',
+                            '-', '-', '-',
+                            '-', '-', '-', '-', '-',
+                            '-', '-', '-',
+                            '-', '-', '-', '-',
+                            '-', '-', '-'
+                        ]);
+                    }
+                }
+                
+                // La fila final refleja los totales calculados hasta el mes límite
+                tablaMeses.push([
+                    'TOTAL', 
+                    formatCero(matHFinal), formatCero(matMFinal), formatCero(matHFinal+matMFinal),
+                    formatCero(totals.demH), formatCero(totals.demM), formatCero(totals.demH+totals.demM),
+                    formatCero(totals.cauA), formatCero(totals.cauB), formatCero(totals.cauC), formatCero(totals.cauD), formatCero(totals.cauA+totals.cauB+totals.cauC+totals.cauD),
+                    formatCero(totals.redH), formatCero(totals.redM), formatCero(totals.redH+totals.redM),
+                    formatCero(totals.rCauA), formatCero(totals.rCauB), formatCero(totals.rCauC), formatCero(totals.rCauA+totals.rCauB+totals.rCauC),
+                    formatCero(totals.recH), formatCero(totals.recM), formatCero(totals.recH+totals.recM)
+                ]);
+
+                // Dibujar PDF
+                btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Construyendo documento PDF...";
+                
+                const docPdf = new jsPDF('l', 'mm', 'letter'); 
+                const width = docPdf.internal.pageSize.getWidth(); 
+                docPdf.setFont("helvetica", "normal");
+                
+                try { if(LOGO_URL && LOGO_URL.length > 5) docPdf.addImage(LOGO_URL, 'PNG', width - 50, 2, 45, 20); } catch(e){}
+
+                docPdf.setFontSize(14.5); docPdf.text("Instrumento No. 002", width/2, 27, {align:'center'});
+                docPdf.setFontSize(12); docPdf.text("Registro Consolidado Mensual de Deméritos/Redenciones/Reconocimientos", width/2, 32, {align:'center'});
+                
+                docPdf.setFontSize(10); let y = 39; const m1 = 10; const x2 = 205; 
+                dibujarCampoConLinea(docPdf, "1. Nombre del Centro Educativo: ", nombreEscuela, m1, y, 185);
+                dibujarCampoConLinea(docPdf, "2. Código del C.E.: ", codigoEscuela, x2, y, 60); y+=6;
+                dibujarCampoConLinea(docPdf, "3. Departamento del C.E.: ", escuelaData.departamento||'', m1, y, 90);
+                dibujarCampoConLinea(docPdf, "4. Municipio: ", escuelaData.municipio||'', 110, y, 85);
+                dibujarCampoConLinea(docPdf, "5. Distrito: ", escuelaData.distrito||'', x2, y, 60); y+=6;
+                dibujarCampoConLinea(docPdf, "6. Nombre del docente: ", nombreDocente, m1, y, 185);
+                dibujarCampoConLinea(docPdf, "7. Año Lectivo: ", String(anio), x2, y, 60); y+=6;
+                
+                dibujarCampoConLinea(docPdf, "8. Grado: ", gradeLabels[gradoCode], m1, y, 90);
+                dibujarCampoConLinea(docPdf, "9. Sección: ", `"A"`, 110, y, 85);
+                dibujarCampoConLinea(docPdf, "10. Turno: ", "Matutino", x2, y, 60);
+
+                docPdf.autoTable({
+                    startY: y + 8,
+                    head: [[{content:'11.\nMes', rowSpan:2}, {content:'12.\nMatricula por Sexo', colSpan:3}, {content:'13.\nNúmero de\nDeméritos por sexo', colSpan:3}, {content:'14.\nNúmero de\nDeméritos por causales', colSpan:5}, {content:'15.\nNúmero\nRedenciones por sexo', colSpan:3}, {content:'16.\nNúmero de Redenciones por\nopción elegida', colSpan:4}, {content:'17.\nNumero\nReconocimientos por\nsexo', colSpan:3}], ['H','M','Total', 'H','M','Total', 'A','B','C','D','Total', 'H','M','Total', 'A','B','C','Total', 'H','M','Total']],
+                    body: tablaMeses,
+                    theme: 'grid',
+                    styles: { fontSize: 8, cellPadding: 1, halign: 'center', valign: 'middle', lineColor: [0,0,0], lineWidth: 0.2, minCellHeight: 6 }, 
+                    headStyles: { fillColor: [255,255,255], textColor: 0, fontStyle: 'bold', lineColor:[0,0,0], lineWidth:0.2 },
+                    columnStyles: { 0: {cellWidth: 18} },
+                    margin: {horizontal: m1}
+                });
+
+                const finalY = docPdf.lastAutoTable.finalY + 15;
+                docPdf.setDrawColor(0,0,0); docPdf.setLineWidth(0.2); 
+                docPdf.line(10, finalY, 100, finalY); docPdf.text(`Nombre, firma y sello del Director del C. E.\n${nombreDirector}`, 10, finalY+5);
+                
+                // Finalizar
+                document.getElementById('redirectMsg').style.display = 'block';
+                document.getElementById('btnImprimir').style.display = 'none';
+                
+                docPdf.save(`002_Consolidado_Grado${gradoCode}_Hasta_${MESES_LISTA[mesLimite-1]}_${anio}.pdf`);
+                
+                setTimeout(() => { window.location.href = 'demeritos.html'; }, 2500);
+
+            } catch (e) {
+                console.error("Error generando PDF:", e);
+                showToast("Hubo un error contactando la base de datos.", "error");
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bxs-download'></i> Descargar Consolidado";
+            }
+        };
+    </script>
+</body>
+</html>

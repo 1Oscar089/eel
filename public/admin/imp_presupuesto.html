@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impresión de Presupuesto - Iconic Edition</title>
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark: #243C4C; 
+            --primary-steel: #5289AD; 
+            --bg-light: #F4FCFB;
+            --border: #cbd5e1;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background: #e2e8f0; color: #000; font-size: 10px; }
+
+        /* BARRA DE CONTROLES (NO IMPRIMIBLE) */
+        .no-print-bar {
+            background: var(--primary-dark);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .controls-group { display: flex; gap: 1rem; align-items: center; }
+        .controls-group select, .controls-group input { padding: 0.5rem; border-radius: 6px; border: 1px solid white; outline: none; font-weight: bold; }
+        .btn { padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; display: flex; align-items: center; gap: 0.5rem; text-decoration: none; transition: 0.2s;}
+        .btn-print { background: var(--success, #16a34a); color: white; }
+        .btn-print:hover { background: #15803d; }
+        .btn-back { background: white; color: var(--primary-dark); }
+        .btn-back:hover { background: #f1f5f9; }
+
+        /* CONTENEDOR DE PÁGINA TIPO A4 APAISADO */
+        .page-a4 {
+            width: 297mm;
+            min-height: 210mm;
+            margin: 2rem auto;
+            background: white;
+            padding: 15mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        /* ENCABEZADOS EDITABLES */
+        .header-section { margin-bottom: 15px; }
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 20px;
+            margin-bottom: 10px;
+        }
+        .header-item { display: flex; align-items: center; font-size: 11px; }
+        .header-label { font-weight: bold; width: 100px; }
+        .header-value { border-bottom: 1px dotted #000; flex: 1; outline: none; padding-left: 5px; }
+        .header-value:focus { background: #fffbeb; }
+
+        .title-center { text-align: center; font-weight: bold; font-size: 14px; margin: 15px 0; text-transform: uppercase; }
+
+        /* TABLAS ESTILO REPORTE */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 9px;
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #000;
+            padding: 4px;
+            vertical-align: middle;
+        }
+        .report-table th { background: #f1f5f9; font-weight: bold; text-align: center; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        
+        .row-subtotal { font-weight: bold; background: #f8fafc;}
+        
+        /* FIRMAS */
+        .signatures-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+        .signature-box { text-align: left; font-size: 10px; }
+        .signature-line { border-bottom: 1px solid #000; height: 30px; margin-bottom: 5px; width: 80%; }
+        
+        /* CUADRO RESUMEN */
+        .summary-header { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px; font-size: 11px;}
+
+        /* REGLAS DE IMPRESIÓN */
+        @media print {
+            @page { size: A4 landscape; margin: 0; } 
+            body { background: white; margin: 0; padding: 0; }
+            .no-print-bar { display: none !important; }
+            .page-a4 { margin: 0; padding: 15mm; box-shadow: none; width: 100%; min-height: auto; }
+            .report-table th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; }
+            .row-subtotal { background: #f8fafc !important; -webkit-print-color-adjust: exact; }
+            .header-value { border-bottom: 1px solid transparent; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA DE CONTROLES SUPERIOR -->
+    <div class="no-print-bar">
+        <div style="font-size: 1.2rem; font-weight: 800;"><i class='bx bx-printer'></i> Impresión de Presupuesto</div>
+        <div class="controls-group">
+            <span style="font-size: 0.8rem; text-transform: uppercase;">Fecha:</span>
+            <input type="date" id="ctrlFecha" onchange="actualizarFecha()">
+            
+            <span style="font-size: 0.8rem; text-transform: uppercase; margin-left: 1rem;">Año:</span>
+            <input type="number" id="ctrlYear" style="width: 80px;" onchange="cargarDatos()">
+            
+            <select id="ctrlFondo" onchange="cargarDatos()">
+                <option value="GOES">Fondo: GOES</option>
+                <option value="DONACION">Fondo: Donación/Otros</option>
+            </select>
+            
+            <button class="btn btn-print" onclick="window.print()"><i class='bx bx-printer'></i> Imprimir (A4)</button>
+            <a href="presupuesto.html" class="btn btn-back"><i class='bx bx-arrow-back'></i> Volver</a>
+        </div>
+    </div>
+
+    <!-- PÁGINA A4 APAISADA -->
+    <div class="page-a4" id="printArea">
+        
+        <!-- ENCABEZADO -->
+        <div class="header-section">
+            <div class="header-grid">
+                <div class="header-item">
+                    <span class="header-label">Organismo:</span>
+                    <span class="header-value" contenteditable="true">Consejo Directivo Escolar (CDE)</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Fecha:</span>
+                    <span class="header-value" contenteditable="true" id="lblFechaActual"></span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Centro Escolar:</span>
+                    <span class="header-value" contenteditable="true" id="instNombre">Cargando...</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Municipio:</span>
+                    <span class="header-value" contenteditable="true" id="instMunicipio">Cargando...</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Dirección:</span>
+                    <span class="header-value" contenteditable="true" id="instDireccion">Cargando...</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Departamento:</span>
+                    <span class="header-value" contenteditable="true" id="instDepto">Cargando...</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Distrito N°:</span>
+                    <span class="header-value" contenteditable="true" id="instDistrito">04-08</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="title-center">PLAN DE COMPRAS</div>
+
+        <!-- TABLA PLAN DE COMPRAS -->
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 12%;">Área de Oper</th>
+                    <th style="width: 15%;">Rubro de Operación</th>
+                    <th style="width: 15%;">Subárea de operación<br>y específico</th>
+                    <th style="width: 25%;">Descripción del bien/servicio</th>
+                    <th style="width: 5%;">Cantidad</th>
+                    <th style="width: 6%;">Unidad de<br>medida</th>
+                    <th style="width: 7%;">Precio<br>unitario</th>
+                    <th style="width: 7%;">Monto total</th>
+                    <th style="width: 8%;">Fecha probable<br>de compras</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyPlan">
+                <!-- Generado por JS -->
+            </tbody>
+        </table>
+
+        <!-- SECCIÓN DE FIRMAS (Generada Dinámicamente y Ordenada) -->
+        <div class="signatures-grid" id="signaturesContainer">
+            <!-- Placeholder en caso de que no haya conexión o datos -->
+            <div class="signature-box">
+                <div class="signature-line" style="display:flex; align-items:flex-end;">F:</div>
+                <div>Nombre: <span contenteditable="true">_________________________</span></div>
+                <div>Cargo: <span contenteditable="true">Presidente</span></div>
+            </div>
+        </div>
+
+        <!-- SALTO DE PÁGINA -->
+        <div style="page-break-before: always; margin-top: 40px;"></div>
+
+        <div class="title-center" style="font-size: 16px;">PRESUPUESTO ESCOLAR <span id="lblTitleYear">2026</span></div>
+
+        <div class="summary-header">
+            <div>
+                <div class="header-item">
+                    <span class="header-label">Centro Escolar:</span>
+                    <span class="header-value" contenteditable="true" id="sumNombre">Cargando...</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Código:</span>
+                    <span class="header-value" contenteditable="true" id="sumCodigo">10856</span>
+                </div>
+                <div class="header-item" style="margin-top: 10px;">
+                    <span class="header-label">Total Presupuesto Escolar:</span>
+                    <span class="header-value" id="lblPresupuesto">$ 0.00</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Total de fondos a invertir:</span>
+                    <span class="header-value" id="lblInvertir">$ 0.00</span>
+                </div>
+            </div>
+            <div>
+                <div class="header-item">
+                    <span class="header-label">Primer monto recibido:</span>
+                    <span class="header-value" contenteditable="true">$ ___________</span>
+                </div>
+                <div class="header-item">
+                    <span class="header-label">Segundo monto recibido:</span>
+                    <span class="header-value" contenteditable="true">$ ___________</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA RESUMEN -->
+        <table class="report-table" style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">N°</th>
+                    <th style="width: 35%;">Área de inversión</th>
+                    <th style="width: 15%;">Monto a invertir en el<br>primer semestre</th>
+                    <th style="width: 15%;">Monto a invertir en el<br>segundo semestre</th>
+                    <th style="width: 15%;">Fuente de<br>financiamiento</th>
+                    <th style="width: 15%;">Total a invertir en<br>el año</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyResumen">
+                <!-- Generado por JS -->
+            </tbody>
+        </table>
+
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+        // Inicializar Fechas y Controles
+        const tzDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/El_Salvador" }));
+        const yyyy = tzDate.getFullYear();
+        const mm = String(tzDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(tzDate.getDate()).padStart(2, '0');
+
+        // Configurar valores por defecto de la barra superior
+        document.getElementById('ctrlFecha').value = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('ctrlYear').value = yyyy;
+
+        // Función para actualizar la fecha del documento cuando el usuario la cambie en el input
+        window.actualizarFecha = () => {
+            const val = document.getElementById('ctrlFecha').value;
+            if (val) {
+                const [y, m, d] = val.split('-');
+                document.getElementById('lblFechaActual').innerText = `${d}/${m}/${y}`;
+            }
+        };
+        // Cargar fecha la primera vez
+        window.actualizarFecha();
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            cargarDatosInstitucion();
+            window.cargarDatos();
+        });
+
+        const formatMoney = (n) => parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        // --- 1. CARGAR DATOS INSTITUCIONALES DESDE FIREBASE ---
+        async function cargarDatosInstitucion() {
+            try {
+                const escuelaSnap = await getDoc(doc(db, "control", "escuela"));
+                if (escuelaSnap.exists()) {
+                    const dataE = escuelaSnap.data();
+                    if (dataE.name) {
+                        document.getElementById('instNombre').innerText = dataE.name;
+                        document.getElementById('sumNombre').innerText = dataE.name;
+                    }
+                    if (dataE.code) document.getElementById('sumCodigo').innerText = dataE.code;
+                    document.getElementById('instDistrito').innerText = "04-08";
+                    if (dataE.municipio) document.getElementById('instMunicipio').innerText = dataE.municipio;
+                    if (dataE.departamento) document.getElementById('instDepto').innerText = dataE.departamento;
+                    if (dataE.canton) document.getElementById('instDireccion').innerText = dataE.canton;
+                }
+
+                const cdeSnap = await getDoc(doc(db, "centroescolar", "cde"));
+                if (cdeSnap.exists()) {
+                    const dataCDE = cdeSnap.data();
+                    if (dataCDE.miembros && Array.isArray(dataCDE.miembros) && dataCDE.miembros.length > 0) {
+                        const firmasContainer = document.getElementById('signaturesContainer');
+                        let firmasHtml = '';
+                        
+                        const getPesoCargo = (cargo) => {
+                            const c = (cargo || "").toLowerCase();
+                            if (c.includes("presidente")) return 1;
+                            if (c.includes("tesorer")) return 2;
+                            if (c.includes("docente")) return 3;
+                            if (c.includes("padre") || c.includes("madre") || c.includes("familia")) return 4;
+                            if (c.includes("alumno") || c.includes("estudiante")) return 5;
+                            return 6;
+                        };
+
+                        const miembrosOrdenados = [...dataCDE.miembros].sort((a, b) => getPesoCargo(a.cargo) - getPesoCargo(b.cargo));
+
+                        miembrosOrdenados.forEach(m => {
+                            firmasHtml += `
+                            <div class="signature-box">
+                                <div class="signature-line" style="display:flex; align-items:flex-end;">F:</div>
+                                <div>Nombre: <span contenteditable="true">${m.nombre || '_________________________'}</span></div>
+                                <div>Cargo: <span contenteditable="true">${m.cargo || 'Sin cargo'}</span></div>
+                            </div>`;
+                        });
+                        
+                        firmasContainer.innerHTML = firmasHtml;
+                    }
+                }
+            } catch(e) {
+                console.warn("Error al cargar la información institucional o del CDE.", e);
+            }
+        }
+
+        // --- 2. CARGAR PRESUPUESTO ACTUAL ---
+        window.cargarDatos = async () => {
+            const y = document.getElementById('ctrlYear').value;
+            const f = document.getElementById('ctrlFondo').value;
+            document.getElementById('lblTitleYear').innerText = y;
+
+            const tbodyPlan = document.getElementById('tbodyPlan');
+            const tbodyResumen = document.getElementById('tbodyResumen');
+
+            tbodyPlan.innerHTML = `<tr><td colspan="9" class="text-center">Cargando presupuesto...</td></tr>`;
+
+            try {
+                const docId = `${y}_${f}`;
+                const snap = await getDoc(doc(db, "presupuestos", docId));
+                let items = [];
+                if (snap.exists()) items = snap.data().items || [];
+
+                renderPlanCompras(items);
+                renderPresupuestoEscolar(items, f);
+
+            } catch (error) {
+                tbodyPlan.innerHTML = `<tr><td colspan="9" class="text-center">Error al cargar datos.</td></tr>`;
+            }
+        };
+
+        function renderPlanCompras(items) {
+            const tbody = document.getElementById('tbodyPlan');
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay ítems registrados en este presupuesto.</td></tr>`;
+                return;
+            }
+
+            // Agrupación jerárquica: Área > Rubro > Subárea
+            const agrupado = {};
+            items.forEach(it => {
+                if(!agrupado[it.area]) agrupado[it.area] = {};
+                if(!agrupado[it.area][it.rubro]) agrupado[it.area][it.rubro] = {};
+                if(!agrupado[it.area][it.rubro][it.subarea]) agrupado[it.area][it.rubro][it.subarea] = [];
+                agrupado[it.area][it.rubro][it.subarea].push(it);
+            });
+
+            let html = '';
+            
+            const ordenAreas = Object.keys(agrupado).sort((a,b) => a.localeCompare(b, 'es'));
+
+            ordenAreas.forEach(area => {
+                let areaRowspan = 0;
+                const rubros = Object.keys(agrupado[area]).sort((a,b) => a.localeCompare(b, 'es'));
+                
+                // Calcular el rowspan total para el Área (solo abarca las filas de ítems)
+                rubros.forEach(r => {
+                    const subareas = Object.keys(agrupado[area][r]);
+                    subareas.forEach(sa => {
+                        areaRowspan += agrupado[area][r][sa].length;
+                    });
+                });
+
+                let areaPrinted = false;
+
+                rubros.forEach(rubro => {
+                    let totalRubro = 0;
+                    let rubroRowspan = 0;
+                    
+                    const subareas = Object.keys(agrupado[area][rubro]).sort((a,b) => a.localeCompare(b, 'es'));
+                    
+                    // Calcular el rowspan total para el Rubro
+                    subareas.forEach(sa => {
+                        rubroRowspan += agrupado[area][rubro][sa].length;
+                    });
+
+                    let rubroPrinted = false;
+
+                    subareas.forEach(subarea => {
+                        const listaItems = agrupado[area][rubro][subarea].sort((a,b) => a.desc.localeCompare(b.desc, 'es'));
+                        
+                        listaItems.forEach((it, index) => {
+                            let fFormateada = "---";
+                            if (it.fecha && it.fecha.includes('-')) {
+                                const [a, m, d] = it.fecha.split('-');
+                                fFormateada = `${d}/${m}/${a}`;
+                            }
+
+                            html += `<tr>`;
+                            
+                            // Imprimir Área con Rowspan si es el primer ítem de toda el área
+                            if (!areaPrinted) {
+                                html += `<td rowspan="${areaRowspan}">${area}</td>`;
+                                areaPrinted = true;
+                            }
+                            
+                            // Imprimir Rubro con Rowspan si es el primer ítem de este rubro
+                            if (!rubroPrinted) {
+                                html += `<td rowspan="${rubroRowspan}">${rubro}</td>`;
+                                rubroPrinted = true;
+                            }
+
+                            html += `
+                                <td>${subarea}</td>
+                                <td>${it.desc}</td>
+                                <td class="text-center">${it.cant}</td>
+                                <td class="text-center">${it.uni}</td>
+                                <td class="text-right">${formatMoney(it.precio)}</td>
+                                <td class="text-right">${formatMoney(it.total)}</td>
+                                <td class="text-center">${fFormateada}</td>
+                            </tr>`;
+                            
+                            totalRubro += it.total;
+                        });
+                    });
+
+                    // Subtotal por Rubro (Excluido de los Rowspans)
+                    html += `
+                        <tr class="row-subtotal">
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right">Subtotal</td>
+                            <td class="text-right">${formatMoney(totalRubro)}</td>
+                            <td></td>
+                        </tr>
+                    `;
+                });
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function renderPresupuestoEscolar(items, fuente) {
+            const tbody = document.getElementById('tbodyResumen');
+
+            const cats = [
+                "Material Educativo", "Operación logística", "Alimentación escolar", 
+                "Capacitación local", "Remuneraciones", "Gastos de Graduación", 
+                "Otros gastos corrientes", "Adquisición de equipo", 
+                "Adquisición de mobiliario", "Otros gastos de inversión"
+            ];
+
+            let resumenData = {};
+            cats.forEach(c => resumenData[c] = { s1: 0, s2: 0 });
+            let granTotal = 0;
+
+            items.forEach(it => {
+                let catAsignada = it.rubro;
+                if (!cats.includes(catAsignada)) {
+                    if(it.area === "Inversión") catAsignada = "Otros gastos de inversión";
+                    else catAsignada = "Otros gastos corrientes";
+                }
+
+                const mes = parseInt(it.fecha.split('-')[1]);
+                if (mes <= 6) resumenData[catAsignada].s1 += it.total;
+                else resumenData[catAsignada].s2 += it.total;
+                
+                granTotal += it.total;
+            });
+
+            document.getElementById('lblPresupuesto').innerText = `$ ${formatMoney(granTotal)}`;
+            document.getElementById('lblInvertir').innerText = `$ ${formatMoney(granTotal)}`;
+
+            let html = '';
+            let tS1 = 0, tS2 = 0;
+
+            cats.forEach((c, i) => {
+                const valS1 = resumenData[c].s1;
+                const valS2 = resumenData[c].s2;
+                const totRow = valS1 + valS2;
+                
+                tS1 += valS1;
+                tS2 += valS2;
+
+                html += `
+                    <tr>
+                        <td class="text-center">${i + 1}</td>
+                        <td>${c}</td>
+                        <td class="text-right">${valS1 > 0 ? formatMoney(valS1) : '0.00'}</td>
+                        <td class="text-right">${valS2 > 0 ? formatMoney(valS2) : '0.00'}</td>
+                        <td class="text-center">${fuente}</td>
+                        <td class="text-right">${formatMoney(totRow)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                <tr class="row-subtotal" style="font-size: 11px;">
+                    <td colspan="2" class="text-right">TOTAL GENERAL</td>
+                    <td class="text-right">${formatMoney(tS1)}</td>
+                    <td class="text-right">${formatMoney(tS2)}</td>
+                    <td></td>
+                    <td class="text-right">${formatMoney(granTotal)}</td>
+                </tr>
+            `;
+
+            tbody.innerHTML = html;
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Grados - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/admin-sidebar.css" as="style">
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/admin-sidebar.css">
+    
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        :root { 
+            --primary-dark: #243C4C; --primary-steel: #5289AD; 
+            --accent: #698696; --border: #ACBCBF; 
+            --bg-light: #F4FCFB; --danger: #ef4444; --warning: #f59e0b; --success: #16a34a; --info: #3b82f6;
+            --gap: 0.5rem;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        
+        /* BLOQUEO DE DESBORDAMIENTO Y AJUSTE EXACTO DE MÁRGENES (Igual que estudiantes.html) */
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+        
+        .admin-main { 
+            height: calc(100vh - 60px) !important; 
+            width: calc(100vw - 260px) !important; 
+            margin-left: 260px !important; 
+            margin-top: 0 !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex;
+            flex-direction: column;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        .admin-main::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) {
+            .admin-main { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; padding: var(--gap) !important; }
+        }
+        
+        /* HEADER */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; }
+
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+        .btn-primary:hover { background: var(--primary-steel); }
+
+        /* TABLA DE GRADOS (Estilo idéntico a Estudiantes) */
+        .table-container { width: 100%; flex-shrink: 0; margin-bottom: 2rem; }
+        
+        .list-table { width: 100%; background: white; border: 1px solid var(--border); border-radius: 8px; border-collapse: collapse; table-layout: auto; }
+        .list-table th, .list-table td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        .list-table th { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; background: #f8fafc; }
+        .list-table td { font-size: 0.85rem; color: var(--primary-dark); }
+
+        .id-badge { 
+            font-family: monospace; 
+            font-weight: 800; 
+            color: var(--primary-dark); 
+            background: var(--bg-light); 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            border: 1px solid var(--border);
+        }
+        .role-tag { 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            text-transform: uppercase; 
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .btn-sq { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-sq-edit { background: #e0f2fe; color: var(--info); }
+        .btn-sq-edit:hover { background: #bae6fd; transform: scale(1.05); }
+        .btn-sq-delete { background: #fef2f2; color: var(--danger); }
+        .btn-sq-delete:hover { background: #fee2e2; transform: scale(1.05); }
+
+        /* MODAL BLINDADO */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.6); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 0.5rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: white; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 500px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex !important;
+            flex-direction: column !important;
+            max-height: 90vh !important; 
+            overflow: hidden !important; 
+            padding: 1.8rem;
+        }
+        
+        .modal-header { flex-shrink: 0 !important; margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center;}
+        
+        .modal-body {
+            flex: 1 1 auto !important; 
+            min-height: 0 !important; 
+            overflow-y: auto !important; 
+            padding-right: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .modal-actions {
+            flex-shrink: 0 !important; 
+            background: white !important;
+            padding-top: 1rem !important;
+            border-top: 1px solid var(--bg-light);
+            margin-top: 0 !important;
+            position: relative !important;
+            z-index: 10 !important;
+            display: flex; 
+            gap: 0.5rem; 
+            justify-content: flex-end; 
+            align-items: center;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.7rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); background: white; outline: none; transition: 0.2s; width: 100%; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); }
+        .form-group input:disabled { background: #f8fafc; color: #475569; border-color: #cbd5e1; cursor: default; }
+
+        .btn-save-text { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: 0.2s;}
+        .btn-save-text:hover { background: var(--primary-steel); }
+
+        .empty-state { text-align: center; padding: 2rem; color: var(--accent); font-style: italic; font-size: 0.85rem;}
+
+        @media (max-width: 768px) {
+            .list-table th, .list-table td { padding: 0.6rem 0.4rem; font-size: 0.8rem; }
+            .btn-sq { width: 28px; height: 28px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-root"></div>
+        <main class="admin-main">
+            
+            <div class="page-header">
+                <h1><i class='bx bxs-graduation'></i> Gestión de Grados y Secciones</h1>
+                <button class="btn-primary" onclick="openGradeModal()">
+                    <i class='bx bx-plus'></i> Registrar Grado
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="list-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px; text-align: center;">Código ID</th>
+                            <th>Nombre Oficial</th>
+                            <th>Turno Asignado</th>
+                            <th style="text-align:right; width: 120px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="grades-body">
+                        <tr><td colspan="4"><div class="empty-state"><i class='bx bx-loader bx-spin'></i><p>Sincronizando base de datos...</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="gradeModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); margin: 0;">Nuevo Grado</h2>
+                <button class="btn-sq" style="background: transparent; color: var(--accent);" onclick="closeGradeModal()"><i class='bx bx-x'></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>ID del Grado (Identificador Numérico)</label>
+                    <input type="number" id="gId" placeholder="Ej: 1, 2, 3, -1">
+                    <small style="font-size: 0.65rem; color: var(--accent); margin-top: -0.2rem;">(Parvularia usa números negativos o el 10,11,12)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nombre Oficial *</label>
+                    <input type="text" id="gNombre" placeholder="Ej: Primer Grado">
+                </div>
+                
+                <div class="form-group">
+                    <label>Turno Asignado</label>
+                    <select id="gTurno">
+                        <option value="matutino">Matutino</option>
+                        <option value="vespertino">Vespertino</option>
+                        <option value="nocturno">Nocturno</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-save-text" style="background:var(--bg-light); color:var(--primary-dark); border: 1px solid var(--border);" onclick="closeGradeModal()">Cancelar</button>
+                <button class="btn-save-text" id="btnSaveGrade" onclick="saveGrade()"><i class='bx bx-save'></i> Guardar Datos</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initUserbar } from '../js/userbar.js';
+        import { initAdminSidebar } from '../js/admin-sidebar.js';
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { doc, onSnapshot, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        await initUserbar({ brandHref: '../index.html' }); 
+        await initAdminSidebar();
+        
+        try { await enableIndexedDbPersistence(db); } catch(e) {} 
+
+        let allGradesData = {}, editingId = null;
+        
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+
+        // --- SISTEMA DE TOAST ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            if (!u) { window.location.href = '../index.html'; return; }
+            onSnapshot(doc(db, "control", "grados"), (s) => {
+                if(!s.exists()) {
+                    document.getElementById('grades-body').innerHTML = `<tr><td colspan="4"><div class="empty-state"><p>No hay grados registrados.</p></div></td></tr>`;
+                    return;
+                }
+                allGradesData = s.data();
+                renderGrades();
+            });
+        });
+
+        function renderGrades() {
+            const container = document.getElementById('grades-body');
+            const keys = Object.keys(allGradesData).sort((a,b) => parseInt(a) - parseInt(b));
+            
+            if(keys.length === 0) {
+                container.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class='bx bx-book-bookmark'></i><p>Aún no hay grados configurados.</p></div></td></tr>`;
+                return;
+            }
+
+            container.innerHTML = keys.map(id => {
+                const name = allGradesData[id]?.nombre || allGradesData[id];
+                const turno = allGradesData[id]?.turno || 'matutino';
+                
+                // Color dinámico pastel según el turno
+                let styleBadge = 'background: #f1f5f9; color: #475569;';
+                if(turno === 'matutino') styleBadge = 'background: #fef3c7; color: #b45309; border: 1px solid #fde68a;';
+                if(turno === 'vespertino') styleBadge = 'background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;';
+                if(turno === 'nocturno') styleBadge = 'background: #1e293b; color: white;';
+
+                return `<tr>
+                    <td style="text-align: center;"><span class="id-badge">${id}</span></td>
+                    <td style="font-weight:700; color: var(--primary-dark);">${cap(name)}</td>
+                    <td><span class="role-tag" style="${styleBadge}">${cap(turno)}</span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn-sq btn-sq-edit" onclick="openGradeModal('${id}')" title="Editar">
+                                <i class='bx bx-edit-alt'></i>
+                            </button>
+                            <button class="btn-sq btn-sq-delete" onclick="deleteGrade('${id}')" title="Eliminar">
+                                <i class='bx bx-trash'></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- MANEJO DE MODAL ---
+        window.openGradeModal = (id = null) => {
+            editingId = id;
+            document.getElementById('modalTitle').innerText = id ? 'Editar Grado' : 'Registrar Nuevo Grado';
+            
+            document.getElementById('gId').value = id || '';
+            document.getElementById('gId').disabled = !!id; // El ID nunca debe cambiar si ya existe
+            
+            // Si es un objeto, toma el nombre, si era un string (legacy), toma el string
+            document.getElementById('gNombre').value = id ? (allGradesData[id]?.nombre || allGradesData[id]) : '';
+            document.getElementById('gTurno').value = id ? (allGradesData[id]?.turno || 'matutino') : 'matutino';
+            
+            document.getElementById('gradeModalOverlay').classList.add('active');
+        };
+
+        window.closeGradeModal = () => document.getElementById('gradeModalOverlay').classList.remove('active');
+
+        // --- GUARDADO ---
+        window.saveGrade = async () => {
+            const id = document.getElementById('gId').value.trim();
+            const nombre = cap(document.getElementById('gNombre').value.trim());
+            const turno = document.getElementById('gTurno').value;
+            
+            if(!id || !nombre) {
+                showToast("El ID y el Nombre son obligatorios.", "warning");
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveGrade');
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-loader bx-spin'></i> Guardando...";
+            
+            try {
+                // Guarda la estructura jerárquica { nombre, turno } sin sobreescribir el resto del documento
+                await setDoc(doc(db, "control", "grados"), { 
+                    [id]: { nombre: nombre, turno: turno } 
+                }, { merge: true });
+                
+                showToast(editingId ? "Grado actualizado correctamente." : "Grado registrado en el sistema.");
+                closeGradeModal();
+            } catch(e) { 
+                console.error(e); 
+                showToast("Error de conexión al guardar.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class='bx bx-save'></i> Guardar Datos";
+            }
+        };
+
+        // --- ELIMINAR ---
+        window.deleteGrade = async (id) => {
+            const confirmMsg = `¿Está completamente seguro de eliminar el grado "${id}"?\nSi hay estudiantes asignados a este código, podrían desaparecer de las listas.`;
+            
+            if(!confirm(confirmMsg)) return;
+            
+            try {
+                // Clonamos la data actual, eliminamos la llave, y sobreescribimos todo
+                const newData = { ...allGradesData };
+                delete newData[id];
+                
+                await setDoc(doc(db, "control", "grados"), newData);
+                showToast("Grado eliminado permanentemente.", "success");
+            } catch(e) { 
+                console.error(e); 
+                showToast("No se pudo eliminar el grado.", "error");
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consola — CE Cantón Los Prados</title>
+    <style>
+        :root {
+            --green: #a8ff78; --green-dim: #5a9e42; --blue: #78b8ff; --yellow: #ffd878;
+            --red: #ff7878; --cyan: #78f0ff; --white: #cdd9e5; --gray: #556677;
+            --bg: #0d1117; --bg2: #0f1923; --bg3: #1a2535; --border: #1e2d3d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg); color: var(--white);
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            min-height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Top bar */
+        .topbar {
+            background: var(--bg2); border-bottom: 1px solid var(--border);
+            padding: 0 1rem; height: 44px; display: flex;
+            align-items: center; justify-content: space-between; flex-shrink: 0;
+        }
+        .back-btn {
+            display: flex; align-items: center; gap: 0.4rem; color: var(--gray);
+            text-decoration: none; font-size: 0.78rem; padding: 5px 10px;
+            border-radius: 6px; border: 1px solid var(--border); transition: 0.2s;
+        }
+        .back-btn:hover { background: var(--bg3); color: var(--white); }
+        .back-btn svg { width: 14px; height: 14px; stroke: currentColor; }
+
+        /* Terminal area */
+        .terminal-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .terminal-output {
+            flex: 1; overflow-y: auto; padding: 1rem 1.25rem;
+            font-size: 0.875rem; line-height: 1.6; scroll-behavior: smooth;
+        }
+        
+        /* Bash Colors */
+        .out-line { display: block; white-space: pre-wrap; word-break: break-all; }
+        .out-prompt { color: var(--green); font-weight: bold; }
+        .out-prompt .at { color: var(--white); font-weight: normal; }
+        .out-prompt .path { color: var(--blue); font-weight: bold; }
+        .out-cmd { color: var(--white); }
+        .out-error { color: var(--red); }
+        .out-info { color: var(--gray); }
+        .out-success { color: var(--green); }
+        .out-dir { color: var(--blue); font-weight: bold; margin-right: 15px; display: inline-block; }
+        .out-file { color: var(--white); margin-right: 15px; display: inline-block; }
+
+        /* NANO EDITOR */
+        .nano-overlay {
+            display: none; position: fixed; inset: 44px 0 0 0;
+            background: #0d1117; flex-direction: column; z-index: 100;
+        }
+        .nano-overlay.active { display: flex; }
+        .nano-topbar {
+            background: #243C4C; color: white; padding: 4px 12px;
+            font-size: 0.78rem; display: flex; justify-content: space-between; flex-shrink: 0;
+        }
+        #nanoEditor {
+            flex: 1; background: transparent; color: var(--green);
+            border: none; outline: none; padding: 1rem;
+            font-family: 'Courier New', monospace; font-size: 0.9rem;
+            resize: none; line-height: 1.5; width: 100%;
+        }
+        .nano-bottombar {
+            background: #243C4C; padding: 6px 12px; display: flex;
+            gap: 2rem; font-size: 0.72rem; color: var(--white); flex-shrink: 0;
+        }
+        .nano-key { background: var(--white); color: #0d1117; padding: 1px 6px; border-radius: 3px; font-weight: bold; }
+
+        /* Input area */
+        .terminal-input-row {
+            border-top: 1px solid var(--border); background: var(--bg2);
+            padding: 0.6rem 1.25rem; display: flex; align-items: flex-start; gap: 0.5rem;
+        }
+        .input-prompt {
+            color: var(--green); font-weight: bold; white-space: nowrap; font-size: 0.875rem;
+        }
+        .input-prompt .at { color: var(--white); font-weight: normal; }
+        .input-prompt .path { color: var(--blue); font-weight: bold; }
+        
+        #termInput {
+            flex: 1; background: transparent; border: none; outline: none;
+            color: var(--white); font-family: inherit; font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left"><a class="back-btn" href="admin.html">Volver</a></div>
+    <div style="font-size: 0.8rem; color: var(--gray);">bash — firestore@expediente-en-linea</div>
+</div>
+
+<div class="nano-overlay" id="nanoOverlay">
+    <div class="nano-topbar">
+        <span>GNU nano 6.2</span>
+        <span style="color: var(--yellow);" id="nanoFileName"></span>
+        <span id="nanoStatus"></span>
+    </div>
+    <textarea id="nanoEditor" spellcheck="false"></textarea>
+    <div class="nano-bottombar">
+        <div><span class="nano-key">Ctrl+S</span> Guardar</div>
+        <div><span class="nano-key">Ctrl+X</span> Salir</div>
+        <div style="margin-left: auto; color: var(--blue);">Firestore Live Editor</div>
+    </div>
+</div>
+
+<div class="terminal-wrapper">
+    <div class="terminal-output" id="termOutput">
+        <pre style="color: var(--green-dim); font-size: 0.7rem;">
+  ______ _                _                 
+ |  ____(_)              | |                
+ | |__   _ _ __ ___  ___| |_ ___  _ __ ___ 
+ |  __| | | '__/ _ \/ __| __/ _ \| '__/ _ \
+ | |    | | | |  __/\__ \ || (_) | | |  __/
+ |_|    |_|_|  \___||___/\__\___/|_|  \___|
+ Consola Bash (Emulador Firestore Filesystem)
+        </pre>
+        <span class="out-line out-info">Sistema de archivos virtual montado. Comandos: pwd, ls, cd, nano, clear, exit</span>
+        <br>
+    </div>
+
+    <div class="terminal-input-row">
+        <span class="input-prompt" id="promptArea">
+            admin<span class="at">@firestore:</span><span class="path" id="promptPath">/</span>$
+        </span>
+        <input type="text" id="termInput" autocomplete="off" autofocus>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, db } from '../js/initFirebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+    onAuthStateChanged(auth, (u) => { if (!u) window.location.href = '../index.html'; });
+
+    const output = document.getElementById('termOutput');
+    const input = document.getElementById('termInput');
+    const promptPath = document.getElementById('promptPath');
+    const nanoOverlay = document.getElementById('nanoOverlay');
+    const nanoEditor = document.getElementById('nanoEditor');
+
+    // FILESYSTEM EN MEMORIA
+    const ROOT_COLLECTIONS = ['control', 'docentes', 'users'];
+    let cwd = []; // Array que representa la ruta actual. Vacio = raíz '/'
+
+    let currentEditPath = { col: '', doc: '' };
+    let cmdHistory = [];
+    let historyIdx = -1;
+
+    // Click enfoca el input
+    document.getElementById('termOutput').addEventListener('click', () => input.focus());
+
+    // --- UTILIDADES BASH ---
+    const getCwdString = () => cwd.length === 0 ? '/' : '/' + cwd.join('/');
+    const updatePrompt = () => promptPath.textContent = getCwdString();
+    
+    function print(html, cssClass = '') {
+        const span = document.createElement('span');
+        span.className = `out-line ${cssClass}`;
+        span.innerHTML = html;
+        output.appendChild(span);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    function printPrompt(cmd) {
+        print(`<span class="out-prompt">admin<span class="at">@firestore:</span><span class="path">${getCwdString()}</span>$</span> <span class="out-cmd">${cmd}</span>`);
+    }
+
+    // RESOLUCIÓN DE RUTAS (Soporta /absolutas, relativas, . y ..)
+    function resolvePath(pathStr) {
+        if (!pathStr || pathStr === '.') return [...cwd];
+        const parts = pathStr.startsWith('/') ? [] : [...cwd];
+        const segs = pathStr.split('/').filter(Boolean);
+        
+        for (const seg of segs) {
+            if (seg === '..') {
+                if (parts.length > 0) parts.pop();
+            } else if (seg !== '.') {
+                parts.push(seg);
+            }
+        }
+        return parts;
+    }
+
+    // --- COMANDOS ---
+
+    function cmdPwd() {
+        print(getCwdString(), "out-cmd");
+    }
+
+    async function cmdCd(pathStr) {
+        const target = resolvePath(pathStr || '/');
+        const depth = target.length;
+
+        if (depth === 0) {
+            cwd = [];
+            updatePrompt();
+            return;
+        }
+
+        if (depth === 1) {
+            const col = target[0];
+            if (!ROOT_COLLECTIONS.includes(col)) {
+                print(`bash: cd: ${col}: No existe el directorio`, "out-error");
+                return;
+            }
+            cwd = target;
+            updatePrompt();
+            return;
+        }
+
+        // Si es depth >= 2, en este emulador los consideramos "Archivos", no puedes hacer cd a un archivo.
+        print(`bash: cd: ${pathStr}: No es un directorio`, "out-error");
+    }
+
+    async function cmdLs(pathStr) {
+        const target = resolvePath(pathStr || '.');
+        const depth = target.length;
+
+        try {
+            if (depth === 0) {
+                let out = '';
+                ROOT_COLLECTIONS.forEach(c => out += `<span class="out-dir">${c}</span>`);
+                print(out);
+            } 
+            else if (depth === 1) {
+                const col = target[0];
+                if (!ROOT_COLLECTIONS.includes(col)) {
+                    print(`ls: no se puede acceder a '${col}': No existe el directorio`, "out-error");
+                    return;
+                }
+                const snap = await getDocs(collection(db, col));
+                if (snap.empty) {
+                    print(`(Directorio vacío)`, "out-info");
+                } else {
+                    let out = '';
+                    snap.docs.forEach(d => out += `<span class="out-file">${d.id}.json</span>`);
+                    print(out);
+                }
+            } 
+            else if (depth === 2) {
+                const col = target[0];
+                const docId = target[1].replace(/\.json$/, '');
+                const snap = await getDoc(doc(db, col, docId));
+                if (snap.exists()) {
+                    print(`<span class="out-file">${docId}.json</span>`);
+                } else {
+                    print(`ls: no se puede acceder a '${target[1]}': No existe el archivo`, "out-error");
+                }
+            } else {
+                print(`ls: ruta no soportada`, "out-error");
+            }
+        } catch(e) {
+            print(`ls: error al leer Firebase: ${e.message}`, "out-error");
+        }
+    }
+
+    async function cmdNano(pathStr) {
+        if (!pathStr) { print("nano: falta el nombre del archivo", "out-error"); return; }
+        
+        const target = resolvePath(pathStr);
+        if (target.length !== 2) {
+            print(`nano: '${pathStr}' es un directorio. Solo puedes editar archivos (ej. control/horarios.json)`, "out-error");
+            return;
+        }
+
+        const col = target[0];
+        const docId = target[1].replace(/\.json$/, '');
+
+        if (!ROOT_COLLECTIONS.includes(col)) {
+            print(`nano: El directorio padre '${col}' no existe.`, "out-error");
+            return;
+        }
+
+        try {
+            const snap = await getDoc(doc(db, col, docId));
+            currentEditPath = { col, doc: docId };
+            document.getElementById('nanoFileName').textContent = `${col}/${docId}.json`;
+            
+            if (snap.exists()) {
+                nanoEditor.value = JSON.stringify(snap.data(), null, 2);
+                document.getElementById('nanoStatus').textContent = "";
+            } else {
+                nanoEditor.value = "{\n  \n}";
+                document.getElementById('nanoStatus').textContent = "[ Nuevo Archivo ]";
+            }
+            
+            nanoOverlay.classList.add('active');
+            nanoEditor.focus();
+        } catch (e) { print("nano: error de lectura: " + e.message, "out-error"); }
+    }
+
+    // --- GUARDADO DE NANO (CTRL+S) ---
+    async function saveDocument() {
+        try {
+            const data = JSON.parse(nanoEditor.value);
+            await setDoc(doc(db, currentEditPath.col, currentEditPath.doc), data);
+            
+            const status = document.getElementById('nanoStatus');
+            status.textContent = "[ Guardado en Firestore ]"; 
+            status.style.color = "var(--green)";
+            setTimeout(() => { status.textContent = ""; status.style.color = "white"; }, 2500);
+            
+        } catch (e) {
+            document.getElementById('nanoStatus').textContent = "[ Error: JSON Inválido ]";
+            document.getElementById('nanoStatus').style.color = "var(--red)";
+        }
+    }
+
+    window.addEventListener('keydown', async (e) => {
+        if (nanoOverlay.classList.contains('active')) {
+            if (e.ctrlKey && e.key === 's') { e.preventDefault(); await saveDocument(); }
+            if (e.ctrlKey && e.key === 'x') { 
+                e.preventDefault(); 
+                nanoOverlay.classList.remove('active'); 
+                input.focus(); 
+            }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = nanoEditor.selectionStart;
+                nanoEditor.value = nanoEditor.value.substring(0, start) + "  " + nanoEditor.value.substring(nanoEditor.selectionEnd);
+                nanoEditor.selectionStart = nanoEditor.selectionEnd = start + 2;
+            }
+        }
+    });
+
+    // --- MOTOR PRINCIPAL BASH ---
+    input.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            const raw = input.value.trim();
+            input.value = '';
+            
+            if (raw) {
+                cmdHistory.push(raw);
+                historyIdx = cmdHistory.length;
+            }
+
+            printPrompt(raw);
+            if (!raw) return;
+
+            const [cmd, ...args] = raw.split(/\s+/);
+            const arg1 = args[0] || '';
+
+            switch (cmd) {
+                case 'pwd': cmdPwd(); break;
+                case 'cd': await cmdCd(arg1); break;
+                case 'ls': await cmdLs(arg1); break;
+                case 'nano': await cmdNano(arg1); break;
+                case 'clear': output.innerHTML = ''; break;
+                case 'exit': window.location.href = 'admin.html'; break;
+                default: print(`bash: ${cmd}: orden no encontrada`, "out-error");
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (historyIdx > 0) {
+                historyIdx--;
+                input.value = cmdHistory[historyIdx];
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (historyIdx < cmdHistory.length - 1) {
+                historyIdx++;
+                input.value = cmdHistory[historyIdx];
+            } else {
+                historyIdx = cmdHistory.length;
+                input.value = '';
+            }
+        }
+    });
+</script>
+</body>
+</html>

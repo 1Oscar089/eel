@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comité de Alimentación Escolar (CAE) - Iconic Edition</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/styles.css" as="style">
+    
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <!-- LIBRERÍA PARA GENERACIÓN DIRECTA DE PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root { --primary-dark:#243C4C; --primary-steel:#5289AD; --accent:#698696; --border:#ACBCBF; --bg-light:#F4FCFB; --danger:#dc2626; --warning:#f59e0b; --success:#16a34a; --gap:0.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; overflow-y: hidden; position: relative; }
+        
+        /* CONTENEDOR DEL FORMULARIO */
+        #formSection { height: calc(100vh - 60px); width: 100vw; margin: 0; padding: 1.5rem; overflow-y: auto; overflow-x: hidden; display: block; -ms-overflow-style: none; scrollbar-width: none; }
+        #formSection::-webkit-scrollbar { display: none; }
+        @media (max-width: 1024px) { #formSection { padding-bottom: 80px; } }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; margin-top: 0; flex-shrink: 0; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -1px; display: flex; align-items: center; gap: 0.5rem; margin-top: 0;}
+        
+        .header-actions { display: flex; gap: 0.5rem; }
+        .btn-primary { background: var(--primary-dark); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-primary:hover:not(:disabled) { background: var(--primary-steel); }
+        .btn-secondary { background: #e0f2fe; color: var(--primary-steel); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: 1px solid #bae6fd; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem; text-decoration: none;}
+        .btn-secondary:hover { background: #bae6fd; color: var(--primary-dark); }
+
+        .card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .card-title { font-size: 1rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1.2rem; border-bottom: 2px solid var(--bg-light); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;}
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: start; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; position: relative;}
+        .form-group label { font-size: 0.65rem; font-weight: 800; color: var(--primary-steel); text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); background: white; width: 100%; font-family: inherit; transition: 0.2s;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary-steel); box-shadow: 0 0 0 3px rgba(82, 137, 173, 0.1); }
+        .form-group input:read-only, .form-group select:disabled { background: #f8fafc; color: var(--accent); cursor: not-allowed; border-color: #cbd5e1; opacity: 1; }
+        .full-width { grid-column: 1 / -1; }
+
+        /* AUTOCOMPLETADO */
+        .autocomplete-wrapper { position: relative; width: 100%; }
+        .suggestions-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--primary-steel); border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .suggestion-item { padding: 0.7rem 0.8rem; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); cursor: pointer; border-bottom: 1px solid var(--bg-light); display: flex; flex-direction: column; }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover { background: #f0f8ff; color: var(--primary-steel); }
+        .sugg-meta { font-size: 0.65rem; color: var(--accent); font-weight: 500; margin-top: 0.2rem; }
+
+        /* BLOQUE OCULTO PARA CONSTRUCCIÓN DEL PDF */
+        #printSection { position: absolute; top: -9999px; left: -9999px; display: none; background: white; }
+
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .header-actions { width: 100%; justify-content: space-between; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="userbar-root"></div>
+    
+    <div class="admin-layout">
+        <!-- SECCIÓN 1: FORMULARIO -->
+        <main id="formSection">
+            <div class="page-header">
+                <h1><i class='bx bx-restaurant'></i> Comité de Alimentación Escolar (CAE)</h1>
+                <div class="header-actions">
+                    <a href="generador.html" class="btn-secondary"><i class='bx bx-arrow-back'></i> Volver</a>
+                </div>
+            </div>
+
+            <div id="formContainer">
+                <!-- DATOS DEL ACTA Y ESCUELA -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bx-edit'></i> Datos de la Emisión del Acta</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Acta No.</label>
+                            <input type="number" id="actaNum" placeholder="Ej: 5">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Reunión</label>
+                            <input type="date" id="actaFecha">
+                        </div>
+                        <div class="form-group">
+                            <label>Hora de Inicio</label>
+                            <input type="time" id="actaHoraIni">
+                        </div>
+                        <div class="form-group">
+                            <label>Hora de Cierre</label>
+                            <input type="time" id="actaHoraFin">
+                        </div>
+                        <div class="form-group full-width" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--bg-light);">
+                            <label style="color: var(--warning);"><i class='bx bxs-institution'></i> Datos de la Institución y Director</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Centro Educativo</label>
+                            <input type="text" id="escNombre" readonly placeholder="Cargando...">
+                        </div>
+                        <div class="form-group">
+                            <label>Código</label>
+                            <input type="text" id="escCode" readonly placeholder="Cargando...">
+                        </div>
+                        <div class="form-group">
+                            <label>Municipio</label>
+                            <input type="text" id="escMuni" readonly placeholder="Cargando...">
+                        </div>
+                        <div class="form-group">
+                            <label>Departamento</label>
+                            <input type="text" id="escDepto" readonly placeholder="Cargando...">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Nombre del Director/a</label>
+                            <input type="text" id="dirNombre" readonly placeholder="Cargando...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INTEGRANTES DEL CAE -->
+                <div class="card">
+                    <div class="card-title"><i class='bx bx-group'></i> Integrantes del Comité (CAE)</div>
+                    
+                    <div class="form-grid" style="margin-bottom: 1.5rem;">
+                        <div class="form-group full-width">
+                            <label style="color: var(--info);" id="lblMatricula">Tamaño de Matrícula (Calculando...)</label>
+                            <select id="caeMatricula" disabled>
+                                <option value="MAYOR">Matrícula Mayor o igual a 100 (1 Docente y 4 Padres de familia)</option>
+                                <option value="MENOR">Matrícula Menor a 100 (1 Docente y 2 Padres de Familia)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group full-width" style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                            <label style="color: var(--primary-dark); font-size:0.8rem;"><i class='bx bx-user'></i> Docente Encargado</label>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Buscar Docente</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="searchDoc" placeholder="Buscar..." autocomplete="off" oninput="buscarUsuario('doc', this.value)">
+                                <div id="suggDoc" class="suggestions-box"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre del Docente</label>
+                            <input type="text" id="docNombre" placeholder="Nombre completo">
+                        </div>
+                        <div class="form-group">
+                            <label>DUI</label>
+                            <input type="text" id="docDui" placeholder="00000000-0">
+                        </div>
+                        <div class="form-group">
+                            <label>Turno (Para firmas)</label>
+                            <input type="text" id="docTurno" placeholder="Ej: Matutino">
+                        </div>
+
+                        <!-- PADRE 1 -->
+                        <div class="form-group full-width" style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem;">
+                            <label style="color: var(--primary-dark); font-size:0.8rem;"><i class='bx bx-user'></i> Padre o Madre 1</label>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Buscar Responsable</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="searchP1" placeholder="Buscar en base de datos..." autocomplete="off" oninput="buscarUsuario('p1', this.value)">
+                                <div id="suggP1" class="suggestions-box"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="p1Nombre">
+                        </div>
+                        <div class="form-group">
+                            <label>DUI</label>
+                            <input type="text" id="p1Dui" placeholder="00000000-0">
+                        </div>
+
+                        <!-- PADRE 2 -->
+                        <div class="form-group full-width" style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem;">
+                            <label style="color: var(--primary-dark); font-size:0.8rem;"><i class='bx bx-user'></i> Padre o Madre 2</label>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Buscar Responsable</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="searchP2" placeholder="Buscar en base de datos..." autocomplete="off" oninput="buscarUsuario('p2', this.value)">
+                                <div id="suggP2" class="suggestions-box"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="p2Nombre">
+                        </div>
+                        <div class="form-group">
+                            <label>DUI</label>
+                            <input type="text" id="p2Dui" placeholder="00000000-0">
+                        </div>
+
+                        <!-- PADRES 3 y 4 (Ocultos si matrícula < 100) -->
+                        <div id="padresExtra" class="form-grid full-width" style="margin: 0; padding: 0; gap: 1rem; display: none;">
+                            <!-- PADRE 3 -->
+                            <div class="form-group full-width" style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem;">
+                                <label style="color: var(--primary-dark); font-size:0.8rem;"><i class='bx bx-user'></i> Padre o Madre 3</label>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Buscar Responsable</label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="searchP3" placeholder="Buscar en base de datos..." autocomplete="off" oninput="buscarUsuario('p3', this.value)">
+                                    <div id="suggP3" class="suggestions-box"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre Completo</label>
+                                <input type="text" id="p3Nombre">
+                            </div>
+                            <div class="form-group">
+                                <label>DUI</label>
+                                <input type="text" id="p3Dui" placeholder="00000000-0">
+                            </div>
+
+                            <!-- PADRE 4 -->
+                            <div class="form-group full-width" style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem;">
+                                <label style="color: var(--primary-dark); font-size:0.8rem;"><i class='bx bx-user'></i> Padre o Madre 4</label>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Buscar Responsable</label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="searchP4" placeholder="Buscar en base de datos..." autocomplete="off" oninput="buscarUsuario('p4', this.value)">
+                                    <div id="suggP4" class="suggestions-box"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre Completo</label>
+                                <input type="text" id="p4Nombre">
+                            </div>
+                            <div class="form-group">
+                                <label>DUI</label>
+                                <input type="text" id="p4Dui" placeholder="00000000-0">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <!-- BOTÓN DE DESCARGA DIRECTA -->
+                <div style="margin-top: 1rem; margin-bottom: 2rem; display: flex; justify-content: flex-end;">
+                    <button class="btn-primary" style="font-size: 1rem; padding: 0.8rem 1.5rem;" onclick="descargarPDF()">
+                        <i class='bx bx-download'></i> Descargar PDF
+                    </button>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- CAJA OCULTA DONDE SE CONSTRUYE EL HTML PURO PARA EL PDF (SIN TABLA, CON ESPACIOS PARA SELLO) -->
+        <div id="printSection">
+            <div id="pdfData" style="font-family: Arial, sans-serif; font-size: 10.5pt; color: #000; line-height: 1.5; width: 100%; position: relative;">
+                
+                <!-- ENCABEZADO INSTITUCIONAL MINEDUCYT (LOGO LOCAL) -->
+                <div style="text-align: right; margin-bottom: 1.5rem;">
+                    <img src="../img/logo_mined.png" alt="Ministerio de Educación, Ciencia y Tecnología" style="height: 55px; object-fit: contain;">
+                </div>
+
+                <!-- TÍTULO PRINCIPAL -->
+                <div style="text-align: center; font-weight: bold; font-size: 11pt; margin-bottom: 1.5rem;">
+                    Acta No <span id="pvActaNum" style="border-bottom: 1px solid #000; padding: 0 10px; font-weight: normal;"></span>
+                </div>
+                
+                <!-- PÁRRAFO 1 DEL MACHOTE -->
+                <div style="text-align: justify; margin-bottom: 1.5rem;" id="pvParrafo1"></div>
+                
+                <!-- LISTA DE INTEGRANTES EN LÍNEA CONTINUA -->
+                <div style="margin-left: 0; margin-top: 1rem; margin-bottom: 2rem;" id="pvListaIntegrantes"></div>
+
+                <!-- PÁRRAFO 2 DE CIERRE -->
+                <div style="text-align: justify; margin-bottom: 3rem;" id="pvParrafo2"></div>
+                
+                <!-- FIRMAS SIN CUADRÍCULA (40% de ancho cada una, 20% en el centro para el sello) -->
+                <div id="pvFirmasGrid" style="width: 100%; font-size: 8.5pt;"></div>
+
+                <!-- NOTA DE MATRÍCULA -->
+                <div style="margin-top: 1rem; font-size: 7.5pt; page-break-inside: avoid;">
+                    <strong>Nota:</strong><br>
+                    Matricula Mayor o igual a 100 (1 docente y 4 Padres de familia)<br>
+                    Matricula Menor a 100 (1 docente y 2 Padres de Familia)
+                </div>
+
+                <!-- PIE LEGAL DEL MACHOTE -->
+                <div style="margin-top: 2rem; font-size: 7pt; text-align: justify; font-style: italic; color: #333; page-break-inside: avoid;">
+                    Artículo 54, literal "C" del Reglamento de la Ley de la Carrera Docente, regula a los padres de familia en lo relativo a optar a cargos en el Consejo y en los Comités de Desarrollo Educativo.
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../js/initFirebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { collection, getDocs, getDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        let escuelaData = {};
+        let listaDocentes = [];
+        let listaUsuarios = []; // Responsables/Padres
+
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        };
+
+        const cap = (s) => (s || '').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+
+        // FECHAS INICIALES (Formato dd/mm/aaaa)
+        const tzDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/El_Salvador" }));
+        const yyyy = tzDate.getFullYear();
+        const mm = String(tzDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(tzDate.getDate()).padStart(2, '0');
+        const defaultDate = `${yyyy}-${mm}-${dd}`;
+        
+        document.getElementById('actaFecha').value = defaultDate;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            await cargarDatosBase();
+        });
+
+        async function cargarDatosBase() {
+            try {
+                // Escuela
+                const escSnap = await getDoc(doc(db, "control", "escuela"));
+                if(escSnap.exists()) {
+                    escuelaData = escSnap.data();
+                    document.getElementById('escNombre').value = escuelaData.name || '';
+                    document.getElementById('escCode').value = escuelaData.code || '';
+                    document.getElementById('escMuni').value = escuelaData.municipio || '';
+                    document.getElementById('escDepto').value = escuelaData.departamento || '';
+                }
+
+                // Director
+                const qDirector = query(collection(db, "docentes"), where("cargo", "==", "director"));
+                const dirSnap = await getDocs(qDirector);
+                if (!dirSnap.empty) {
+                    const dirData = dirSnap.docs[0].data();
+                    document.getElementById('dirNombre').value = dirData.nombre || '';
+                }
+
+                // Docentes
+                const docSnap = await getDocs(collection(db, "docentes"));
+                docSnap.forEach(d => {
+                    const data = d.data();
+                    listaDocentes.push({ nombre: data.nombre, dui: data.dui || '' });
+                });
+
+                // Responsables (Cálculo de matrícula automático)
+                const usersSnap = await getDocs(collection(db, "users"));
+                const totalEstudiantes = usersSnap.size;
+                
+                usersSnap.forEach(u => {
+                    const data = u.data();
+                    if(data.responsable) {
+                        const exists = listaUsuarios.find(x => x.nombre === data.responsable);
+                        if(!exists) {
+                            listaUsuarios.push({ nombre: data.responsable, dui: data.dui || '' });
+                        }
+                    }
+                });
+
+                // Configurar Matrícula Automática
+                const selectMatricula = document.getElementById('caeMatricula');
+                const lblMatricula = document.getElementById('lblMatricula');
+                
+                if (totalEstudiantes >= 100) {
+                    selectMatricula.value = 'MAYOR';
+                    lblMatricula.innerHTML = `Tamaño de Matrícula (Automático: ${totalEstudiantes} estudiantes - MAYOR A 100)`;
+                } else {
+                    selectMatricula.value = 'MENOR';
+                    lblMatricula.innerHTML = `Tamaño de Matrícula (Automático: ${totalEstudiantes} estudiantes - MENOR A 100)`;
+                }
+                window.evaluarMatricula();
+
+            } catch (e) {
+                console.error("Error al cargar datos base", e);
+                showToast("Error al conectar con la base de datos.", "error");
+            }
+        }
+
+        window.evaluarMatricula = () => {
+            const val = document.getElementById('caeMatricula').value;
+            const extra = document.getElementById('padresExtra');
+            if (val === 'MAYOR') {
+                extra.style.display = 'grid';
+            } else {
+                extra.style.display = 'none';
+                document.getElementById('p3Nombre').value = '';
+                document.getElementById('p3Dui').value = '';
+                document.getElementById('p4Nombre').value = '';
+                document.getElementById('p4Dui').value = '';
+            }
+        };
+
+        // AUTOCOMPLETADO
+        window.buscarUsuario = (tipo, queryText) => {
+            queryText = queryText.toLowerCase().trim();
+            const box = document.getElementById(`sugg${cap(tipo)}`);
+            
+            if (queryText.length < 3) { box.style.display = 'none'; return; }
+
+            const listaBusqueda = tipo === 'doc' ? listaDocentes : listaUsuarios;
+            const matches = listaBusqueda.filter(d => d.nombre.toLowerCase().includes(queryText));
+            
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(m => {
+                    const n = m.nombre.replace(/'/g, "\\'");
+                    const du = (m.dui || '').replace(/'/g, "\\'");
+                    return `
+                    <div class="suggestion-item" onclick="seleccionarUsuario('${tipo}', '${n}', '${du}')">
+                        ${m.nombre} 
+                        <span class="sugg-meta">DUI: ${m.dui || 'S/R'}</span>
+                    </div>
+                `}).join('');
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        };
+
+        window.seleccionarUsuario = (tipo, nombre, dui) => {
+            document.getElementById(`search${cap(tipo)}`).value = nombre;
+            document.getElementById(`${tipo}Nombre`).value = nombre;
+            document.getElementById(`${tipo}Dui`).value = dui;
+            document.getElementById(`sugg${cap(tipo)}`).style.display = 'none';
+        };
+
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.autocomplete-wrapper')) {
+                document.querySelectorAll('.suggestions-box').forEach(b => b.style.display = 'none');
+            }
+        });
+
+        // CONVERSORES DE TEXTO
+        const unidadesTxt = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
+        const decenasTxt = ['', 'diez', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+        const centenasTxt = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+        const mesesTxt = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+        function num2Text(n) {
+            if (n < 30) return unidadesTxt[n];
+            if (n < 100) {
+                let dec = Math.floor(n / 10);
+                let uni = n % 10;
+                return uni === 0 ? decenasTxt[dec] : `${decenasTxt[dec]} y ${unidadesTxt[uni]}`;
+            }
+            if (n === 100) return 'cien';
+            if (n < 1000) {
+                let cen = Math.floor(n / 100);
+                let rest = n % 100;
+                if (cen === 5) return rest === 0 ? 'quinientos' : `quinientos ${num2Text(rest)}`;
+                if (cen === 7) return rest === 0 ? 'setecientos' : `setecientos ${num2Text(rest)}`;
+                if (cen === 9) return rest === 0 ? 'novecientos' : `novecientos ${num2Text(rest)}`;
+                return rest === 0 ? centenasTxt[cen] : `${centenasTxt[cen]} ${num2Text(rest)}`;
+            }
+            if (n === 1000) return 'mil';
+            if (n < 2000) {
+                let rest = n % 1000;
+                return rest === 0 ? 'mil' : `mil ${num2Text(rest)}`;
+            }
+            return n.toString();
+        }
+
+        function extractDateText(dateStr) {
+            if(!dateStr) return { d: '__________', m: '__________', y: '_____' };
+            const [y, m, d] = dateStr.split('-');
+            return {
+                d: num2Text(parseInt(d)),
+                m: mesesTxt[parseInt(m) - 1],
+                y: num2Text(parseInt(y))
+            };
+        }
+
+        function extractTimeText(timeStr) {
+            if(!timeStr) return "_________";
+            let [h, m] = timeStr.split(':');
+            h = parseInt(h); m = parseInt(m);
+            let res = `${num2Text(h)}`;
+            if (m > 0) res += ` y ${num2Text(m)}`;
+            return res;
+        }
+
+        // =========================================================
+        // MOTOR DE GENERACIÓN DE PDF DIRECTA (HTML2PDF)
+        // =========================================================
+        window.descargarPDF = () => {
+            showToast("Generando documento, por favor espere...", "info");
+
+            // --- RECOGER VARIABLES ---
+            const actaNum = document.getElementById('actaNum').value || '_________';
+            const actaF = extractDateText(document.getElementById('actaFecha').value);
+            const actaHIni = extractTimeText(document.getElementById('actaHoraIni').value);
+            const actaHFin = extractTimeText(document.getElementById('actaHoraFin').value);
+            
+            const escNombre = document.getElementById('escNombre').value || '________________________________________';
+            const escCode = document.getElementById('escCode').value || '____________';
+            const escMuni = document.getElementById('escMuni').value || '_____________________';
+            const escDepto = document.getElementById('escDepto').value || '_______________________';
+            const dNombre = document.getElementById('dirNombre').value || '________________________________________';
+
+            const isMayor = document.getElementById('caeMatricula').value === 'MAYOR';
+            
+            // DOCENTE
+            const docNombre = document.getElementById('docNombre').value || '________________________________________';
+            const docDui = document.getElementById('docDui').value || '_______________';
+            const docTurno = document.getElementById('docTurno').value || '________________________________';
+
+            // PADRES
+            const p1N = document.getElementById('p1Nombre').value || '________________________________________';
+            const p1D = document.getElementById('p1Dui').value || '_______________';
+            const p2N = document.getElementById('p2Nombre').value || '________________________________________';
+            const p2D = document.getElementById('p2Dui').value || '_______________';
+            
+            let p3N = '', p3D = '', p4N = '', p4D = '';
+            if (isMayor) {
+                p3N = document.getElementById('p3Nombre').value || '________________________________________';
+                p3D = document.getElementById('p3Dui').value || '_______________';
+                p4N = document.getElementById('p4Nombre').value || '________________________________________';
+                p4D = document.getElementById('p4Dui').value || '_______________';
+            }
+
+            // --- INYECTAR TEXTO AL MOLDE HTML ---
+            document.getElementById('pvActaNum').innerText = actaNum;
+            
+            document.getElementById('pvParrafo1').innerHTML = `Reunidos en el local que ocupa el Centro Educativo <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${escNombre}</span> código <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${escCode}</span> del municipio <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${escMuni}</span> del departamento de <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${escDepto}</span> a las <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${actaHIni}</span> horas del día <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${actaF.d}</span> del mes de <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${actaF.m}</span> año <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${actaF.y}</span>; contando con la presencia del Director/a <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${dNombre}</span> y Asamblea de Padres de familia, con el objetivo de conformar el Comité de Alimentación Escolar, establecido en el Instructivo para el Funcionamiento y ejecución del Programa de Alimentación y Salud Escolar (PASE), debiendo cumplir con las funciones, responsabilidades y obligaciones que el mismo demanda, el cual tendrá como vigencia el presente año y queda integrado de la siguiente manera:`;
+
+            let listaHTML = `<div style="margin-bottom: 0.6rem; text-align: left; white-space: nowrap; font-size: 10.5pt;"><span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${docNombre}</span> docente, con No. DUI <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${docDui}</span></div>`;
+            listaHTML += `<div style="margin-bottom: 0.6rem; text-align: left; white-space: nowrap; font-size: 10.5pt;"><span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p1N}</span> padre o madre de familia, con No. DUI <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p1D}</span></div>`;
+            listaHTML += `<div style="margin-bottom: 0.6rem; text-align: left; white-space: nowrap; font-size: 10.5pt;"><span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p2N}</span> padre o madre de familia, con No. DUI <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p2D}</span></div>`;
+            
+            if (isMayor) {
+                listaHTML += `<div style="margin-bottom: 0.6rem; text-align: left; white-space: nowrap; font-size: 10.5pt;"><span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p3N}</span> padre o madre de familia, con No. DUI <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p3D}</span></div>`;
+                listaHTML += `<div style="margin-bottom: 0.6rem; text-align: left; white-space: nowrap; font-size: 10.5pt;"><span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p4N}</span> padre o madre de familia, con No. DUI <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${p4D}</span></div>`;
+            }
+            document.getElementById('pvListaIntegrantes').innerHTML = listaHTML;
+
+            document.getElementById('pvParrafo2').innerHTML = `Por lo que, para efectos de hacer del conocimiento a la Dirección Departamental de Educación, se envía copia de la presente acta. Y no habiendo más que hacer constar, se cierra la presente acta, a las <span style="border-bottom: 1px solid #000; display: inline-block; padding: 0 5px;">${actaHFin}</span> horas del día y fecha anteriormente mencionados, y para constancia firmamos.`;
+
+            // INYECCIÓN DE FIRMAS SIN TABLA, CON ESPACIO AMPLIO
+            let firmasHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3.5rem; page-break-inside: avoid;">
+                    <div style="width: 40%; text-align: left;">
+                        <div style="font-weight: bold;">F _____________________________________</div>
+                        <div style="font-weight: bold; margin-top: 2px;">Nombre, firma y sello Director del Centro Escolar</div>
+                        <div style="margin-top: 4px;">Nombre: ${dNombre}</div>
+                    </div>
+                    <div style="width: 40%; text-align: left;">
+                        <div style="font-weight: bold;">F _____________________________________</div>
+                        <div style="font-weight: bold; margin-top: 2px;">Nombre y firma Docente Encargado</div>
+                        <div style="margin-top: 4px;">Nombre: ${docNombre}</div>
+                        <div>Turno: ${docTurno}</div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3.5rem; page-break-inside: avoid;">
+                    <div style="width: 40%; text-align: left;">
+                        <div style="font-weight: bold;">F _____________________________________</div>
+                        <div style="font-weight: bold; margin-top: 2px;">Nombre y firma del padre y/o madre de familia</div>
+                        <div style="margin-top: 4px;">Nombre: ${p1N}</div>
+                        <div>DUI: ${p1D}</div>
+                    </div>
+                    <div style="width: 40%; text-align: left;">
+                        <div style="font-weight: bold;">F _____________________________________</div>
+                        <div style="font-weight: bold; margin-top: 2px;">Nombre y firma del padre y/o madre de familia</div>
+                        <div style="margin-top: 4px;">Nombre: ${p2N}</div>
+                        <div>DUI: ${p2D}</div>
+                    </div>
+                </div>
+            `;
+
+            if (isMayor) {
+                firmasHTML += `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3.5rem; page-break-inside: avoid;">
+                    <div style="width: 40%; text-align: left;">
+                        <div style="font-weight: bold;">F _____________________________________</div>
+                        <div style="font-weight: bold; margin-top: 2px;">Nombre y firma del padre y/o madre de familia</div>
+                        <div style="margin-top: 4px;">Nombre: ${p3N}</div>
+                        <div>DUI: ${p3D}</div>
+                    </div>
+                    <div style="width: 40%; text-align: left;">
+                        <div style="font-weight: bold;">F _____________________________________</div>
+                        <div style="font-weight: bold; margin-top: 2px;">Nombre y firma del padre y/o madre de familia</div>
+                        <div style="margin-top: 4px;">Nombre: ${p4N}</div>
+                        <div>DUI: ${p4D}</div>
+                    </div>
+                </div>
+                `;
+            }
+
+            document.getElementById('pvFirmasGrid').innerHTML = firmasHTML;
+
+            // --- EJECUTAR HTML2PDF ---
+            const printSec = document.getElementById('printSection');
+            const pdfData = document.getElementById('pdfData');
+            
+            printSec.style.display = 'block';
+
+            const opt = {
+                margin:       [0.8, 1, 0.8, 1], // Margen perfecto
+                filename:     `Acta_CAE_${actaNum}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opt).from(pdfData).save().then(() => {
+                    printSec.style.display = 'none';
+                    showToast("PDF del CAE descargado correctamente.");
+                }).catch(err => {
+                    console.error(err);
+                    printSec.style.display = 'none';
+                    showToast("Error al generar PDF", "error");
+                });
+            }, 200);
+        };
+
+    </script>
+</body>
+</html>

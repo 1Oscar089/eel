@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio - CE Cantón Los Prados</title>
+    
+    <link rel="preload" href="../css/userbar.css" as="style">
+    <link rel="preload" href="../css/navbar.css" as="style">
+    <link rel="stylesheet" href="../css/userbar.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        :root {
+            --primary-dark: #243C4C; --primary-steel: #5289AD; 
+            --accent: #698696; --border: #ACBCBF; 
+            --bg-light: #F4FCFB; --success: #16a34a; 
+            --warning: #d97706; --danger: #dc2626; --info: #0284c7;
+            --gap: 0.5rem; 
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+        html, body { background: var(--bg-light); color: var(--primary-dark); width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; position: relative; }
+
+        .app-content { 
+            height: calc(100vh - 60px) !important; 
+            min-height: 0 !important;
+            width: calc(100vw - 220px) !important; 
+            margin-left: 220px !important; 
+            padding: var(--gap) !important; 
+            overflow-y: auto !important; 
+            overflow-x: hidden !important; 
+            display: flex; 
+            flex-direction: column;
+            margin-top: 0 !important; 
+            -ms-overflow-style: none; 
+            scrollbar-width: none;
+        }
+        .app-content::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 768px) {
+            .app-content { width: 100vw !important; margin-left: 0 !important; padding-bottom: 80px !important; }
+        }
+
+        .welcome-banner { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-steel) 100%); border-radius: 12px; padding: 1.2rem 1.5rem; color: white; margin-bottom: var(--gap); position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(36, 60, 76, 0.05); flex-shrink: 0; }
+        .welcome-banner::after { content: ''; position: absolute; right: -30px; top: -30px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+        .welcome-banner::before { content: ''; position: absolute; right: 60px; bottom: -50px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.04); }
+        .welcome-banner h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.2rem; letter-spacing: -0.5px; z-index: 2; position: relative; text-transform: uppercase;}
+        .welcome-banner p { font-size: 0.8rem; opacity: 0.9; margin: 0; font-weight: 600; z-index: 2; position: relative;}
+        
+        .welcome-meta { display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; z-index: 2; position: relative;}
+        .welcome-meta-item { display: flex; flex-direction: column; }
+        .welcome-meta-item span:first-child { font-size: 0.65rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
+        .welcome-meta-item span:last-child { font-size: 0.95rem; font-weight: 800; margin-top: 2px; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--gap); margin-bottom: var(--gap); flex-shrink: 0; }
+        .kpi-card { background: white; border-radius: 12px; padding: 1rem 1.2rem; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 1rem; transition: 0.2s; }
+        .kpi-card:hover { border-color: var(--primary-steel); transform: translateY(-2px); }
+        .kpi-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
+        .kpi-info { flex: 1; display: flex; flex-direction: column; }
+        .kpi-title { font-size: 0.65rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 0.1rem; }
+        .kpi-value { font-size: 1.3rem; font-weight: 900; color: var(--primary-dark); line-height: 1; }
+        .kpi-sub { font-size: 0.65rem; font-weight: 600; color: var(--accent); margin-top: 0.2rem; }
+
+        /* Cuadrícula Ajustada a 2 Columnas */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); flex: 1; min-height: 0; }
+        .panel-card { background: white; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.02); height: 100%; overflow: hidden; }
+        .panel-header { padding: 0.7rem 1rem; border-bottom: 1px solid var(--bg-light); background: #f8fafc; font-size: 0.8rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; text-transform: uppercase;}
+        .panel-header i { font-size: 1.2rem; color: var(--primary-steel); }
+        .panel-body { padding: 0.5rem; flex: 1; overflow-y: auto; -ms-overflow-style: none; scrollbar-width: none; }
+        .panel-body::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 1024px) { 
+            .dashboard-grid { grid-template-columns: 1fr; } 
+            .app-content { overflow-y: auto !important; } 
+            .panel-card { height: 350px; flex-shrink: 0; } 
+        }
+
+        .item-row { border-bottom: 1px solid var(--bg-light); padding: 0.5rem; display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: inherit; border-radius: 8px; transition: 0.2s; }
+        .item-row:hover { background: #f8fafc; padding-left: 0.8rem; cursor: pointer; }
+        .item-row:last-child { border-bottom: none; }
+        .item-icon { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem; background: var(--primary-steel); color: white; }
+        .item-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 0.1rem; }
+        .item-title { font-size: 0.8rem; font-weight: 800; color: var(--primary-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-meta { font-size: 0.65rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 0.2rem; }
+
+        .quick-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); padding: 0.5rem; }
+        .quick-card { background: var(--bg-light); border-radius: 10px; padding: 1.2rem 1rem; border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 0.6rem; cursor: pointer; transition: 0.2s; text-decoration: none; color: var(--primary-dark); }
+        .quick-card:hover { border-color: var(--primary-steel); background: white; box-shadow: 0 4px 12px rgba(82, 137, 173, 0.1); transform: translateY(-2px); }
+        .quick-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .quick-label { font-size: 0.75rem; font-weight: 800; text-align: center; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(36, 60, 76, 0.7); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 1rem; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; padding: 1.5rem; border-radius: 16px; width: 100%; max-width: 450px; position: relative; display: flex; flex-direction: column; gap: 0.8rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .btn-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.8rem; color: var(--accent); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; padding: 0.2rem;}
+        .btn-close:hover { color: var(--danger); }
+
+        .empty-state { text-align: center; padding: 2rem 1rem; color: var(--accent); font-size: 0.8rem; font-style: italic; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .empty-state i { font-size: 2rem; color: var(--border); }
+        .placeholder { background: linear-gradient(90deg, #e8f0f2 25%, #d4e4e8 50%, #e8f0f2 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; display: inline-block; color: transparent !important; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    </style>
+</head>
+<body>
+
+<div id="userbar-root"></div>
+<div id="navbar-root"></div>
+<div id="navbar-mobile-root"></div>
+
+<div class="app-content" id="mainContent">
+
+    <div class="welcome-banner">
+        <h2>¡Hola, <span id="welcomeName" class="placeholder">Estudiante</span>!</h2>
+        <p>Este es el resumen de tu expediente académico actual.</p>
+        <div class="welcome-meta">
+            <div class="welcome-meta-item">
+                <span>Grado Asignado</span>
+                <span id="metaGrade" class="placeholder">Cargando...</span>
+            </div>
+            <div class="welcome-meta-item">
+                <span>Identificador (NIE)</span>
+                <span id="metaNIE" class="placeholder">Cargando...</span>
+            </div>
+            <div class="welcome-meta-item">
+                <span>Responsable</span>
+                <span id="metaResp" class="placeholder">Cargando...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;"><i class='bx bx-calendar-check'></i></div>
+            <div class="kpi-info">
+                <span class="kpi-title">Asistencia (Meses Registrados)</span>
+                <span class="kpi-value" id="kpiAsistencia"><span class="placeholder">000%</span></span>
+                <span class="kpi-sub" id="subAsistencia">Calculando registros...</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #fef3c7; color: #d97706;"><i class='bx bx-shield-quarter'></i></div>
+            <div class="kpi-info">
+                <span class="kpi-title">Conducta Actual</span>
+                <span class="kpi-value" id="kpiConducta"><span class="placeholder">Solvente</span></span>
+                <span class="kpi-sub" id="subConducta">Puntos disciplinarios</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        
+        <div class="panel-card">
+            <div class="panel-header"><span>Avisos y Eventos</span><i class='bx bxs-bell-ring'></i></div>
+            <div id="listAvisos" class="panel-body">
+                <div class="empty-state"><i class='bx bx-loader bx-spin'></i> Cargando información...</div>
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-header"><span>Accesos Rápidos</span><i class='bx bx-grid-alt'></i></div>
+            <div class="panel-body">
+                <div class="quick-grid">
+                    <a href="horario.html" class="quick-card">
+                        <div class="quick-icon" style="background:#eff6ff; color:#3b82f6;"><i class='bx bx-time'></i></div>
+                        <span class="quick-label">Horario de Clases</span>
+                    </a>
+                    <a href="calificaciones.html" class="quick-card">
+                        <div class="quick-icon" style="background:#f0fdf4; color:#16a34a;"><i class='bx bx-task'></i></div>
+                        <span class="quick-label">Mis Notas</span>
+                    </a>
+                    <a href="demeritos.html" class="quick-card">
+                        <div class="quick-icon" style="background:#fef2f2; color:#ef4444;"><i class='bx bx-shield-x'></i></div>
+                        <span class="quick-label">Deméritos</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Modal para Eventos -->
+<div id="modalEv" class="modal-overlay">
+    <div class="modal">
+        <button class="btn-close" onclick="closeModalEv()"><i class='bx bx-x'></i></button>
+        <h2 id="mTitle" style="font-size: 1.1rem; margin-bottom: 0.2rem; font-weight: 800; color: var(--primary-dark); padding-right: 2rem;"></h2>
+        <p id="mDate" style="font-size: 0.75rem; color: var(--accent); margin-bottom: 1rem; font-weight: 700;"></p>
+        <div id="mDesc" style="background: var(--bg-light); padding: 1rem; border-radius: 8px; font-size: 0.85rem; line-height: 1.4; color: #444; border: 1px solid var(--border);"></div>
+    </div>
+</div>
+
+<!-- Modal para Avisos -->
+<div id="modalAviso" class="modal-overlay">
+    <div class="modal">
+        <button class="btn-close" onclick="closeModalAviso()"><i class='bx bx-x'></i></button>
+        <h2 id="mAvisoTitle" style="font-size: 1.1rem; margin-bottom: 0.2rem; font-weight: 800; color: var(--primary-dark); padding-right: 2rem;"></h2>
+        <p id="mAvisoDate" style="font-size: 0.75rem; color: var(--accent); margin-bottom: 1rem; font-weight: 700;"></p>
+        <div id="mAvisoDesc" style="background: var(--bg-light); padding: 1rem; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; color: #444; border: 1px solid var(--border); white-space: pre-wrap;"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initUserbar } from '../js/userbar.js';
+    import { initNavbar } from '../js/navbar.js';
+    import { auth, db } from '../js/initFirebase.js'; 
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+    initNavbar();
+    await initUserbar({ brandHref: '../../index.html' });
+
+    let curY = new Date().getFullYear();
+    let listAvisosData = [];
+    let listEventosData = [];
+    let gradeLabels = {};
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = '../../index.html'; return; }
+        const email = user.email;
+
+        try {
+            const docGrados = await getDoc(doc(db, "control", "grados"));
+            if (docGrados.exists()) {
+                const dataG = docGrados.data();
+                for (let k in dataG) gradeLabels[k] = dataG[k].nombre || dataG[k];
+            }
+        } catch (e) {}
+
+        try {
+            const q = query(collection(db, 'users'), where('email', '==', email));
+            const snap = await getDocs(q);
+
+            if (!snap.empty) {
+                const student = snap.docs[0].data();
+                const stId = snap.docs[0].id;
+                
+                const primerNombre = student.nombreCompleto ? student.nombreCompleto.split(' ')[0] : 'Estudiante';
+                const gradoTxt = gradeLabels[student.grade] || `Grado ${student.grade || 'N/A'}`;
+
+                document.getElementById('welcomeName').textContent = primerNombre;
+                document.getElementById('welcomeName').classList.remove('placeholder');
+                document.getElementById('metaGrade').textContent = gradoTxt;
+                document.getElementById('metaGrade').classList.remove('placeholder');
+                document.getElementById('metaNIE').textContent = student.nie || student.NIE || 'No registrado';
+                document.getElementById('metaNIE').classList.remove('placeholder');
+                document.getElementById('metaResp').textContent = student.responsable || 'No registrado';
+                document.getElementById('metaResp').classList.remove('placeholder');
+
+                // Conducta Acumulada
+                let dems = 0, reds = 0;
+                try {
+                    const dDoc = await getDoc(doc(db, "users", stId, "metadata", "demeritos"));
+                    if(dDoc.exists()) {
+                        Object.values(dDoc.data()).forEach(r => { if(r.fecha?.startsWith(String(curY))) dems++; });
+                    }
+                    const rDoc = await getDoc(doc(db, "users", stId, "metadata", "redenciones"));
+                    if(rDoc.exists()) {
+                        Object.values(rDoc.data()).forEach(r => { if(r.fecha?.startsWith(String(curY))) reds++; });
+                    }
+                } catch(e){}
+
+                const net = dems - reds;
+                const kpiConducta = document.getElementById('kpiConducta');
+                if (net <= 0) {
+                    kpiConducta.textContent = "Solvente";
+                    kpiConducta.style.color = "var(--success)";
+                } else if (net >= 5) {
+                    kpiConducta.textContent = `${net} Pts.`;
+                    kpiConducta.style.color = "var(--danger)";
+                } else {
+                    kpiConducta.textContent = `${net} Pts.`;
+                    kpiConducta.style.color = "var(--warning)";
+                }
+                document.getElementById('subConducta').textContent = `Deméritos: ${dems} | Redenciones: ${reds}`;
+
+                // Asistencia Acumulada en base a los meses registrados
+                try {
+                    const aDoc = await getDoc(doc(db, "asistencia", `${curY}_grado_${student.grade}`));
+                    
+                    let totalA = 0, totalIJ = 0, totalII = 0;
+                    
+                    if(aDoc.exists() && aDoc.data()[stId]) {
+                        const asisData = aDoc.data()[stId];
+                        Object.values(asisData).forEach(m => {
+                            totalA += (m.a || 0);
+                            totalIJ += (m.ij || 0);
+                            totalII += (m.ii || 0);
+                        });
+                    }
+
+                    const totalDiasRegistrados = totalA + totalIJ + totalII;
+                    const pctAsis = totalDiasRegistrados > 0 ? Math.round(((totalA + totalIJ) / totalDiasRegistrados) * 100) : 100;
+                    
+                    const kpiAsis = document.getElementById('kpiAsistencia');
+                    if (totalDiasRegistrados === 0) {
+                        kpiAsis.textContent = "S/D";
+                        kpiAsis.style.color = "var(--accent)";
+                        document.getElementById('subAsistencia').textContent = "Sin registros de asistencia aún";
+                    } else {
+                        kpiAsis.textContent = `${pctAsis}%`;
+                        kpiAsis.style.color = pctAsis >= 80 ? 'var(--success)' : (pctAsis >= 60 ? 'var(--warning)' : 'var(--danger)');
+                        document.getElementById('subAsistencia').innerHTML = `Total Días: ${totalDiasRegistrados} &bull; A: ${totalA} &bull; IJ: ${totalIJ} &bull; II: ${totalII}`;
+                    }
+                } catch(e){
+                    console.error(e);
+                }
+            }
+        } catch (err) { }
+
+        // Renderizado Unificado de Avisos y Eventos
+        const renderAvisosEventos = () => {
+            const container = document.getElementById('listAvisos');
+            const combined = [...listAvisosData, ...listEventosData];
+            
+            if (combined.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bx bx-message-square-x"></i><p>No hay avisos ni eventos recientes.</p></div>';
+                return;
+            }
+
+            // Orden descendente por timestamp
+            const sortedList = combined.sort((a, b) => {
+                const timeA = a.timestamp || Date.parse(a.fecha) || 0;
+                const timeB = b.timestamp || Date.parse(b.fecha) || 0;
+                return timeB - timeA;
+            });
+
+            container.innerHTML = sortedList.slice(0, 8).map(a => {
+                let isEvent = a.hasOwnProperty('tipo'); 
+                let customColor = a.color || (isEvent ? 'var(--info)' : 'var(--warning)'); 
+                let icon = isEvent ? 'bx-calendar-event' : 'bxs-megaphone';
+                
+                let fechaVisual = a.fecha;
+                if (fechaVisual && fechaVisual.includes('-')) {
+                    const [y, m, d] = fechaVisual.split('-');
+                    fechaVisual = `${d}/${m}/${y}`;
+                }
+
+                let onclickAction = isEvent ? `openModalEv('${encodeURIComponent(JSON.stringify([a]))}')` : `openAvisoModal('${encodeURIComponent(JSON.stringify(a))}')`;
+                let title = a.asunto || a.nombre || 'Aviso/Evento';
+
+                return `
+                    <div class="item-row" onclick="${onclickAction}">
+                        <div class="item-icon" style="background: ${customColor}; color: white;">
+                            <i class='bx ${icon}'></i>
+                        </div>
+                        <div class="item-info">
+                            <div class="item-title">${title}</div>
+                            <div class="item-meta"><i class='bx bx-time'></i> ${fechaVisual || ''}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        onSnapshot(doc(db, "control", "avisos"), (snap) => {
+            listAvisosData = snap.exists() ? (snap.data().eventos || []) : [];
+            renderAvisosEventos();
+        });
+
+        onSnapshot(doc(db, "control", "calendario"), (snap) => {
+            listEventosData = snap.exists() ? (snap.data().eventos || []) : [];
+            renderAvisosEventos();
+        });
+    });
+
+    window.openModalEv = (jsonEncoded) => {
+        const evs = JSON.parse(decodeURIComponent(jsonEncoded));
+        if (evs.length > 0) {
+            const ev = evs[0]; 
+            document.getElementById('mTitle').innerText = ev.nombre || 'Evento';
+            
+            let fechaVisual = ev.fecha;
+            if (fechaVisual && fechaVisual.includes('-')) {
+                const [y, m, d] = fechaVisual.split('-');
+                fechaVisual = `${d}/${m}/${y}`;
+            }
+
+            document.getElementById('mDate').innerHTML = `<i class='bx bx-calendar'></i> ${fechaVisual || ev.fecha}`;
+            document.getElementById('mDesc').innerHTML = `<strong>Tipo:</strong> <span style="text-transform: capitalize;">${ev.tipo || 'Evento'}</span><br><br>${ev.descripcion || 'Sin detalles adicionales.'}`;
+        }
+        document.getElementById('modalEv').classList.add('active');
+    };
+
+    window.closeModalEv = () => document.getElementById('modalEv').classList.remove('active');
+    
+    window.openAvisoModal = (jsonEncoded) => {
+        const av = JSON.parse(decodeURIComponent(jsonEncoded));
+        document.getElementById('mAvisoTitle').innerText = av.asunto || 'Aviso Institucional';
+        
+        let fechaVisual = av.fecha;
+        if (fechaVisual && fechaVisual.includes('-')) {
+            const [y, m, d] = fechaVisual.split('-');
+            fechaVisual = `${d}/${m}/${y}`;
+        }
+
+        document.getElementById('mAvisoDate').innerHTML = `<i class='bx bx-time'></i> Fecha: ${fechaVisual || 'N/A'}`;
+        
+        let descHtml = av.mensaje || av.descripcion || 'Sin detalles adicionales.';
+        if (av.enlace) {
+            descHtml += `<br><br><a href="${av.enlace}" target="_blank" style="display: inline-block; background: var(--primary-steel); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.8rem;"><i class='bx bx-link-external'></i> Ver enlace adjunto</a>`;
+        }
+        
+        document.getElementById('mAvisoDesc').innerHTML = descHtml;
+        document.getElementById('modalAviso').classList.add('active');
+    };
+
+    window.closeModalAviso = () => document.getElementById('modalAviso').classList.remove('active');
+
+</script>
+
+</body>
+</html>
