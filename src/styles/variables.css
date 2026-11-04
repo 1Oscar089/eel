@@ -4,7 +4,7 @@
    ============================================================ */
 :root {
   /* --- Colores institucionales --- */
-  --c-navy:        #1a2a4a;  /* Azul Deep Navy: userbar y elementos directivos */
+  --c-navy:        #355eb0;  /* Azul Deep Navy: userbar y elementos directivos */
   --c-azul:        #1565c0;  /* Azul Real: interactivos, ítems activos, enlaces */
   --c-azul-claro:  #e3f2fd;  /* Fondo del ítem activo del sidebar */
   --c-esmeralda:   #2e7d32;  /* Positivo: guardar, aprobar, activo */
@@ -18,8 +18,8 @@
 
   /* --- Medidas de layout --- */
   --userbar-alto:  64px;     /* Escritorio. En móvil se sobreescribe a 56px */
-  --sidebar-ancho: 280px;    /* Sidebar expandida */
-  --sidebar-mini:  72px;     /* Sidebar de solo iconos */
+  --sidebar-ancho: 140px;    /* Sidebar expandida */
+  --sidebar-mini:  70px;     /* Sidebar de solo iconos */
 
   /* --- Breakpoints (solo documentación: en las media queries van
          duros porque CSS no acepta var() en las condiciones) --- */
