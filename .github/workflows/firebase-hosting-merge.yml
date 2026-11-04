@@ -6,13 +6,75 @@ on:
   push:
     branches:
       - main
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: npm ci && npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project with Firebase env vars
+        env:
+          # Proyecto 1
+          VITE_P1_API_KEY: ${{ secrets.VITE_P1_API_KEY }}
+          VITE_P1_AUTH_DOMAIN: ${{ secrets.VITE_P1_AUTH_DOMAIN }}
+          VITE_P1_PROJECT_ID: ${{ secrets.VITE_P1_PROJECT_ID }}
+          VITE_P1_STORAGE_BUCKET: ${{ secrets.VITE_P1_STORAGE_BUCKET }}
+          VITE_P1_MESSAGING_SENDER_ID: ${{ secrets.VITE_P1_MESSAGING_SENDER_ID }}
+          VITE_P1_APP_ID: ${{ secrets.VITE_P1_APP_ID }}
+          
+          # Proyecto 2
+          VITE_P2_API_KEY: ${{ secrets.VITE_P2_API_KEY }}
+          VITE_P2_AUTH_DOMAIN: ${{ secrets.VITE_P2_AUTH_DOMAIN }}
+          VITE_P2_PROJECT_ID: ${{ secrets.VITE_P2_PROJECT_ID }}
+          VITE_P2_STORAGE_BUCKET: ${{ secrets.VITE_P2_STORAGE_BUCKET }}
+          VITE_P2_MESSAGING_SENDER_ID: ${{ secrets.VITE_P2_MESSAGING_SENDER_ID }}
+          VITE_P2_APP_ID: ${{ secrets.VITE_P2_APP_ID }}
+
+          # Proyecto 3
+          VITE_P3_API_KEY: ${{ secrets.VITE_P3_API_KEY }}
+          VITE_P3_AUTH_DOMAIN: ${{ secrets.VITE_P3_AUTH_DOMAIN }}
+          VITE_P3_PROJECT_ID: ${{ secrets.VITE_P3_PROJECT_ID }}
+          VITE_P3_STORAGE_BUCKET: ${{ secrets.VITE_P3_STORAGE_BUCKET }}
+          VITE_P3_MESSAGING_SENDER_ID: ${{ secrets.VITE_P3_MESSAGING_SENDER_ID }}
+          VITE_P3_APP_ID: ${{ secrets.VITE_P3_APP_ID }}
+
+          # Proyecto 4
+          VITE_P4_API_KEY: ${{ secrets.VITE_P4_API_KEY }}
+          VITE_P4_AUTH_DOMAIN: ${{ secrets.VITE_P4_AUTH_DOMAIN }}
+          VITE_P4_PROJECT_ID: ${{ secrets.VITE_P4_PROJECT_ID }}
+          VITE_P4_STORAGE_BUCKET: ${{ secrets.VITE_P4_STORAGE_BUCKET }}
+          VITE_P4_MESSAGING_SENDER_ID: ${{ secrets.VITE_P4_MESSAGING_SENDER_ID }}
+          VITE_P4_APP_ID: ${{ secrets.VITE_P4_APP_ID }}
+
+          # Proyecto 5
+          VITE_P5_API_KEY: ${{ secrets.VITE_P5_API_KEY }}
+          VITE_P5_AUTH_DOMAIN: ${{ secrets.VITE_P5_AUTH_DOMAIN }}
+          VITE_P5_PROJECT_ID: ${{ secrets.VITE_P5_PROJECT_ID }}
+          VITE_P5_STORAGE_BUCKET: ${{ secrets.VITE_P5_STORAGE_BUCKET }}
+          VITE_P5_MESSAGING_SENDER_ID: ${{ secrets.VITE_P5_MESSAGING_SENDER_ID }}
+          VITE_P5_APP_ID: ${{ secrets.VITE_P5_APP_ID }}
+
+          # Proyecto 6
+          VITE_P6_API_KEY: ${{ secrets.VITE_P6_API_KEY }}
+          VITE_P6_AUTH_DOMAIN: ${{ secrets.VITE_P6_AUTH_DOMAIN }}
+          VITE_P6_PROJECT_ID: ${{ secrets.VITE_P6_PROJECT_ID }}
+          VITE_P6_STORAGE_BUCKET: ${{ secrets.VITE_P6_STORAGE_BUCKET }}
+          VITE_P6_MESSAGING_SENDER_ID: ${{ secrets.VITE_P6_MESSAGING_SENDER_ID }}
+          VITE_P6_APP_ID: ${{ secrets.VITE_P6_APP_ID }}
+        run: npm run build
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_EXPEDIENTE_EN_LINEA1 }}
