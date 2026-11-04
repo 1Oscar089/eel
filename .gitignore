@@ -1,3 +1,7 @@
 node_modules/
 dist/
 .firebase/
+
+# Archivos de variables de entorno local
+.env.local
+.env.*.local

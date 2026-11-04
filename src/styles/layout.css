@@ -1,0 +1,163 @@
+/* ============================================================
+   layout.css — Esqueleto: userbar + sidebar + contenido + footer
+   Las media queries van AL FINAL para poder sobreescribir lo base.
+   ============================================================ */
+
+/* ---------- 1. Reset ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* provisional */
+  background: var(--c-slate-fondo);
+  color: var(--c-texto);
+  overflow: hidden; /* la página NO scrollea: scrollean sidebar y contenido */
+}
+
+/* ---------- 2. Estructura general ---------- */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-body {
+  display: flex;   /* fila: sidebar a la izquierda, contenido ocupa el resto */
+  flex: 1;         /* todo lo que queda debajo de la userbar */
+  min-height: 0;   /* imprescindible para que los hijos puedan scrollear */
+}
+
+/* ---------- 3. Userbar ---------- */
+.userbar {
+  flex-shrink: 0;
+  height: var(--userbar-alto);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  background: var(--c-navy);
+  color: var(--c-blanco);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+  position: relative;
+  z-index: 20;  /* siempre por encima del sidebar flotante y del overlay */
+}
+
+.userbar button {  /* hamburguesa provisional */
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- 4. Sidebar ---------- */
+.sidebar {
+  width: var(--sidebar-ancho);
+  flex-shrink: 0;   /* el contenido NO la aplasta */
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--c-blanco);
+  border-right: 1px solid var(--c-slate-borde);
+  transition: width .3s ease, transform .3s ease;
+}
+
+/* Texto de cada ítem: en modo mini se oculta (la usará sidebar.ts) */
+.sidebar-texto {
+  white-space: nowrap;
+}
+
+/* ---------- 5. Contenido ---------- */
+.content {
+  flex: 1;          /* ★ LA magia: crece solo al colapsar u ocultar el sidebar */
+  min-width: 0;     /* evita que tablas anchas rompan el layout */
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---------- 6. Footer ---------- */
+.content footer {
+  margin-top: auto; /* pegado abajo aunque haya poco contenido */
+  padding: 12px 0 0;
+  border-top: 1px solid var(--c-slate-borde);
+  font-size: .8rem;
+  color: var(--c-slate);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ============================================================
+   7. ESCRITORIO (>1024px) — colapsado a mini
+   La clase .sidebar-mini la alternará la hamburguesa (Iteración 3)
+   ============================================================ */
+@media (min-width: 1025px) {
+  .app-layout.sidebar-mini .sidebar { width: var(--sidebar-mini); }
+  .app-layout.sidebar-mini .sidebar-texto { display: none; }
+}
+
+/* ============================================================
+   8. TABLET (768–1024px) — mini por defecto, flotante al abrir
+   ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar { width: var(--sidebar-mini); }
+
+  .app-layout.sidebar-open .sidebar {
+    position: fixed;   /* flota: deja de empujar al contenido */
+    top: var(--userbar-alto);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-ancho);
+    z-index: 15;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, .3);
+  }
+}
+
+/* ============================================================
+   9. MÓVIL (<768px) — userbar 56px, drawer deslizante + overlay
+   ============================================================ */
+@media (max-width: 768px) {
+  :root { --userbar-alto: 56px; }
+
+  .sidebar {
+    position: fixed;               /* fuera del flujo siempre */
+    top: var(--userbar-alto);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-ancho);   /* ancho completo aunque venga de mini */
+    transform: translateX(-100%);  /* escondida fuera de pantalla */
+    z-index: 15;
+    border-right: none;
+  }
+
+  .app-layout.sidebar-open .sidebar {
+    transform: translateX(0);      /* entra deslizándose */
+    box-shadow: 8px 0 24px rgba(0, 0, 0, .35);
+  }
+
+  /* Fondo traslúcido desenfocado detrás del drawer */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;  /* equivale a top/right/bottom/left: 0 */
+    background: rgba(15, 23, 42, .5);
+    backdrop-filter: blur(3px);
+    z-index: 10;          /* sobre el contenido, bajo sidebar y userbar */
+    opacity: 0;
+    pointer-events: none; /* invisible: no captura clics */
+    transition: opacity .3s ease;
+  }
+
+  .app-layout.sidebar-open .sidebar-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

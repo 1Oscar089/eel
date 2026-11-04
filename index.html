@@ -3,46 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prueba TypeScript</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      display: grid;
-      place-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background-color: #f4f4f9;
-      color: #333;
-    }
-    .card {
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    button {
-      background-color: #0070f3;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 1rem;
-    }
-    button:hover {
-      background-color: #0051a2;
-    }
-  </style>
+  <title>Expediente en linea</title>
+  <link rel="stylesheet" href="./src/main.css">
 </head>
 <body>
-  <div class="card">
-    <h1>🚀 Estado del Proyecto</h1>
-    <p id="status">Cargando TypeScript...</p>
-    <button id="counter-btn">Clicks: 0</button>
+  <div class="app-layout">
+    <header class="userbar">☰ INICIO</header>
+    <div class="app-body">
+      <aside class="sidebar">
+        <li>Inicio</li>
+        <li>Usuario</li>
+      </aside>
+      <main class="content">
+        <h4>Contenido</h4>
+        <footer>Centro Escolar Cantón Los Prados</footer>
+      </main>
+    </div>
   </div>
-
-  <script type="module" src="./index.js"></script>
+  <script type="module" src="src/main.ts"></script>
 </body>
 </html>

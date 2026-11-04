@@ -1,3 +1,10 @@
+import '@/styles/variables.css';
+import '@/styles/layout.css';
+
+import { testAllFirebaseProjects } from './testFirebase';
+
+testAllFirebaseProjects();
+
 const statusEl = document.getElementById("status");
 const buttonEl = document.getElementById("counter-btn") as HTMLButtonElement | null;
 

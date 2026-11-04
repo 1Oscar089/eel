@@ -1,0 +1,28 @@
+/* ============================================================
+   variables.css — Paleta Material Design y medidas del layout
+   (Guía PASO 2.1). Ninguna otra hoja usa colores sueltos.
+   ============================================================ */
+:root {
+  /* --- Colores institucionales --- */
+  --c-navy:        #1a2a4a;  /* Azul Deep Navy: userbar y elementos directivos */
+  --c-azul:        #1565c0;  /* Azul Real: interactivos, ítems activos, enlaces */
+  --c-azul-claro:  #e3f2fd;  /* Fondo del ítem activo del sidebar */
+  --c-esmeralda:   #2e7d32;  /* Positivo: guardar, aprobar, activo */
+  --c-carmesi:     #c62828;  /* Eliminar, alertas, faltas graves */
+  --c-ambar:       #f9a825;  /* Advertencias, pendientes */
+  --c-slate:       #475569;  /* Texto secundario */
+  --c-slate-borde: #cbd5e1;  /* Bordes y divisiones */
+  --c-slate-fondo: #f1f5f9;  /* Fondo del área de contenido */
+  --c-texto:       #1e293b;  /* Texto principal */
+  --c-blanco:      #ffffff;
+
+  /* --- Medidas de layout --- */
+  --userbar-alto:  64px;     /* Escritorio. En móvil se sobreescribe a 56px */
+  --sidebar-ancho: 280px;    /* Sidebar expandida */
+  --sidebar-mini:  72px;     /* Sidebar de solo iconos */
+
+  /* --- Breakpoints (solo documentación: en las media queries van
+         duros porque CSS no acepta var() en las condiciones) --- */
+  --bp-tablet-max: 1024px;
+  --bp-movil-max:  768px;
+}
