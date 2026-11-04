@@ -1,28 +1,49 @@
 /* ============================================================
-   variables.css — Paleta Material Design y medidas del layout
-   (Guía PASO 2.1). Ninguna otra hoja usa colores sueltos.
+   variables.css — SOLO medidas, capas, formas, transiciones y
+   tipografía. LOS COLORES NO VIVEN AQUÍ: van escritos directo
+   en layout.css (decisión del proyecto).
    ============================================================ */
 :root {
-  /* --- Colores institucionales --- */
-  --c-navy:        #355eb0;  /* Azul Deep Navy: userbar y elementos directivos */
-  --c-azul:        #1565c0;  /* Azul Real: interactivos, ítems activos, enlaces */
-  --c-azul-claro:  #e3f2fd;  /* Fondo del ítem activo del sidebar */
-  --c-esmeralda:   #2e7d32;  /* Positivo: guardar, aprobar, activo */
-  --c-carmesi:     #c62828;  /* Eliminar, alertas, faltas graves */
-  --c-ambar:       #f9a825;  /* Advertencias, pendientes */
-  --c-slate:       #475569;  /* Texto secundario */
-  --c-slate-borde: #cbd5e1;  /* Bordes y divisiones */
-  --c-slate-fondo: #f1f5f9;  /* Fondo del área de contenido */
-  --c-texto:       #1e293b;  /* Texto principal */
-  --c-blanco:      #ffffff;
+  /* --- Medidas del layout --- */
+  --userbar-alto: 64px;      /* Escritorio/tablet. En móvil: 56px (media query abajo) */
+  --sidebar-ancho: 220px;    /* Sidebar expandida */
+  --sidebar-mini: 64px;      /* Sidebar de solo iconos */
 
-  /* --- Medidas de layout --- */
-  --userbar-alto:  64px;     /* Escritorio. En móvil se sobreescribe a 56px */
-  --sidebar-ancho: 140px;    /* Sidebar expandida */
-  --sidebar-mini:  70px;     /* Sidebar de solo iconos */
+  /* --- Espaciados --- */
+  --content-padding: 16px;
+  --gap-userbar: 16px;
+  --item-alto: 48px;         /* Alto de cada ítem del menú lateral */
 
-  /* --- Breakpoints (solo documentación: en las media queries van
-         duros porque CSS no acepta var() en las condiciones) --- */
-  --bp-tablet-max: 1024px;
-  --bp-movil-max:  768px;
+  /* --- Formas --- */
+  --radio-borde: 8px;
+  --borde-activo: 4px;       /* Barra lateral del ítem activo */
+
+  /* --- Capas (z-index) --- */
+  --z-overlay: 10;
+  --z-sidebar: 15;
+  --z-userbar: 20;
+
+  /* --- Transiciones --- */
+  --t-rapida: .2s ease;
+  --t-normal: .3s ease;
+
+  /* --- Tipografía --- */
+  --fuente-base: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --tam-titulo: 1.5rem;
+  --tam-texto: 1rem;
+  --tam-mini: .8rem;
 }
+
+/* Móvil: la userbar baja de altura y el contenido respira menos */
+@media (max-width: 768px) {
+  :root {
+    --userbar-alto: 56px;
+    --content-padding: 12px;
+  }
+}
+
+/* Breakpoints usados en las media queries (CSS no permite var() aquí):
+   - Escritorio: min-width 1025px
+   - Tablet:     max-width 1024px
+   - Móvil:      max-width 768px
+*/
