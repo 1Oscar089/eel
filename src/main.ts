@@ -54,10 +54,10 @@ function crearSidebar(): HTMLElement {
     const item = crearElemento('a', 'sidebar-item');
     item.setAttribute('href', '#/' + nombre.toLowerCase());
     // El texto va envuelto: el modo mini lo oculta con CSS (Iteración 5)
+    item.style.color = "white"; 
     item.appendChild(crearElemento('span', 'sidebar-texto', nombre));
     nav.appendChild(item);
-  }
-
+  } 
   aside.appendChild(nav);
   return aside;
 }
