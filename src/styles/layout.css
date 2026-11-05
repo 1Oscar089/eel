@@ -1,257 +1,628 @@
 /* ============================================================
-   layout.css — Esqueleto responsivo de 3 dispositivos.
-   LOS COLORES viven aquí (decisión del proyecto): variables.css
-   solo guarda medidas, capas y transiciones.
-   Paleta (Guía PASO 2.1):
-     Navy #1a2a4a | Azul real #1565c0 | Azul claro #e3f2fd
-     Esmeralda #2e7d32 | Carmesí #c62828 | Ámbar #f9a825
-     Slate #334155 / #475569 / #64748b / #cbd5e1 | Fondo #f1f5f9
-   ============================================================ */
+  layout.css — Colores y estilos del esqueleto
+  ------------------------------------------------------------
+  Breakpoints (escritorio-primero: la base ES escritorio):
+  - Escritorio: > 1024px   (sin media query)
+  - Tablet:     769–1024px → @media (max-width: 1024px)
+  - Móvil:      ≤ 768px    → @media (max-width: 768px)
 
-/* ---------- 1. Reset ---------- */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  Paleta institucional:
+  - Navy       #1a2a4a → userbar (identidad)
+  - Azul       #1565c0 → acentos e ítem activo
+  - Azul claro #e3f2fd → fondo del ítem activo
+  - Ámbar      #f9a825 → punto de sincronización
+  - Slate      #f1f5f9 / #64748b → fondo general / texto secundario
+============================================================ */
 
-html, body { height: 100%; }
-
-body {
-  font-family: var(--fuente-base);
-  background: #f1f5f9;
-  color: #1e293b;
-  overflow: hidden; /* la página no scrollea: scrollean sidebar y contenido */
+/* ---------- 1. Reset básico ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* ---------- 2. Estructura general ---------- */
+html,
+body {
+  height: 100%;
+}
+
+/* ---------- 2. Base del documento ---------- */
+body {
+  font-family: var(--fuente-base, 'Segoe UI', Inter, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif);
+  font-size: var(--texto-md, 1rem);
+  color: #1e293b;        /* texto principal (slate oscuro) */
+  background: #f1f5f9;   /* fondo general gris muy claro */
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;      /* la página no scrollea: el scroll vive en .content */
+}
+
+/* Foco visible para navegación con teclado (accesibilidad) */
+:focus-visible {
+  outline: 2px solid #1565c0;
+  outline-offset: 2px;
+}
+.userbar :focus-visible {
+  outline-color: #90caf9; /* sobre fondo navy se usa un azul claro */
+}
+
+/* ---------- 3. Estructura general ---------- */
+/* Columna: userbar arriba, app-body llenando el resto */
 .app-layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* en móvil descuenta la barra del navegador */
 }
 
+/* Fila: sidebar a la izquierda, content llenando lo demás */
 .app-body {
-  display: flex;      /* fila: sidebar a la izquierda, contenido al resto */
-  flex: 1;            /* todo lo que queda debajo de la userbar */
-  min-height: 0;      /* imprescindible para que los hijos scrolleen */
+  display: flex;
+  flex: 1;
+  min-height: 0; /* clave para que .content pueda hacer scroll */
 }
 
-/* ---------- 3. Userbar (azul navy institucional) ---------- */
+/* ---------- 4. Userbar (barra superior) ---------- */
 .userbar {
+  height: var(--userbar-alto, 64px);
   flex-shrink: 0;
-  height: var(--userbar-alto);
   display: flex;
   align-items: center;
-  gap: var(--gap-userbar);
-  padding: 0 var(--content-padding);
-  background: #1a2a4a;
+  gap: var(--gap-userbar, 16px);
+  padding: 0 16px;
+  background: #1a2a4a;    /* navy institucional */
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.25);
   position: relative;
-  z-index: var(--z-userbar);
+  z-index: var(--z-userbar, 20);
 }
 
-.userbar .logo {
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: .3px;
-}
-
-/* Botón hamburguesa de 3 barras */
+/* Botón hamburguesa: 3 barras dibujadas con CSS */
 .hamburguesa {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   gap: 5px;
-  border-radius: var(--radio-borde);
-  transition: background var(--t-rapida);
+  background: transparent;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
 }
-.hamburguesa:hover { background: rgba(255, 255, 255, .12); }
+.hamburguesa:hover  { background: rgba(255, 255, 255, 0.12); }
+.hamburguesa:active { background: rgba(255, 255, 255, 0.22); }
 .hamburguesa-barra {
-  display: block;
-  width: 22px;
+  width: 20px;
   height: 2px;
   background: #ffffff;
   border-radius: 2px;
 }
 
-/* ---------- 4. Sidebar ---------- */
-.sidebar {
-  width: var(--sidebar-ancho);
-  flex-shrink: 0;               /* el contenido NO la aplasta */
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: #ffffff;
-  border-right: 1px solid #cbd5e1;
-  transition: width var(--t-normal), transform var(--t-normal);
+/* Logo: chip translúcido con icono + nombre */
+.userbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+.logo-icono {
+  width: 36px;
+  height: 36px;
+  padding: 7px;
+  border-radius: var(--radio-pequeno, 6px);
+  background: rgba(255, 255, 255, 0.12);
+  color: #90caf9; /* icono azul claro dentro del chip */
+}
+.logo-texto {
+  font-size: var(--texto-lg, 1.25rem);
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
-.sidebar-nav {
+/* ---------- 5. Sidebar (menú lateral) ---------- */
+.sidebar {
+  width: var(--sidebar-ancho, 280px);
+  flex-shrink: 0;  /* el content no puede aplastarlo */
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  overflow-y: auto;      /* listo para cuando haya muchas secciones */
+  overflow-x: hidden;
+  transition: width var(--t-normal, 0.3s ease), transform var(--t-normal, 0.3s ease),
+    box-shadow var(--t-normal, 0.3s ease);
+  z-index: var(--z-sidebar, 15);
 }
 
+/* Etiqueta interna "MENÚ" (se oculta al colapsar) */
+.sidebar-marca {
+  padding: 14px 16px 8px;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.sidebar-lista {
+  list-style: none;
+}
+
+/* Opción del menú. La barra izquierda se RESERVA con un borde
+   transparente para que el ítem activo no "salte" al aparecer. */
 .sidebar-item {
-  position: relative;
+  height: var(--item-alto, 48px);
   display: flex;
   align-items: center;
   gap: 12px;
-  height: var(--item-alto);
-  padding: 0 12px;
-  border-radius: var(--radio-borde);
-  text-decoration: none;
+  padding: 0 16px;
+  border-left: var(--borde-activo, 4px) solid transparent;
   color: #334155;
-  font-size: var(--tam-texto);
-  flex-shrink: 0;
-  transition: background var(--t-rapida), color var(--t-rapida);
+  font-size: var(--texto-md, 1rem);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease),
+    border-color var(--t-rapida, 0.2s ease);
 }
-.sidebar-item:hover { background: #eef2f7; }
-
-/* Ítem activo: fondo azul claro, texto azul real, barra lateral de 4px */
+.sidebar-item:hover {
+  background: #f1f5f9;
+  color: #1565c0;
+}
 .sidebar-item.activo {
   background: #e3f2fd;
+  border-left-color: #1565c0;
   color: #1565c0;
   font-weight: 600;
 }
-.sidebar-item.activo::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: var(--borde-activo);
-  border-radius: 2px;
-  background: #1565c0;
-}
-
 .sidebar-icono {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }
-.sidebar-icono svg { width: 22px; height: 22px; fill: currentColor; }
-.sidebar-texto { white-space: nowrap; }
-
-/* ---------- 5. Contenido ---------- */
-.content {
-  flex: 1;            /* ★ se expande solo al colapsar u ocultar el sidebar */
-  min-width: 0;       /* evita que tablas anchas rompan el layout */
-  overflow-y: auto;
-  padding: var(--content-padding);
-  display: flex;
-  flex-direction: column;
-  gap: var(--content-padding);
+.sidebar-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.migas { font-size: var(--tam-mini); color: #64748b; }
-.titulo-vista { font-size: var(--tam-titulo); color: #1a2a4a; }
-.descripcion-vista { color: #475569; font-size: .95rem; }
+/* ---------- 6. Content (área central) ---------- */
+.content {
+  flex: 1;       /* ocupa TODO el ancho restante: al colapsar el sidebar se expande solo */
+  min-width: 0;  /* evita que tablas/textos largos rompan el flex */
+  overflow-y: auto;
+  padding: var(--content-padding, 8px);
+  display: flex;
+  flex-direction: column;
+}
 
-/* Zona de montaje de vistas (provisional hasta la Fase 3) */
+/* Scrollbar discreta dentro del contenido (navegadores WebKit) */
+.content::-webkit-scrollbar { width: 10px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
+}
+
+/* Migas de pan */
+.migas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--texto-xs, 0.75rem);
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+.migas-separador { color: #cbd5e1; }
+.migas-actual {
+  color: #1565c0;
+  font-weight: 600;
+}
+
+/* Título y descripción de la vista */
+.titulo-vista {
+  font-size: var(--texto-xl, 1.5rem);
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+.descripcion-vista {
+  font-size: var(--texto-sm, 0.875rem);
+  color: #64748b;
+  max-width: 70ch;
+}
+
+/* Panel provisional donde el router montará las vistas.
+   flex:1 hace que la tarjeta CREZCA y llene todo el espacio libre
+   entre la descripción y el pie (el pie se queda abajo). */
 .view-container {
-  flex: 1;
-  min-height: 220px;
+  flex: 1;               /* llena el alto disponible del content */
+  min-height: 320px;
+  margin-top: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  border: 1px dashed #94a3b8;
-  border-radius: var(--radio-borde);
-  color: #94a3b8;
-  font-size: .95rem;
   text-align: center;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radio-borde, 10px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06);
+  color: #94a3b8;
+  font-size: var(--texto-sm, 0.875rem);
 }
 
-/* ---------- 6. Footer ---------- */
-.content footer {
-  margin-top: auto;   /* pegado abajo aunque haya poco contenido */
-  padding-top: 12px;
-  border-top: 1px solid #cbd5e1;
-  font-size: var(--tam-mini);
-  color: #64748b;
+/* Pie del área central */
+.pie-contenido {
+  margin-top: auto; /* se pega abajo aunque haya poco contenido */
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  font-size: var(--texto-xs, 0.75rem);
+  color: #94a3b8;
 }
-
-/* Puntito de estado de sincronización (ámbar = pendiente) */
+.sync-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .sync-estado::before {
   content: '';
-  display: inline-block;
   width: 8px;
   height: 8px;
-  margin-right: 6px;
   border-radius: 50%;
-  background: #f9a825;
+  background: #f9a825;              /* ámbar = pendiente */
+  animation: latido 2s infinite;    /* parpadeo suave */
+}
+@keyframes latido {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
 }
 
-/* ============================================================
-   7. ESCRITORIO (>1024px) — colapsado a mini con .sidebar-mini
-   ============================================================ */
-@media (min-width: 1025px) {
-  .app-layout.sidebar-mini .sidebar { width: var(--sidebar-mini); }
-  .app-layout.sidebar-mini .sidebar-texto { display: none; }
-  .app-layout.sidebar-mini .sidebar-item { justify-content: center; padding: 0; }
+/* ---------- 7. Overlay (fondo tras el menú flotante) ---------- */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;   /* invisible: no bloquea clics */
+  transition: opacity var(--t-normal, 0.3s ease);
+  z-index: var(--z-overlay, 10); /* debajo del sidebar (15) y de la userbar (20) */
+}
+/* Se enciende SOLO mientras el sidebar tenga .sidebar-open.
+   :has() evita tocar el DOM desde JS: el CSS reacciona al estado. */
+body:has(.sidebar.sidebar-open) .sidebar-overlay {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-/* ============================================================
-   8. TABLET (768–1024px) — mini por defecto, flotante al abrir
-   ============================================================ */
+/* ---------- 8. Escritorio: versión colapsada (.sidebar-mini) ---------- */
+.sidebar-mini {
+  width: var(--sidebar-mini, 72px);
+}
+.sidebar-mini .sidebar-marca,
+.sidebar-mini .sidebar-texto {
+  display: none; /* solo iconos */
+}
+.sidebar-mini .sidebar-item {
+  justify-content: center;
+  padding: 0;
+  border-left-width: 0; /* sin barra: el fondo azul indica el activo */
+}
+
+/* ---------- 9. Tablet (769–1024px) ---------- */
 @media (max-width: 1024px) {
-  .sidebar { width: var(--sidebar-mini); }
-  .sidebar-item { justify-content: center; padding: 0; }
-  .sidebar-texto { display: none; }
-
-  .app-layout.sidebar-open .sidebar {
-    position: fixed;              /* flota: deja de empujar al contenido */
-    top: var(--userbar-alto);
-    left: 0;
-    bottom: 0;
-    width: var(--sidebar-ancho);
-    z-index: var(--z-sidebar);
-    box-shadow: 8px 0 24px rgba(0, 0, 0, .3);
+  /* Por defecto queda como carril de iconos (mini), pero SIN la clase:
+     aquí el estrechamiento lo decide el CSS, no el JS */
+  .sidebar { width: var(--sidebar-mini, 72px); }
+  .sidebar .sidebar-marca,
+  .sidebar .sidebar-texto { display: none; }
+  .sidebar .sidebar-item {
+    justify-content: center;
+    padding: 0;
+    border-left-width: 0;
   }
-  .app-layout.sidebar-open .sidebar-item { justify-content: flex-start; padding: 0 12px; }
-  .app-layout.sidebar-open .sidebar-texto { display: inline; }
+
+  /* Abierto: panel flotante de 280px ENCIMA del contenido (no lo empuja) */
+  .sidebar.sidebar-open {
+    position: fixed;
+    top: var(--userbar-alto, 64px);
+    bottom: 0;
+    left: 0;
+    width: var(--sidebar-ancho, 280px);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+  }
+  /* Se recuperan textos y barra activa del panel abierto */
+  .sidebar.sidebar-open .sidebar-marca,
+  .sidebar.sidebar-open .sidebar-texto { display: block; }
+  .sidebar.sidebar-open .sidebar-item {
+    justify-content: flex-start;
+    padding: 0 16px;
+    border-left-width: var(--borde-activo, 4px);
+  }
+  .sidebar.sidebar-open .sidebar-item.activo {
+    border-left-color: #1565c0;
+  }
 }
 
-/* ============================================================
-   9. MÓVIL (<768px) — drawer deslizante + overlay desenfocado
-   ============================================================ */
+/* ---------- 10. Móvil (≤768px): drawer ---------- */
 @media (max-width: 768px) {
+  /* El menú vive SIEMPRE fuera del flujo (position: fixed): cerrado
+     queda fuera de pantalla y el content ocupa TODA la anchura, sin
+     dejar margen izquierdo (antes ocupaba el carril de 72px). */
   .sidebar {
     position: fixed;
-    top: var(--userbar-alto);
-    left: 0;
+    top: var(--userbar-alto, 64px);
     bottom: 0;
-    width: var(--sidebar-ancho);
-    transform: translateX(-100%);  /* escondida fuera de pantalla */
-    z-index: var(--z-sidebar);
-    border-right: none;
+    left: 0;
+    width: var(--sidebar-ancho, 280px);
+    transform: translateX(-100%);
+    box-shadow: none;
   }
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+  }
+}
 
-  .app-layout.sidebar-open .sidebar {
-    transform: translateX(0);      /* entra deslizándose */
-    box-shadow: 8px 0 24px rgba(0, 0, 0, .35);
-  }
+/* ---------- 11. Escritorio grande: más aire ---------- */
+@media (min-width: 1025px) {
+  .content { padding: var(--content-padding, 8px); }
+  .view-container { min-height: 380px; }
+}
 
-  .sidebar-overlay {
-    position: fixed;
-    inset: 0;                      /* equivale a top/right/bottom/left: 0 */
-    background: rgba(15, 23, 42, .5);
-    backdrop-filter: blur(3px);
-    z-index: var(--z-overlay);
-    opacity: 0;
-    pointer-events: none;          /* invisible: no captura clics */
-    transition: opacity var(--t-normal);
+/* ---------- 12. Accesibilidad: sin animaciones si el SO lo pide ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
   }
-  .app-layout.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
+}
+
+/* ---------- 13. Userbar: usuario (avatar + menú) ---------- */
+.userbar-usuario {
+  position: relative;    /* ancla del menú desplegable */
+  margin-left: auto;     /* empuja la zona de usuario a la derecha */
+}
+
+/* Avatar circular con la inicial del nombre */
+.userbar-avatar {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: var(--texto-md, 1rem);
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
+}
+.userbar-avatar:hover { background: rgba(255, 255, 255, 0.26); }
+
+/* Menú desplegable (oculto hasta que JS le ponga .abierto) */
+.userbar-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 260px;
+  padding: 14px 14px 12px;
+  display: none;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-borde, 10px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+  color: #1e293b;
+  text-align: left;
+}
+.userbar-menu.abierto { display: block; }
+
+.userbar-menu-nombre {
+  font-size: var(--texto-md, 1rem);
+  font-weight: 600;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+.userbar-menu-rol {
+  margin-top: 2px;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #1565c0;
+}
+.userbar-menu-salir {
+  width: 100%;
+  height: 38px;
+  margin-top: 12px;
+  font: inherit;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  color: #b91c1c;
+  background: #ffffff;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radio-pequeno, 6px);
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
+}
+.userbar-menu-salir:hover { background: #fef2f2; }
+
+/* Bloque "Ver como" (solo admin): rótulo + botones en cuadrícula */
+.userbar-menu-vista-titulo {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+}
+.userbar-menu-vista {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.userbar-menu-opcion {
+  height: 34px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 600;
+  white-space: nowrap;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-pequeno, 6px);
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease),
+    border-color var(--t-rapida, 0.2s ease);
+}
+.userbar-menu-opcion:hover {
+  background: #e3f2fd;
+  border-color: #90caf9;
+  color: #1565c0;
+}
+.userbar-menu-opcion.activo {
+  background: #1565c0;
+  border-color: #1565c0;
+  color: #ffffff;
+}
+
+/* Móvil: avatar un poco más pequeño */
+@media (max-width: 768px) {
+  .userbar-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: var(--texto-sm, 0.875rem);
+  }
+}
+
+/* ---------- 14. Vista de subsecciones (sustituye al menú) ---------- */
+/* Al abrir las subsecciones de una sección, el contenido del sidebar
+   se REEMPLAZA: el menú (marca + lista) se oculta completo y queda
+   una vista con la flecha atrás, el nombre de la sección y la lista.
+   La flecha atrás es el único control para regresar al menú. */
+
+/* La vista vive DENTRO del nav, después de la lista del menú */
+.sidebar-vista-sub {
+  display: none;          /* oculta hasta que el nav reciba .con-sub */
+  flex-direction: column;
+}
+
+/* Con .con-sub: el menú completo se oculta y la vista entra */
+.sidebar.con-sub .sidebar-marca,
+.sidebar.con-sub .sidebar-lista { display: none; }
+.sidebar.con-sub .sidebar-vista-sub { display: flex; }
+
+/* Cabecera: flecha atrás + nombre de la sección */
+.sub-cabecera {
+  height: var(--item-alto, 48px);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Botón de la flecha atrás (único control para regresar) */
+.sub-atras {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  color: #334155;
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
+}
+.sub-atras:hover {
+  background: #f1f5f9;
+  color: #1565c0;
+}
+.sub-atras-icono {
+  width: 16px;
+  height: 16px;
+}
+
+/* Nombre de la sección abierta */
+.sub-titulo {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Lista de subsecciones (el scroll lo maneja el sidebar) */
+.sub-lista {
+  list-style: none;
+}
+.sub-item {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 16px;
+  border-left: var(--borde-activo, 4px) solid transparent;
+  color: #334155;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
+}
+.sub-item:hover {
+  background: #f1f5f9;
+  color: #1565c0;
+}
+.sub-item.activo {
+  background: #e3f2fd;
+  border-left-color: #1565c0;
+  color: #1565c0;
+  font-weight: 600;
+}
+
+/* Flecha indicadora en las secciones que abren subsecciones.
+   Se muestra siempre que el ítem muestre su texto: escritorio
+   expandido y panel flotante abierto (tablet/móvil). */
+.sidebar-flecha {
+  display: none;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-left: auto;
+  opacity: 0.55;
+}
+.sidebar:not(.sidebar-mini) .sidebar-flecha { display: block; }
+.sidebar.sidebar-open .sidebar-flecha { display: block; }
+/* En el carril de iconos de tablet (menú cerrado) no cabe: oculta */
+@media (max-width: 1024px) {
+  .sidebar:not(.sidebar-open) .sidebar-flecha { display: none; }
 }

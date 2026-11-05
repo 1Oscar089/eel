@@ -1,49 +1,50 @@
 /* ============================================================
-   variables.css — SOLO medidas, capas, formas, transiciones y
-   tipografía. LOS COLORES NO VIVEN AQUÍ: van escritos directo
-   en layout.css (decisión del proyecto).
-   ============================================================ */
+  variables.css — Tokens de diseño (SOLO medidas, SIN colores)
+  ------------------------------------------------------------
+  Regla del proyecto: aquí NUNCA va un color. Los colores viven
+  en layout.css. Así puedes cambiar medidas sin tocar estilos.
+
+  Breakpoints acordados:
+  - Escritorio: > 1024px
+  - Tablet:     769 – 1024px
+  - Móvil:      ≤ 768px
+============================================================ */
+
 :root {
-  /* --- Medidas del layout --- */
-  --userbar-alto: 64px;      /* Escritorio/tablet. En móvil: 56px (media query abajo) */
-  --sidebar-ancho: 220px;    /* Sidebar expandida */
-  --sidebar-mini: 64px;      /* Sidebar de solo iconos */
+  /* ---------- 1. Medidas del esqueleto ---------- */
+  --userbar-alto: 64px;      /* barra superior */
+  --sidebar-ancho: 280px;    /* menú lateral expandido */
+  --sidebar-mini: 72px;      /* menú lateral colapsado (solo iconos) */
 
-  /* --- Espaciados --- */
-  --content-padding: 16px;
-  --gap-userbar: 16px;
-  --item-alto: 48px;         /* Alto de cada ítem del menú lateral */
+  --item-alto: 48px;         /* altura de cada opción del menú */
+  --content-padding: 8px;    /* aire del área central (margen de la tarjeta) */
+  --gap-userbar: 16px;       /* separación entre elementos de la userbar */
+  --radio-borde: 10px;       /* esquinas de paneles/tarjetas */
+  --radio-pequeno: 6px;      /* esquinas de botones/chips */
+  --borde-activo: 4px;       /* grosor de la barra lateral del ítem activo */
 
-  /* --- Formas --- */
-  --radio-borde: 8px;
-  --borde-activo: 4px;       /* Barra lateral del ítem activo */
+  /* ---------- 2. Capas z (quién tapa a quién) ---------- */
+  --z-overlay: 10;   /* fondo oscuro tras el menú flotante */
+  --z-sidebar: 15;   /* menú lateral flotante */
+  --z-userbar: 20;   /* barra superior, siempre encima de todo */
 
-  /* --- Capas (z-index) --- */
-  --z-overlay: 10;
-  --z-sidebar: 15;
-  --z-userbar: 20;
+  /* ---------- 3. Transiciones ---------- */
+  --t-rapida: 0.2s ease;   /* hover y cambios de color */
+  --t-normal: 0.3s ease;   /* apertura/cierre y colapso del sidebar */
 
-  /* --- Transiciones --- */
-  --t-rapida: .2s ease;
-  --t-normal: .3s ease;
-
-  /* --- Tipografía --- */
-  --fuente-base: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --tam-titulo: 1.5rem;
-  --tam-texto: 1rem;
-  --tam-mini: .8rem;
+  /* ---------- 4. Tipografía ---------- */
+  --fuente-base: 'Segoe UI', Inter, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --texto-xs: 0.75rem;   /* 12px — etiquetas (MENÚ, migas, pie) */
+  --texto-sm: 0.875rem;  /* 14px — textos secundarios */
+  --texto-md: 1rem;      /* 16px — texto normal */
+  --texto-lg: 1.25rem;   /* 20px — logo */
+  --texto-xl: 1.5rem;    /* 24px — título de vista */
 }
 
-/* Móvil: la userbar baja de altura y el contenido respira menos */
+/* En móvil la barra superior baja a 56px y el aire se reduce */
 @media (max-width: 768px) {
   :root {
     --userbar-alto: 56px;
-    --content-padding: 12px;
+    --content-padding: 8px;
   }
 }
-
-/* Breakpoints usados en las media queries (CSS no permite var() aquí):
-   - Escritorio: min-width 1025px
-   - Tablet:     max-width 1024px
-   - Móvil:      max-width 768px
-*/
