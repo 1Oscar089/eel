@@ -245,19 +245,15 @@ export function crearUserbar(): HTMLElement {
   }
 
   // --- Logo: icono de documento (SVG) + nombre del sistema ---
+    // --- Logo: SOLO texto, sin SVG ---
+  // Dos <span>: el CSS decide cuál mostrar según el dispositivo
+  // (@media 768px). Computadora y tablet → "Expediente en Línea".
+  // Teléfono → "EEL".
   const logo = document.createElement('div');
   logo.className = 'userbar-logo';
   logo.innerHTML = `
-    <svg class="logo-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-         aria-hidden="true">
-      <path d="M6 2h9l5 5v15H6z" />
-      <path d="M15 2v6h5" />
-      <path d="M9 13h7" />
-      <path d="M9 17h7" />
-    </svg>
-    <span class="logo-texto">Expediente en Línea</span>`;
-
+    <span class="logo-texto">Expediente en Línea</span>
+    <span class="logo-corto">EEL</span>`;
   header.appendChild(boton);
   header.appendChild(logo);
 

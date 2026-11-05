@@ -102,25 +102,26 @@ body {
   border-radius: 2px;
 }
 
-/* Logo: chip translúcido con icono + nombre */
+/* Logo: solo texto, SIN icono SVG. El bloque lleva los dos nombres y
+   el CSS enseña uno u otro según el dispositivo (@media 768px):
+   computadora y tablet → "Expediente en Línea", teléfono → "EEL". */
 .userbar-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
   user-select: none;
+  min-width: 0;
 }
-.logo-icono {
-  width: 36px;
-  height: 36px;
-  padding: 7px;
-  border-radius: var(--radio-pequeno, 6px);
-  background: rgba(255, 255, 255, 0.12);
-  color: #90caf9; /* icono azul claro dentro del chip */
-}
-.logo-texto {
+.logo-texto,
+.logo-corto {
   font-size: var(--texto-lg, 1.25rem);
   font-weight: 600;
   letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.logo-corto { display: none; }
+@media (max-width: 768px) {
+  .logo-texto { display: none; }
+  .logo-corto { display: inline; }
 }
 
 /* ---------- 5. Sidebar (menú lateral) ---------- */
