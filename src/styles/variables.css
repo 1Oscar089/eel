@@ -27,7 +27,7 @@
   --z-overlay: 10;   /* fondo oscuro tras el menú flotante */
   --z-sidebar: 15;   /* menú lateral flotante */
   --z-userbar: 20;   /* barra superior, siempre encima de todo */
-
+   --z-modal: 40;     /* modales (agregar/editar docente...): encima de todo */
   /* ---------- 3. Transiciones ---------- */
   --t-rapida: 0.2s ease;   /* hover y cambios de color */
   --t-normal: 0.3s ease;   /* apertura/cierre y colapso del sidebar */

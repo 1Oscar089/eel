@@ -225,18 +225,27 @@ body {
   font-weight: 600;
 }
 
-/* Título y descripción de la vista */
+/* Sección de las migas: enlace REAL (te lleva a la sección).
+   Hereda el gris de las migas y se tiñe de azul al pasar. */
+.migas-enlace {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--t-rapida, 0.2s ease);
+}
+.migas-enlace:hover {
+  color: #1565c0;
+  text-decoration: underline;
+}
+
+/* Título de la vista (la descripción se quitó: más alto para la
+   tarjeta blanca). El tamaño y la posición NO cambian. */
 .titulo-vista {
   font-size: var(--texto-xl, 1.5rem);
   font-weight: 700;
   color: #0f172a;
   margin-bottom: 6px;
 }
-.descripcion-vista {
-  font-size: var(--texto-sm, 0.875rem);
-  color: #64748b;
-  max-width: 70ch;
-}
+
 
 /* Panel provisional donde el router montará las vistas.
    flex:1 hace que la tarjeta CREZCA y llene todo el espacio libre
@@ -626,4 +635,444 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
 /* En el carril de iconos de tablet (menú cerrado) no cabe: oculta */
 @media (max-width: 1024px) {
   .sidebar:not(.sidebar-open) .sidebar-flecha { display: none; }
+}
+/* ---------- 15. Vistas reales montadas en #view-container ---------- */
+/* Cuando el router monta una vista real, la tarjeta provisional
+   (borde punteado, texto centrado) se convierte en panel sólido. */
+.view-container.con-vista {
+  display: block;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+/* ---------- 16. Cabecera de vista: título + zona de acciones ---------- */
+/* Fila: título a la izquierda, botones de la vista a la derecha.
+   Si la vista no pone botones, la zona queda vacía y se oculta. */
+.content-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.content-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.content-acciones:empty { display: none; }
+
+/* Botones reutilizables de las vistas */
+.boton-primario {
+  height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  color: #ffffff;
+  background: #1565c0;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
+}
+.boton-primario:hover  { background: #0d4c8f; }
+.boton-primario:disabled { opacity: 0.6; cursor: default; }
+
+.boton-secundario {
+  height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radio-pequeno, 6px);
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
+}
+.boton-secundario:hover  { background: #f1f5f9; }
+.boton-secundario:disabled { opacity: 0.6; cursor: default; }
+
+.boton-peligroso {
+  height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  color: #ffffff;
+  background: #dc2626;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
+}
+.boton-peligroso:hover  { background: #b91c1c; }
+.boton-peligroso:disabled { opacity: 0.6; cursor: default; }
+
+/* Icono SVG dentro de cualquier botón */
+.icono-boton {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ---------- 17. Sección Docentes ---------- */
+.docentes-vista {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Avisos: carga, lista vacía y error de conexión */
+.docentes-aviso {
+  padding: 28px 16px;
+  text-align: center;
+  color: #64748b;
+  font-size: var(--texto-sm, 0.875rem);
+}
+.docentes-aviso--error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: #b91c1c;
+}
+.docentes-vacio {
+  padding: 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: var(--texto-sm, 0.875rem);
+}
+
+/* Tabla de docentes (scroll horizontal en pantallas angostas) */
+.docentes-tabla-envoltorio {
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-borde, 10px);
+  background: #ffffff;
+  overflow-x: auto;
+}
+.docentes-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto-sm, 0.875rem);
+}
+.docentes-tabla th {
+  text-align: left;
+  padding: 11px 14px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+.docentes-tabla td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eef2f7;
+  color: #1e293b;
+  vertical-align: middle;
+}
+.docentes-tabla tbody tr:last-child td { border-bottom: none; }
+.docentes-tabla tbody tr { transition: background var(--t-rapida, 0.2s ease); }
+.docentes-tabla tbody tr:hover { background: #f8fafc; }
+
+.docentes-celda { min-height: 1em; }
+.docentes-celda-nombre {
+  font-weight: 600;
+  color: #0f172a;
+  min-width: 180px;
+}
+/* Chapita "Admin" junto al nombre del docente administrador */
+.docentes-chapita-admin {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.docentes-celda-acciones { white-space: nowrap; width: 1%; }
+.docentes-acciones {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Botones-icono de acciones (ver, editar, archivar, eliminar) */
+.docentes-accion {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  color: #64748b;
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
+}
+.docentes-accion:hover {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+/* Eliminar se tiñe de rojo al pasar (acción destructiva) */
+.docentes-accion--peligro:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Apartado de ARCHIVADOS: colapsable, cerrado por defecto */
+.docentes-archivados {
+  margin-top: 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-borde, 10px);
+}
+.docentes-archivados-resumen {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  list-style: none;
+  cursor: pointer;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  color: #334155;
+  border-radius: inherit;
+  transition: color var(--t-rapida, 0.2s ease);
+}
+.docentes-archivados-resumen::-webkit-details-marker { display: none; }
+.docentes-archivados-resumen:hover { color: #1565c0; }
+.docentes-archivados-flecha {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform var(--t-rapida, 0.2s ease);
+}
+.docentes-archivados[open] .docentes-archivados-flecha { transform: rotate(90deg); }
+.docentes-archivados-cuerpo { padding: 0 12px 12px; }
+
+/* Ficha de lectura (modal "ver"): etiquetas a la izquierda */
+.docentes-ficha {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px 20px;
+  margin: 0;
+}
+.docentes-ficha dt {
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  align-self: center;
+  white-space: nowrap;
+}
+.docentes-ficha dd {
+  margin: 0;
+  min-height: 1em;
+  color: #1e293b;
+  font-size: var(--texto-sm, 0.875rem);
+  overflow-wrap: anywhere;
+}
+
+/* Chips de grados (ficha "ver") */
+.docentes-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.docentes-chip {
+  padding: 3px 10px;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 600;
+  color: #0d47a1;
+  background: #e3f2fd;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Formulario del modal (crear/editar docente) */
+.docentes-formulario {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+.docentes-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.docentes-campo--ancho { grid-column: 1 / -1; }
+.docentes-etiqueta {
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  color: #334155;
+}
+.docentes-entrada {
+  height: 40px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: var(--texto-sm, 0.875rem);
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radio-pequeno, 6px);
+  min-width: 0;
+}
+.docentes-entrada:focus {
+  outline: 2px solid #1565c0;
+  outline-offset: 1px;
+  border-color: #1565c0;
+}
+/* Rejilla de checkboxes de grados */
+.docentes-grados {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px 10px;
+}
+.docentes-grado-opcion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: var(--texto-sm, 0.875rem);
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-pequeno, 6px);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--t-rapida, 0.2s ease), border-color var(--t-rapida, 0.2s ease),
+    color var(--t-rapida, 0.2s ease);
+}
+.docentes-grado-opcion:hover {
+  border-color: #90caf9;
+}
+.docentes-grado-opcion:has(input:checked) {
+  background: #e3f2fd;
+  border-color: #90caf9;
+  color: #0d47a1;
+  font-weight: 600;
+}
+.docentes-grado-opcion input { accent-color: #1565c0; }
+
+/* ---------- 18. Modales (agregar/editar/ver/eliminar docente) ---------- */
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 40); /* encima de userbar (20) y sidebar (15) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+}
+.modal-caja {
+  width: 100%;
+  max-width: 560px;
+  max-height: min(85vh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: var(--radio-borde, 10px);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
+  animation: modal-entrada 0.18s ease;
+}
+@keyframes modal-entrada {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.modal-cabecera {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #eef2f7;
+}
+.modal-titulo {
+  font-size: var(--texto-md, 1rem);
+  font-weight: 700;
+  color: #0f172a;
+}
+.modal-cerrar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  color: #64748b;
+  cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
+}
+.modal-cerrar:hover { background: #f1f5f9; color: #0f172a; }
+.modal-cuerpo {
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+/* Pie de botones. Dentro de un formulario usa margen; como hijo
+   directo de la caja usa padding (para pegarse abajo). */
+.modal-pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+.modal-caja > .modal-pie {
+  flex-shrink: 0;
+  margin-top: 0;
+  padding: 0 20px 16px;
+}
+.modal-texto {
+  color: #334155;
+  font-size: var(--texto-sm, 0.875rem);
+  line-height: 1.5;
+}
+.modal-error {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  color: #b91c1c;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 600;
+}
+.modal-error[hidden] { display: none; }
+
+/* ---------- 19. Móvil: ajustes de Docentes y modales ---------- */
+@media (max-width: 768px) {
+  .docentes-formulario { grid-template-columns: 1fr; }
+  .docentes-ficha { grid-template-columns: 1fr; gap: 2px 0; }
+  .docentes-ficha dd { margin-bottom: 10px; }
+  .modal-fondo { padding: 10px; }
+  .modal-caja { max-width: none; max-height: 88dvh; }
 }
