@@ -7,6 +7,17 @@
   - Quién ve cada sección o subsección           → SECCIÓN 4 (roles: ...).
   - Grupos de roles listos (TODOS, PERSONAL...)  → SECCIÓN 2 (EDITA AQUÍ).
 
+  ORDEN DEL MENÚ (AUTOMÁTICO, SECCIÓN 6):
+  - "Inicio" SIEMPRE queda arriba, sea cual sea el orden en que
+    se escriban los bloques de la SECCIÓN 4.
+  - Todas las demás secciones se ordenan SOLOS por orden
+    alfabético (A-Z, español): p. ej. Docentes antes que
+    Estudiantes.
+  - Las subsecciones de cada sección también se listan en orden
+    alfabético (SECCIÓN 5).
+  Al habilitar una sección NUEVA solo se agrega su bloque: no
+  hace falta pensar dónde va, el menú la coloca donde toca.
+
   ACCESO POR ROLES (SECCIÓN 4):
   - Cada sección y cada subsección declaran `roles`: la lista de
     roles que pueden verla. Grupos listos (SECCIÓN 2):
@@ -69,7 +80,7 @@ export interface ItemMenu {
 
 /** Sección que queda marcada cuando la URL no trae hash.
  *  Debe coincidir con la ruta de una opción de la SECCIÓN 4. */
-export const RUTA_POR_DEFECTO = '#/inicio';
+const RUTA_POR_DEFECTO = '#/inicio';
 
 /** Media query de tablet/móvil: debe coincidir con
  *  @media (max-width: 1024px) de layout.css. En estos anchos el
@@ -122,11 +133,15 @@ let seccionAbierta: string | null = null;
             líneas rectas → butt/miter · curvas → round/round.
   - subsecciones (OPCIONAL): lista { titulo, ruta, roles }. Si se
             declara, la sección abre la vista de subsecciones.
-  Se muestran en el mismo orden en que están escritos los bloques.
 
-  'Inicio' y 'Docentes' están ACTIVOS; las demás secciones quedan
-  COMENTADAS y se activan quitándoles el comentario conforme
-  se construyan.
+  ORDEN AUTOMÁTICO: da igual el orden en que se escriban los
+  bloques. "Inicio" SIEMPRE queda arriba y las demás secciones
+  se ordenan solas alfabéticamente (SECCIÓN 6). Las subsecciones
+  de cada sección también salen en orden alfabético.
+
+  Habilitadas por ahora: Inicio, Docentes y Estudiantes. Las
+  demás secciones quedan COMENTADAS y se activan quitándoles
+  el comentario conforme se construyan.
 ============================================================ */
 
 agregarItemMenu({
@@ -141,39 +156,57 @@ agregarItemMenu({
       <path d="M5 9.5V21h14V9.5" />
       <path d="M9 21v-6h6v6" />
     </svg>`,
-
-
-  // SIN subsecciones: al clicar, Inicio navega DIRECTO a su ruta
-  // (no abre la vista de subsecciones) y en las migas aparece solo
-  // "Inicio". Cuando una sección SÍ tenga subsecciones, decláralas
-  // así (cada una con SU propio `roles`):
-  // subsecciones: [
-  //   { titulo: 'Resumen del día', ruta: '#/inicio/resumen', roles: TODOS },
-  //   { titulo: 'Accesos rápidos', ruta: '#/inicio/accesos', roles: PERSONAL },
-  //   { titulo: 'Avisos y recordatorios', ruta: '#/inicio/avisos', roles: TODOS },
-  //   { titulo: 'Calendario escolar', ruta: '#/inicio/calendario', roles: DIRECCION },
-  // ],
+  // EDITA AQUÍ: subsecciones de ejemplo. Cada una lleva SU propio
+  // `roles`: la sección se ve para todos, pero cada subsección solo
+  // la ven los roles de su lista (prueba con "Ver como").
+  subsecciones: [
+    { titulo: 'Resumen del día', ruta: '#/inicio/resumen', roles: TODOS },
+    { titulo: 'Accesos rápidos', ruta: '#/inicio/accesos', roles: PERSONAL },
+    { titulo: 'Avisos y recordatorios', ruta: '#/inicio/avisos', roles: TODOS },
+    { titulo: 'Calendario escolar', ruta: '#/inicio/calendario', roles: DIRECCION },
+  ],
 });
 
-/* ────────────────────────────────────────────────────────────
-   GESTIÓN DE DOCENTES — sección ACTIVA (vista construida)
-   Solo admin y director ven esta sección. Sin subsecciones: al
-   clicar navega directo a #/docentes, donde se gestiona la
-   creación, edición, archivado y eliminación de docentes.
-──────────────────────────────────────────────────────────── */
+/* SECCIÓN HABILITADA — Docentes (solo admin y director). Aunque
+   se escriba aquí arriba, en el menú sale DESPUÉS de Inicio y
+   ANTES de Estudiantes: el orden alfabético es automático. */
 agregarItemMenu({
   titulo: 'Docentes',
   ruta: '#/docentes',
-  roles: DIRECCION,
+  roles: DIRECCION, // mismo acceso que la vista: admin + director
   icono: `
     <svg class="sidebar-icono" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2" stroke-linecap="round"
-         stroke-linejoin="round" aria-hidden="true">
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M3 20.5c1-3.5 3.4-5.5 6-5.5s5 2 6 5.5" />
-      <path d="M16 4.9a3.5 3.5 0 010 6.2" />
-      <path d="M17.5 15.1c1.9.8 3.2 2.5 3.8 5" />
+         stroke="currentColor" stroke-width="2" stroke-linecap="butt"
+         stroke-linejoin="miter" aria-hidden="true">
+      <path d="M3 3.5h18" />
+      <path d="M4.5 3.5V13a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V3.5" />
+      <path d="M8.5 8.5h7" />
+      <path d="M7 21l5-6 5 6" />
     </svg>`,
+});
+
+/* SECCIÓN HABILITADA — Estudiantes con sus subsecciones
+   (Matricular, Nomina y Actualizar). Al hacer clic, el menú se
+   sustituye por la vista de subsecciones (con la flecha atrás);
+   cada subsección navega a su propia ruta. En la lista salen en
+   orden alfabético: Actualizar, Matricular, Nomina. */
+agregarItemMenu({
+  titulo: 'Estudiantes',
+  ruta: '#/estudiantes',
+  roles: DIRECCION, // EDITA AQUÍ: quién ve la sección completa
+  icono: `
+    <svg class="sidebar-icono" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="butt"
+         stroke-linejoin="miter" aria-hidden="true">
+      <path d="M2.5 9.5L12 5l9.5 4.5L12 14z" />
+      <path d="M6.5 11.8v3.9c0 1.2 2.5 2.4 5.5 2.4s5.5-1.2 5.5-2.4v-3.9" />
+      <path d="M21.5 9.5v5.5" />
+    </svg>`,
+  subsecciones: [
+    { titulo: 'Actualizar', ruta: '#/estudiantes/actualizar', roles: DIRECCION },
+    { titulo: 'Matricular', ruta: '#/estudiantes/matricular', roles: DIRECCION },
+    { titulo: 'Nomina', ruta: '#/estudiantes/nomina', roles: DIRECCION },
+  ],
 });
 
 /* ────────────────────────────────────────────────────────────
@@ -715,11 +748,15 @@ function puedeVer(item: ItemMenu): boolean {
   return item.roles.includes(rol);
 }
 
-/** Subsecciones de la sección que el rol activo SÍ puede ver. */
+/** Subsecciones de la sección que el rol activo SÍ puede ver,
+ *  en orden ALFABÉTICO (Actualizar, Matricular, Nomina...), sin
+ *  importar el orden en que estén escritas. */
 function subsVisibles(item: ItemMenu): SubSeccion[] {
   const rol = rolActivo();
   if (rol === null) return [];
-  return (item.subsecciones ?? []).filter((sub) => sub.roles.includes(rol));
+  return (item.subsecciones ?? [])
+    .filter((sub) => sub.roles.includes(rol))
+    .sort((a, b) => a.titulo.localeCompare(b.titulo, 'es'));
 }
 
 /** true si a la sección le queda al menos una subsección visible.
@@ -732,18 +769,35 @@ function tieneSubseccionesVisibles(item: ItemMenu): boolean {
   SECCIÓN 6 · GESTIÓN DEL MENÚ (registrar opciones) (NO EDITAR)
 ============================================================ */
 
+/** Ordena el menú: "Inicio" SIEMPRE primero (sección de entrada)
+ *  y todas las demás por orden alfabético en español (A-Z).
+ *  Así el orden NO depende del orden en que se escriban los
+ *  bloques de la SECCIÓN 4. */
+function ordenarMenu(): void {
+  itemsMenu.sort((a, b) => {
+    if (a.titulo === 'Inicio') return -1; // Inicio siempre arriba
+    if (b.titulo === 'Inicio') return 1;
+    return a.titulo.localeCompare(b.titulo, 'es');
+  });
+}
+
 /**
  * Registra una opción del menú.
- * - Si la app aún no está en pantalla: solo se guarda.
- * - Si ya está en pantalla: además la inserta al final del
- *   menú al instante, SIEMPRE que el rol activo pueda verla.
+ * - Si la app aún no está en pantalla: solo se guarda (ordenada).
+ * - Si ya está en pantalla: redibuja el menú COMPLETO para que la
+ *   nueva sección quede en su sitio alfabético al instante.
  */
 export function agregarItemMenu(item: ItemMenu): void {
   itemsMenu.push(item);
+  ordenarMenu();
 
-  // Menú ya montado → la nueva opción aparece en vivo también
-  if (listaMontada !== null && puedeVer(item)) {
-    listaMontada.appendChild(crearItemLista(item));
+  // Menú ya montado → se repinta entero en el orden correcto
+  if (listaMontada !== null) {
+    listaMontada.textContent = '';
+    for (const visible of itemsMenu) {
+      if (!puedeVer(visible)) continue;
+      listaMontada.appendChild(crearItemLista(visible));
+    }
     seleccionarItem(rutaActual());
   }
 }
@@ -792,35 +846,6 @@ function seleccionarSub(ruta: string): void {
   enlaces.forEach((enlace) => {
     enlace.classList.toggle('activo', enlace.getAttribute('href') === ruta);
   });
-}
-
-/**
- * Datos de una ruta para las migas y el título del content:
- * la sección a la que pertenece y, si aplica, la subsección.
- * Devuelve null si la ruta no coincide con nada registrado.
- * (Lo usa content.ts; también servirá al router de la Fase 3.)
- */
-export function infoDeRuta(ruta: string): {
-  seccionRuta: string;
-  seccionTitulo: string;
-  subseccionTitulo?: string;
-} | null {
-  const buscada = ruta === '' ? RUTA_POR_DEFECTO : ruta;
-
-  for (const item of itemsMenu) {
-    if (buscada === item.ruta) {
-      return { seccionRuta: item.ruta, seccionTitulo: item.titulo };
-    }
-    const sub = (item.subsecciones ?? []).find((s) => s.ruta === buscada);
-    if (sub !== undefined) {
-      return {
-        seccionRuta: item.ruta,
-        seccionTitulo: item.titulo,
-        subseccionTitulo: sub.titulo,
-      };
-    }
-  }
-  return null;
 }
 
 /* ============================================================
@@ -966,6 +991,7 @@ export function crearSidebar(): HTMLElement {
   nav.appendChild(marca);
 
   // Lista con SOLO las opciones permitidas para el rol activo
+  // (itemsMenu ya viene ordenado: Inicio arriba, resto A-Z)
   const lista = document.createElement('ul');
   lista.className = 'sidebar-lista';
   for (const item of itemsMenu) {
@@ -1036,8 +1062,21 @@ export function crearSidebar(): HTMLElement {
   // Marca la sección activa según el hash con el que se entró
   seleccionarItem(rutaActual());
 
-  // Y la actualiza cada vez que el hash cambie (clic o flechas)
-  window.addEventListener('hashchange', () => seleccionarItem(rutaActual()));
+  // Y la actualiza cada vez que el hash cambie (clic o flechas).
+  // Si quedaron las subsecciones de OTRA sección abiertas y la
+  // navegación fue a una ruta ajena (p. ej. por las migas), el
+  // menú regresa solo para mostrar la sección que corresponde.
+  window.addEventListener('hashchange', () => {
+    const ruta = rutaActual() || RUTA_POR_DEFECTO;
+    if (seccionAbierta !== null) {
+      const abierta = itemPorRuta(seccionAbierta);
+      const sigueAbierta =
+        abierta !== undefined &&
+        (ruta === abierta.ruta || ruta.startsWith(abierta.ruta + '/'));
+      if (!sigueAbierta) cerrarVistaSub();
+    }
+    seleccionarItem(ruta);
+  });
 
   return nav;
 }

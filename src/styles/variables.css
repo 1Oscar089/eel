@@ -13,9 +13,9 @@
 :root {
   /* ---------- 1. Medidas del esqueleto ---------- */
   --userbar-alto: 64px;      /* barra superior */
-  --sidebar-ancho: 280px;    /* menú lateral expandido */
+  --sidebar-ancho: 232px;    /* menú lateral expandido (ancho reducido) */
   --sidebar-mini: 72px;      /* menú lateral colapsado (solo iconos) */
-
+  --sub-ancho: 260px;        /* panel de subsecciones pegado al sidebar */
   --item-alto: 48px;         /* altura de cada opción del menú */
   --content-padding: 8px;    /* aire del área central (margen de la tarjeta) */
   --gap-userbar: 16px;       /* separación entre elementos de la userbar */
@@ -27,7 +27,7 @@
   --z-overlay: 10;   /* fondo oscuro tras el menú flotante */
   --z-sidebar: 15;   /* menú lateral flotante */
   --z-userbar: 20;   /* barra superior, siempre encima de todo */
-   --z-modal: 40;     /* modales (agregar/editar docente...): encima de todo */
+
   /* ---------- 3. Transiciones ---------- */
   --t-rapida: 0.2s ease;   /* hover y cambios de color */
   --t-normal: 0.3s ease;   /* apertura/cierre y colapso del sidebar */

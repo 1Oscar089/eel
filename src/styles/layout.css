@@ -126,7 +126,7 @@ body {
 
 /* ---------- 5. Sidebar (menú lateral) ---------- */
 .sidebar {
-  width: var(--sidebar-ancho, 280px);
+  width: var(--sidebar-ancho, 232px);
   flex-shrink: 0;  /* el content no puede aplastarlo */
   display: flex;
   flex-direction: column;
@@ -210,62 +210,10 @@ body {
   border: 2px solid #f1f5f9;
 }
 
-/* Migas de pan */
-.migas {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--texto-xs, 0.75rem);
-  color: #94a3b8;
-  margin-bottom: 12px;
-}
-.migas-separador { color: #cbd5e1; }
-.migas-actual {
-  color: #1565c0;
-  font-weight: 600;
-}
-
-/* Sección de las migas: enlace REAL (te lleva a la sección).
-   Hereda el gris de las migas y se tiñe de azul al pasar. */
-.migas-enlace {
-  color: inherit;
-  text-decoration: none;
-  transition: color var(--t-rapida, 0.2s ease);
-}
-.migas-enlace:hover {
-  color: #1565c0;
-  text-decoration: underline;
-}
-
-/* Título de la vista (la descripción se quitó: más alto para la
-   tarjeta blanca). El tamaño y la posición NO cambian. */
-.titulo-vista {
-  font-size: var(--texto-xl, 1.5rem);
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 6px;
-}
-
-
-/* Panel provisional donde el router montará las vistas.
-   flex:1 hace que la tarjeta CREZCA y llene todo el espacio libre
-   entre la descripción y el pie (el pie se queda abajo). */
-.view-container {
-  flex: 1;               /* llena el alto disponible del content */
-  min-height: 320px;
-  margin-top: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px;
-  background: #ffffff;
-  border: 1px dashed #cbd5e1;
-  border-radius: var(--radio-borde, 10px);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06);
-  color: #94a3b8;
-  font-size: var(--texto-sm, 0.875rem);
-}
+/* NOTA: las migas (.migas), el contenedor de vistas
+   (.view-container) y el título del panel se definen UNA SOLA VEZ
+   en la SECCIÓN VISTAS + DOCENTES de más abajo (estilo estándar
+   de vista, reutilizable por todas las secciones). */
 
 /* Pie del área central */
 .pie-contenido {
@@ -343,13 +291,13 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
     border-left-width: 0;
   }
 
-  /* Abierto: panel flotante de 280px ENCIMA del contenido (no lo empuja) */
+  /* Abierto: panel flotante de 232px ENCIMA del contenido (no lo empuja) */
   .sidebar.sidebar-open {
     position: fixed;
     top: var(--userbar-alto, 64px);
     bottom: 0;
     left: 0;
-    width: var(--sidebar-ancho, 280px);
+    width: var(--sidebar-ancho, 232px);
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
   }
   /* Se recuperan textos y barra activa del panel abierto */
@@ -375,7 +323,7 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
     top: var(--userbar-alto, 64px);
     bottom: 0;
     left: 0;
-    width: var(--sidebar-ancho, 280px);
+    width: var(--sidebar-ancho, 232px);
     transform: translateX(-100%);
     box-shadow: none;
   }
@@ -388,7 +336,6 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
 /* ---------- 11. Escritorio grande: más aire ---------- */
 @media (min-width: 1025px) {
   .content { padding: var(--content-padding, 8px); }
-  .view-container { min-height: 380px; }
 }
 
 /* ---------- 12. Accesibilidad: sin animaciones si el SO lo pide ---------- */
@@ -636,176 +583,481 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
 @media (max-width: 1024px) {
   .sidebar:not(.sidebar-open) .sidebar-flecha { display: none; }
 }
-/* ---------- 15. Vistas reales montadas en #view-container ---------- */
-/* Cuando el router monta una vista real, la tarjeta provisional
-   (borde punteado, texto centrado) se convierte en panel sólido. */
-.view-container.con-vista {
-  display: block;
+
+/* ============================================================
+  SECCIÓN VISTAS + DOCENTES — ESTILO ESTÁNDAR DE VISTA
+  (migas sección/subsección, título del panel con botones a la
+  par, cuadro blanco flexible) + piezas propias de Docentes
+  (listado con encabezados exactos y acciones con el BORDE de
+  color, modal estructurado). TODAS las demás vistas reutilizan
+  estas clases.
+  — Reemplaza CUALQUIER bloque anterior de docentes/modales —
+============================================================ */
+
+/* ---------- Contenedor de vistas: YA NO es tarjeta ----------
+   Las vistas generan su propio encabezado. Este contenedor es
+   el que hace scroll; el pie queda siempre visible abajo. */
+.view-container {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   text-align: left;
-  border: 1px solid #e2e8f0;
-  color: #1e293b;
+  color: inherit;
+  font-size: inherit;
+  overflow-y: auto;
+}
+.view-container::-webkit-scrollbar { width: 10px; }
+.view-container::-webkit-scrollbar-track { background: transparent; }
+.view-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
 }
 
-/* ---------- 16. Cabecera de vista: título + zona de acciones ---------- */
-/* Fila: título a la izquierda, botones de la vista a la derecha.
-   Si la vista no pone botones, la zona queda vacía y se oculta. */
-.content-cabecera {
+/* ---------- Estado vacío (ruta sin vista construida) ---------- */
+.estado-vacio {
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radio-borde, 10px);
+  color: #94a3b8;
+}
+.estado-vacio-icono { width: 44px; height: 44px; margin-bottom: 6px; }
+.estado-vacio-titulo {
+  margin: 0;
+  font-size: var(--texto-md, 1rem);
+  font-weight: 600;
+  color: #475569;
+}
+.estado-vacio-texto { margin: 0; font-size: var(--texto-sm, 0.875rem); max-width: 34ch; }
+
+/* ============================================================
+  ESQUELETO ESTÁNDAR DE VISTA — TODAS las secciones copian esta
+  MISMA estructura (clases genéricas, no solo para Docentes):
+
+  <div class="vista-…">                      raíz (columna, flex:1)
+    <nav class="migas">…</nav>               sección/subsección
+    <header class="panel-encabezado">        título + botones a la par
+      <h4 class="panel-titulo">…</h4>
+      <div class="panel-botones">…</div>
+    </header>
+    <section class="tarjeta-vista">…</section>  cuadro blanco
+  </div>
+============================================================ */
+
+/* ---------- Raíz de una vista ----------
+   Ocupa TODO el alto disponible (flex:1) para que el cuadro
+   blanco cubra el espacio restante hasta el pie. */
+.vista-docentes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  padding: 2px 4px 12px;
+}
+
+/* Rejilla del listado de Docentes: UNA SOLA definición para los
+   títulos de columna y las filas, así cada título queda EXACTO
+   sobre su dato. La última columna tiene ANCHO FIJO (no auto):
+   con "auto" los títulos ("ACCIONES") medían menos que los
+   iconos y todas las columnas se corrían. Las demás columnas
+   usan minmax(0, Xfr) para que un dato largo NO empuje la
+   rejilla y desalinee los encabezados. 5 columnas: Nombre, DUI,
+   NIP, Teléfono y Acciones (en la vista principal solo se ven
+   esos 4 datos; lo demás se ve SOLO al abrir el modal). */
+.vista-docentes {
+  --columnas-listado:
+    minmax(0, 2.1fr) minmax(0, 1.2fr) minmax(0, 0.7fr) minmax(0, 1.2fr)
+    140px;
+}
+
+/* ---------- Migas (formato sección/subsección) ----------
+   Las antecesoras (p. ej. "Inicio") son ENLACES clicables; la
+   última parte (nombre de la ubicación actual) es texto fijo
+   SIN clic. */
+.migas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 2px;
+  min-width: 0;
+  font-size: var(--texto-sm, 0.875rem);
+  color: #94a3b8;
+}
+.migas-parte { color: #64748b; padding: 3px 8px; }
+.migas-separador { color: #cbd5e1; }
+.migas-enlace {
+  color: #64748b;
+  text-decoration: none;
+  padding: 3px 8px;
+  border-radius: var(--radio-pequeno, 6px);
+  transition:
+    background var(--t-rapida, 0.2s ease),
+    color var(--t-rapida, 0.2s ease);
+}
+.migas-enlace:hover { color: #1565c0; background: #e3f2fd; }
+.migas-actual {
+  color: #0f172a;
+  font-weight: 600;
+  padding: 3px 8px;
+}
+
+/* ---------- Nombre del panel EN GRANDE + botones a la par ---------- */
+.panel-encabezado {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 0 2px;
 }
-.content-acciones {
+.panel-titulo {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+.panel-botones { display: flex; align-items: center; gap: 8px; }
+
+/* Botón con icono (Actualizar y Agregar docente) */
+.boton-con-icono { display: inline-flex; align-items: center; gap: 8px; }
+.boton-con-icono svg { width: 16px; height: 16px; }
+
+/* ---------- Cuadro blanco: GENÉRICO para todas las vistas.
+   Cubre TODO el espacio restante hasta el pie. ---------- */
+.tarjeta-vista {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.content-acciones:empty { display: none; }
-
-/* Botones reutilizables de las vistas */
-.boton-primario {
-  height: 38px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font: inherit;
-  font-size: var(--texto-sm, 0.875rem);
-  font-weight: 600;
-  color: #ffffff;
-  background: #1565c0;
-  border: none;
-  border-radius: var(--radio-pequeno, 6px);
-  cursor: pointer;
-  transition: background var(--t-rapida, 0.2s ease);
-}
-.boton-primario:hover  { background: #0d4c8f; }
-.boton-primario:disabled { opacity: 0.6; cursor: default; }
-
-.boton-secundario {
-  height: 38px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font: inherit;
-  font-size: var(--texto-sm, 0.875rem);
-  font-weight: 600;
-  color: #334155;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px 18px;
   background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: var(--radio-pequeno, 6px);
-  cursor: pointer;
-  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
-}
-.boton-secundario:hover  { background: #f1f5f9; }
-.boton-secundario:disabled { opacity: 0.6; cursor: default; }
-
-.boton-peligroso {
-  height: 38px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font: inherit;
-  font-size: var(--texto-sm, 0.875rem);
-  font-weight: 600;
-  color: #ffffff;
-  background: #dc2626;
-  border: none;
-  border-radius: var(--radio-pequeno, 6px);
-  cursor: pointer;
-  transition: background var(--t-rapida, 0.2s ease);
-}
-.boton-peligroso:hover  { background: #b91c1c; }
-.boton-peligroso:disabled { opacity: 0.6; cursor: default; }
-
-/* Icono SVG dentro de cualquier botón */
-.icono-boton {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.05);
+  /* Si el listado no cabe, desplaza EN HORIZONTAL dentro del
+     cuadro blanco (las filas ya no se aplastan). */
+  overflow-x: auto;
 }
 
 /* ============================================================
-  SECCIÓN DOCENTES (vista, filas, archivados, modal, correo)
-  — Reemplaza cualquier bloque de docentes/modales anterior —
+  PIEZAS DE DOCENTES DENTRO DEL CUADRO BLANCO
 ============================================================ */
-.vista-docentes { display: flex; flex-direction: column; gap: 12px; align-self: stretch; width: 100%; }
 
-.docentes-botonera { display: flex; justify-content: flex-end; gap: 8px; }
+.docentes-resumen {
+  margin: 0;
+  font-size: var(--texto-xs, 0.75rem);
+  color: #64748b;
+}
 
-.docentes-lista { display: flex; flex-direction: column; gap: 6px; }
-
-.docentes-fila {
+/* Títulos de columna y filas comparten EXACTAMENTE la misma
+   rejilla, el mismo gap y el mismo padding horizontal. */
+.vista-docentes .docentes-cabecera,
+.vista-docentes .docentes-fila {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 0.8fr 1.2fr auto;
+  grid-template-columns: var(--columnas-listado);
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radio-pequeno, 6px);
+  padding: 11px 12px;
+  text-align: left;
+  /* Ancho mínimo para que las 5 columnas NUNCA se aplasten:
+     en pantallas angostas el cuadro blanco desplaza en
+     horizontal y los encabezados siguen alineados exactos. */
+  min-width: 620px;
 }
-
-.docentes-celda { font-size: var(--texto-sm, 0.875rem); color: #0f172a; overflow-wrap: anywhere; }
-.docentes-celda-nombre { font-weight: 600; }
-
-.docentes-acciones { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-
-.docentes-accion {
-  padding: 4px 10px;
-  font-size: var(--texto-xs, 0.75rem);
-  border: 1px solid #cbd5e1;
+.vista-docentes .docentes-cabecera {
+  padding: 2px 12px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+/* El título ACCIONES termina donde terminan los iconos */
+.vista-docentes .docentes-cabecera span:last-child { text-align: right; }
+.vista-docentes .docentes-fila {
+  border-bottom: 1px solid #f1f5f9;
   border-radius: var(--radio-pequeno, 6px);
-  background: #f8fafc;
-  color: #0f172a;
-  cursor: pointer;
   transition: background var(--t-rapida, 0.2s ease);
 }
-.docentes-accion:hover { background: #e2e8f0; }
+.vista-docentes .docentes-fila:hover { background: #f8fafc; }
+.vista-docentes .docentes-lista > .docentes-fila:last-child { border-bottom: none; }
 
-.docentes-vacio { margin: 0; padding: 12px; font-size: var(--texto-sm, 0.875rem); color: #64748b; }
+.vista-docentes .docentes-lista {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--texto-sm, 0.875rem);
+  color: #64748b;
+}
 
-.docentes-archivados summary {
+.vista-docentes .docentes-celda {
+  font-size: var(--texto-sm, 0.875rem);
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+.vista-docentes .docentes-celda-nombre { font-weight: 600; }
+
+/* Ficha "ARCHIVADO": marca al docente archivado dentro del
+   apartado plegable. */
+.docentes-chip-archivado {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid #fcd34d;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* ---------- Acciones con iconos ---------- */
+.vista-docentes .docentes-acciones { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* CADA ACCIÓN CON SU COLOR EN EL BORDE (el fondo NO se rellena:
+   queda blanco y solo el BORDE y el ICONO llevan el color de la
+   acción). Al pasar el cursor el fondo SÍ se llena del color con
+   el icono en blanco, para confirmar el clic. Cada botón define
+   su color una sola vez en --color-accion. */
+.vista-docentes .docentes-accion {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-accion, #64748b);
+  border-radius: var(--radio-pequeno, 6px);
+  background: #ffffff;
+  color: var(--color-accion, #64748b);
   cursor: pointer;
-  padding: 8px 12px;
+  transition:
+    background var(--t-rapida, 0.2s ease),
+    color var(--t-rapida, 0.2s ease);
+}
+.vista-docentes .docentes-accion svg { width: 16px; height: 16px; }
+
+/* Color de cada acción: Ver azul, Editar ámbar, Eliminar rojo,
+   Archivar violeta y Restaurar verde (en el BORDE, no el fondo). */
+.vista-docentes .accion-ver             { --color-accion: #2563eb; }
+.vista-docentes .accion-ver:hover      { background: #2563eb; color: #ffffff; }
+.vista-docentes .accion-editar         { --color-accion: #d97706; }
+.vista-docentes .accion-editar:hover   { background: #d97706; color: #ffffff; }
+.vista-docentes .accion-eliminar       { --color-accion: #dc2626; }
+.vista-docentes .accion-eliminar:hover { background: #dc2626; color: #ffffff; }
+.vista-docentes .accion-archivar       { --color-accion: #7c3aed; }
+.vista-docentes .accion-archivar:hover { background: #7c3aed; color: #ffffff; }
+.vista-docentes .accion-restaurar      { --color-accion: #16a34a; }
+.vista-docentes .accion-restaurar:hover{ background: #16a34a; color: #ffffff; }
+
+.vista-docentes .docentes-vacio {
+  margin: 0;
+  padding: 24px 16px;
+  font-size: var(--texto-sm, 0.875rem);
+  color: #64748b;
+}
+
+.vista-docentes .docentes-archivados summary {
+  cursor: pointer;
+  padding: 9px 14px;
   font-size: var(--texto-sm, 0.875rem);
   font-weight: 600;
   color: #334155;
-  background: #f1f5f9;
+  background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: var(--radio-pequeno, 6px);
+  border-radius: var(--radio-borde, 10px);
+  transition: background var(--t-rapida, 0.2s ease);
 }
-.docentes-archivados > div { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
+.vista-docentes .docentes-archivados summary:hover { background: #f1f5f9; }
+.vista-docentes .docentes-archivados > div {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
 
-/* ---------- Formulario del modal ---------- */
-.modal-formulario { display: flex; flex-direction: column; gap: 12px; }
+/* ============================================================
+  MODAL (genérico, vale para todas las vistas)
+============================================================ */
 
-.docentes-campo { display: flex; flex-direction: column; gap: 4px; }
-.docentes-rotulo { margin: 0; font-size: var(--texto-xs, 0.75rem); font-weight: 600; color: #475569; }
+/* ---------- Modal: tarjeta ---------- */
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 30; /* encima de sidebar (15) y userbar (20) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(15 23 42 / 0.55);
+  animation: modal-fondo-entrar 0.18s ease-out;
+}
+.modal-tarjeta {
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 0.35);
+  animation: modal-tarjeta-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modal-fondo-entrar { from { opacity: 0; } }
+@keyframes modal-tarjeta-entrar {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+}
+
+.modal-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.modal-titulo { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+.modal-cerrar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  background: transparent;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  transition:
+    background var(--t-rapida, 0.2s ease),
+    color var(--t-rapida, 0.2s ease);
+}
+.modal-cerrar:hover { background: #f1f5f9; color: #0f172a; }
+.modal-cuerpo { padding: 20px; }
+.modal-pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ---------- Modal: formulario en grupos ---------- */
+.modal-formulario { display: flex; flex-direction: column; gap: 18px; }
+
+.form-grupo { display: flex; flex-direction: column; gap: 10px; }
+
+.form-grupo-titulo {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.form-grupo-titulo::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.form-rejilla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.docentes-campo { display: flex; flex-direction: column; gap: 6px; }
+.docentes-campo.campo-completo { grid-column: 1 / -1; }
+.docentes-rotulo {
+  margin: 0;
+  font-size: var(--texto-xs, 0.75rem);
+  font-weight: 600;
+  color: #475569;
+}
 
 .docentes-entrada {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 12px;
   font-family: var(--fuente-base, 'Segoe UI', Inter, system-ui, sans-serif);
   font-size: var(--texto-md, 1rem);
   color: #0f172a;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: var(--radio-pequeno, 6px);
+  transition:
+    border-color var(--t-rapida, 0.2s ease),
+    box-shadow var(--t-rapida, 0.2s ease);
 }
-.docentes-entrada:focus { outline: none; border-color: #2563eb; }
-.docentes-entrada:disabled { opacity: 0.6; cursor: not-allowed; background: #f1f5f9; }
+.docentes-entrada:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+}
+.docentes-entrada:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f1f5f9;
+}
 
-.docentes-grados { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-.docentes-opcion { display: flex; align-items: center; gap: 6px; font-size: var(--texto-sm, 0.875rem); color: #0f172a; }
+/* Grados como fichas (checkbox dentro de una píldora) */
+.docentes-grados { display: flex; flex-wrap: wrap; gap: 8px; }
+.docentes-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: var(--texto-sm, 0.875rem);
+  color: #334155;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--t-rapida, 0.2s ease),
+    border-color var(--t-rapida, 0.2s ease),
+    color var(--t-rapida, 0.2s ease);
+}
+.docentes-opcion:hover { border-color: #94a3b8; background: #f8fafc; }
+.docentes-opcion:has(input:checked) {
+  border-color: #2563eb;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-weight: 600;
+}
+.docentes-opcion input { margin: 0; accent-color: #2563eb; }
 
+/* Correo: parte editable + dominio fijo */
 .campo-correo {
   display: flex;
   align-items: stretch;
@@ -814,14 +1066,20 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
   border-radius: var(--radio-pequeno, 6px);
   overflow: hidden;
   background: #ffffff;
+  transition:
+    border-color var(--t-rapida, 0.2s ease),
+    box-shadow var(--t-rapida, 0.2s ease);
 }
-.campo-correo:focus-within { border-color: #2563eb; }
+.campo-correo:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+}
 .campo-correo-entrada {
   flex: 1 1 auto;
   min-width: 0;
   border: none;
   outline: none;
-  padding: 9px 12px;
+  padding: 10px 12px;
   font-family: var(--fuente-base, 'Segoe UI', Inter, system-ui, sans-serif);
   font-size: var(--texto-md, 1rem);
   color: #0f172a;
@@ -832,58 +1090,22 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
   display: flex;
   align-items: center;
   padding: 0 12px;
-  border-left: 1px solid #cbd5e1;
-  background: #f1f5f9;
+  border-left: 1px solid #e2e8f0;
+  background: #f8fafc;
   color: #64748b;
   font-size: var(--texto-sm, 0.875rem);
   white-space: nowrap;
   user-select: none;
 }
 
-.form-error { margin: 0; color: #dc2626; font-size: var(--texto-sm, 0.875rem); min-height: 1em; }
+.form-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: var(--texto-sm, 0.875rem);
+  min-height: 1em;
+}
 
-/* ---------- Modal genérico ---------- */
-.modal-fondo {
-  position: fixed;
-  inset: 0;
-  z-index: 30; /* encima de sidebar (15) y userbar (20) */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgb(15 23 42 / 0.55);
-}
-.modal-tarjeta {
-  width: 100%;
-  max-width: 460px;
-  max-height: 85vh;
-  overflow-y: auto;
-  background: #ffffff;
-  border-radius: var(--radio-borde, 10px);
-  box-shadow: 0 20px 50px rgb(15 23 42 / 0.3);
-}
-.modal-cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #e2e8f0;
-}
-.modal-titulo { margin: 0; font-size: var(--texto-lg, 1.25rem); color: #0f172a; }
-.modal-cerrar {
-  border: none;
-  background: transparent;
-  font-size: 1.4rem;
-  line-height: 1;
-  color: #64748b;
-  cursor: pointer;
-  padding: 2px 6px;
-}
-.modal-cerrar:hover { color: #0f172a; }
-.modal-cuerpo { padding: 16px; }
-.modal-pie { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
-
+/* ---------- Botones ---------- */
 .boton-primario {
   padding: 9px 16px;
   border: none;
@@ -893,6 +1115,7 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
   font-size: var(--texto-sm, 0.875rem);
   font-weight: 600;
   cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
 }
 .boton-primario:hover { background: #1d4ed8; }
 .boton-primario:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -904,6 +1127,7 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
   color: #0f172a;
   font-size: var(--texto-sm, 0.875rem);
   cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
 }
 .boton-secundario:hover { background: #f1f5f9; }
 .boton-peligro {
@@ -915,26 +1139,163 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
   font-size: var(--texto-sm, 0.875rem);
   font-weight: 600;
   cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
 }
 .boton-peligro:hover { background: #b91c1c; }
 
 /* ---------- Modal Ver (solo lectura) ---------- */
-.modal-detalles { display: flex; flex-direction: column; gap: 6px; }
+.modal-detalles { display: flex; flex-direction: column; }
 .modal-detalle-fila {
   display: grid;
-  grid-template-columns: 40% 60%;
+  grid-template-columns: 38% 62%;
   gap: 8px;
-  padding: 6px 0;
+  padding: 9px 0;
   border-bottom: 1px dashed #e2e8f0;
 }
-.modal-detalle-clave { font-size: var(--texto-xs, 0.75rem); font-weight: 600; color: #64748b; }
-.modal-detalle-valor { font-size: var(--texto-sm, 0.875rem); color: #0f172a; overflow-wrap: anywhere; }
+.modal-detalle-fila:last-child { border-bottom: none; }
+.modal-detalle-clave {
+  align-self: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.modal-detalle-valor {
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 500;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
 
-.confirmar-aviso { margin: 0; font-size: var(--texto-sm, 0.875rem); color: #334155; }
+/* ---------- Modal de confirmación (Eliminar) ---------- */
+.modal-confirmar { align-items: center; text-align: center; }
+.confirmar-icono {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+}
+.confirmar-icono svg { width: 20px; height: 20px; }
+.modal-confirmar .confirmar-aviso { margin: 0 auto; max-width: 38ch; }
+.modal-confirmar .modal-pie {
+  justify-content: center;
+  border-top: none;
+  padding-top: 0;
+}
+
+/* ============================================================
+  ANIMACIÓN DE CARGA que BLOQUEA la pantalla
+  Sale durante guardar / eliminar / archivar / restaurar: tapa
+  TODA la aplicación (z 60, por encima del modal 30) y mientras
+  está en pantalla NO se puede hacer clic en nada de atrás.
+============================================================ */
+.cargando-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(15 23 42 / 0.45);
+  cursor: progress; /* el cursor también avisa de que se está procesando */
+  animation: modal-fondo-entrar 0.18s ease-out;
+}
+.cargando-tarjeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 34px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 0.35);
+  animation: modal-tarjeta-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cargando-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid #e2e8f0;
+  border-top-color: #2563eb;
+  animation: girar 0.9s linear infinite;
+}
+.cargando-texto {
+  margin: 0;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  color: #475569;
+}
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+  ESQUELETO DE CARGA del listado
+  Filas grises animadas mientras Firebase responde, para que la
+  sección no entre de golpe. Usa la MISMA rejilla que las filas
+  reales (--columnas-listado) y los anchos se dibujan aquí.
+============================================================ */
+.vista-docentes .esqueleto-fila {
+  display: grid;
+  grid-template-columns: var(--columnas-listado);
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  min-width: 620px;
+}
+.vista-docentes .docentes-lista .esqueleto-fila:last-child {
+  border-bottom: none;
+}
+.vista-docentes .esqueleto-linea {
+  display: block;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #eef2f7 25%, #e2e8f0 37%, #eef2f7 63%);
+  background-size: 400% 100%;
+  animation: esqueleto-brillo 1.4s ease infinite;
+}
+/* Ancho simulado de cada columna (la última es el bloque de
+   acciones, alineado a la derecha como los iconos reales). */
+.vista-docentes .esqueleto-linea:nth-child(1) { width: 62%; }
+.vista-docentes .esqueleto-linea:nth-child(2) { width: 80%; }
+.vista-docentes .esqueleto-linea:nth-child(3) { width: 55%; }
+.vista-docentes .esqueleto-linea:nth-child(4) { width: 70%; }
+.vista-docentes .esqueleto-linea:nth-child(5) {
+  width: 96px;
+  justify-self: end;
+}
+@keyframes esqueleto-brillo {
+  from { background-position: 100% 0; }
+  to   { background-position: -100% 0; }
+}
 
 /* ---------- Móvil ---------- */
 @media (max-width: 768px) {
-  .docentes-fila { grid-template-columns: 1fr auto; }
-  .docentes-celda { font-size: var(--texto-xs, 0.75rem); }
-  .docentes-acciones { grid-column: 1 / -1; justify-content: flex-start; }
+  .panel-titulo { font-size: 1.25rem; }
+  .panel-botones { width: 100%; justify-content: flex-end; }
+  .tarjeta-vista { padding: 12px; }
+  .form-rejilla { grid-template-columns: 1fr; }
+  .vista-docentes .docentes-cabecera { display: none; }
+  .vista-docentes .docentes-fila {
+    grid-template-columns: 1fr auto;
+    min-width: 0; /* en móvil las filas se apilan: sin ancho mínimo */
+  }
+  .vista-docentes .esqueleto-fila {
+    grid-template-columns: 1fr auto;
+    min-width: 0;
+  }
+  /* En móvil el esqueleto solo dibuja 2 líneas: nombre + acciones */
+  .vista-docentes .esqueleto-linea:nth-child(2),
+  .vista-docentes .esqueleto-linea:nth-child(3),
+  .vista-docentes .esqueleto-linea:nth-child(4) { display: none; }
+  .vista-docentes .docentes-celda { font-size: var(--texto-xs, 0.75rem); }
+  .vista-docentes .docentes-acciones { grid-column: 1 / -1; justify-content: flex-start; }
 }

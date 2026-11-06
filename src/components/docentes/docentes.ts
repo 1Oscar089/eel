@@ -1,17 +1,71 @@
 /* ============================================================
   docentes.ts — Sección Docentes (solo admin y director)
   ------------------------------------------------------------
-  - Lista de docentes desde Firebase, ordenada por nombre con
-    el docente que sea admin SIEMPRE primero.
-  - Columnas: Nombre, DUI, NIP, fecha de nacimiento + acciones
-    (Ver, Editar, Eliminar, Archivar) por fila.
-  - El botón "Agregar docente" queda justo después del título
-    de la vista (primera fila de esta vista).
-  - "Agregar docente" / "Editar" abren un modal con todos los
-    datos: nombre, DUI (guion automático), NIP, fecha de
-    nacimiento, rol (select, solo puede haber UN admin), correo
-    (se forma solo como nombre[0].nombre[1].nombre[2] con el
-    dominio fijo @clases.edu.sv) y grados por checkbox.
+  Esta vista se genera COMPLETA aquí (content.ts solo la agrega):
+  - Migas arriba ("Inicio / Docentes") con el formato
+    sección/subsección: las partes anteriores (p. ej. "Inicio")
+    SON enlaces clicables — pulsar Inicio navega a la sección
+    Inicio y la sidebar la marca como activa — y la ÚLTIMA parte
+    es el nombre de la ubicación actual: texto fijo SIN clic.
+  - Debajo, el nombre del panel EN GRANDE ("Panel de Docentes")
+    con los botones Actualizar y Agregar docente A LA PAR.
+  - Debajo, un CUADRO BLANCO (.tarjeta-vista) que cubre el
+    espacio restante con el resumen (activos · archivados), los
+    títulos de columna, el listado y los archivados.
+  - ESTILO ESTÁNDAR DE VISTA: migas → panel-encabezado →
+    tarjeta-vista. Las demás secciones deben copiar esta MISMA
+    estructura (las clases genéricas ya viven en layout.css).
+  - ANIMACIÓN DE CARGA: toda operación que ESCRIBE en Firebase
+    (guardar, eliminar, archivar, restaurar) muestra un spinner
+    que tapa TODA la pantalla y BLOQUEA los clics hasta que
+    termina: mientras se ejecuta no se puede hacer ninguna otra
+    acción y siempre se sabe que algo está pasando.
+  - ESQUELETO DE CARGA: al abrir/recargar la sección, el listado
+    se pinta con filas grises animadas mientras Firebase
+    responde, para que la sección no entre de golpe.
+  - CADA DOCUMENTO se guarda con rol Y rol2: rol2 = 'admin' solo
+    cuando el docente es admin. rol2 es el campo que el inicio de
+    sesión lee para reconocer admins (prevalece sobre rol); si el
+    documento solo tuviera rol='admin', el auth NO lo vería.
+  - CAMPOS DEL DOCENTE: nombre, dui, nip, fechaNacimiento, nivel
+    (select 1 y 2), especialidad, telefono (solo números, sin
+    guion), aniosServicio (solo números), correo, gradosAsignados,
+    rol, rol2 y archivado. DUI, NIP, teléfono y años de servicio
+    SOLO ACEPTAN NÚMEROS (las teclas se filtran al escribir). Si
+    un campo aún no existe en Firebase se muestra EN BLANCO (en
+    la tabla, en Ver y en Editar) y el flujo no se corta.
+  - Listado ordenado por nombre con el docente que sea admin
+    SIEMPRE primero. En la vista principal SOLO se ven 4 datos:
+    Nombre, DUI, NIP y Teléfono (TODO lo demás —nacimiento,
+    nivel, especialidad, años de servicio, correo, grados— se
+    ve SOLO al abrir el modal Ver/Editar). Acciones con ICONOS
+    que llevan el BORDE de color y el fondo SIN relleno (Ver
+    azul, Editar ámbar, Eliminar rojo, Archivar violeta,
+    Restaurar verde). Los títulos de columna comparten la MISMA
+    rejilla de ancho fijo que las filas, así cada título queda
+    EXACTO sobre su dato.
+  - Fechas en formato de EL SALVADOR: dd-mm-aaaa (zona
+    America/El_Salvador). La fecha de nacimiento se guarda como
+    'AAAA-MM-DD' (el valor del input date) y se muestra
+    'dd-mm-aaaa'; si un documento trae creadoEn (Timestamp), el
+    modal Ver lo muestra con fecha Y hora de El Salvador.
+  - MODAL VER: solo lectura, muestra TODOS los datos EXCEPTO el
+    rol y el estado de archivado. MODAL EDITAR: sí muestra el rol
+    para cambiarlo de ser necesario.
+  - ARCHIVAR: guarda archivado=true (el docente queda con la
+    ficha "Archivado" en el apartado plegable) y NO vuelve a
+    aparecer en el listado ni en las selecciones futuras
+    (listarDocentesActivos() devuelve solo los activos).
+    ELIMINAR: borra el documento de Firebase PERMANENTEMENTE
+    (siempre con confirmación previa).
+  - "Agregar docente" / "Editar" abren un modal estructurado en
+    grupos (Datos personales · Datos laborales · Acceso y
+    permisos · Grados): nombre, DUI (guion automático), NIP,
+    fecha de nacimiento, nivel (select 1 y 2), especialidad,
+    teléfono, años de servicio, rol (select, solo puede haber UN
+    admin), correo (se forma sola como nombre[0].nombre[1].nombre[2]
+    con el dominio fijo @clases.edu.sv) y grados como fichas
+    (checkbox).
   - El ID de cada documento en Firestore es el NIP.
   - A prueba de errores: los campos se leen como unknown con
     lecturas seguras; si un dato falta en Firebase, se muestra
@@ -44,7 +98,7 @@ const COLECCION_DOCENTES = 'profesores';
 /** Clave bajo la que se guarda la sesión en sessionStorage. */
 const CLAVE_SESION = 'eel-sesion';
 
-/** Grados que se pueden asignar a un docente (checkboxes). */
+/** Grados que se pueden asignar a un docente (fichas). */
 const GRADOS: string[] = [
   'Parvularia 4',
   'Parvularia 5',
@@ -69,6 +123,18 @@ const ROLES_CON_ACCESO = ['admin', 'director'];
 /** Dominio fijo del correo institucional (no editable). */
 const DOMINIO_CORREO = '@clases.edu.sv';
 
+/** Niveles que se pueden asignar al docente (select 1 y 2). */
+const NIVELES_DOCENTE = ['1', '2'];
+
+/** Tope de dígitos del teléfono (El Salvador: 8, sin guion) y
+ *  de los años de servicio. Se ajustan aquí, en un solo lugar. */
+const TELEFONO_MAX_DIGITOS = 8;
+const ANIOS_MAX_DIGITOS = 2;
+
+/** Zona horaria de El Salvador para TODAS las fechas y horas
+ *  que se muestran (aunque el navegador esté en otra zona). */
+const ZONA_HORARIA = 'America/El_Salvador';
+
 /* ============================================================
   SECCIÓN 3 · TIPOS Y LECTURAS SEGURAS (NO EDITAR)
 ============================================================ */
@@ -83,9 +149,15 @@ interface Docente {
   dui: unknown;
   nip: unknown;
   fechaNacimiento: unknown;
+  nivel: unknown;
+  especialidad: unknown;
+  telefono: unknown;
+  aniosServicio: unknown;
   gradosAsignados: unknown;
   archivado: unknown;
   rol: unknown;
+  rol2: unknown;
+  creadoEn: unknown;
 }
 
 /** Conexión a Firestore con el proyecto elegido arriba. */
@@ -130,6 +202,14 @@ function formatearDUI(valor: string): string {
   return digitos.slice(0, 8) + '-' + digitos.slice(8);
 }
 
+/** Deja SOLO los dígitos de lo escrito (para NIP, teléfono y
+ *  años de servicio). Con tope, recorta a esa cantidad de
+ *  dígitos; sin tope, deja todos los que vengan. */
+function soloDigitos(valor: string, tope: number | null = null): string {
+  const digitos = valor.replace(/\D/g, '');
+  return tope === null ? digitos : digitos.slice(0, tope);
+}
+
 /** Quita acentos, ñ y todo lo que no sea letra/número. */
 function limpiarParaCorreo(texto: string): string {
   return texto
@@ -150,18 +230,88 @@ function generarCorreoLocal(nombre: string): string {
   return partes.join('.');
 }
 
+/* ----- Fechas en formato de El Salvador (dd-mm-aaaa) ----- */
+
+/** Convierte un valor unknown en Date: acepta Date y el
+ *  Timestamp de Firestore (que trae toDate()). Devuelve null
+ *  cuando el dato falta o no se puede leer (no rompe nada). */
+function fechaDeValor(valor: unknown): Date | null {
+  if (valor instanceof Date) {
+    return isNaN(valor.getTime()) ? null : valor;
+  }
+  if (valor !== null && typeof valor === 'object') {
+    const posible = valor as { toDate?: () => Date; seconds?: unknown };
+    if (typeof posible.toDate === 'function') {
+      const fecha = posible.toDate();
+      return isNaN(fecha.getTime()) ? null : fecha;
+    }
+    if (typeof posible.seconds === 'number') {
+      return new Date(posible.seconds * 1000);
+    }
+  }
+  return null;
+}
+
+/** Fecha en formato dd-mm-aaaa (El Salvador). Acepta el valor
+ *  del input de fecha ('AAAA-MM-DD', se reordena directo, sin
+ *  correr un día) y también Date o Timestamp de Firestore (se
+ *  convierten con la zona America/El_Salvador). Si el dato
+ *  falta o es ilegible devuelve '' (la celda queda en blanco). */
+function formatearFecha(valor: unknown): string {
+  if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    const [anio, mes, dia] = valor.split('-');
+    return dia + '-' + mes + '-' + anio;
+  }
+  const fecha = fechaDeValor(valor);
+  if (fecha === null) return '';
+  const aaaaMmDd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA_HORARIA,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(fecha); // 'AAAA-MM-DD' (en-CA) — se reordena abajo
+  const [anio, mes, dia] = aaaaMmDd.split('-');
+  return dia + '-' + mes + '-' + anio;
+}
+
+/** Fecha Y HORA en formato de El Salvador: 'dd-mm-aaaa, h:mm
+ *  a. m./p. m.' (zona America/El_Salvador). Para campos de
+ *  registro con hora, como creadoEn (Timestamp de Firestore). */
+function formatearFechaHora(valor: unknown): string {
+  const fecha = fechaDeValor(valor);
+  if (fecha === null) return '';
+  const parteHora = new Intl.DateTimeFormat('es-SV', {
+    timeZone: ZONA_HORARIA,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+    .format(fecha)
+    .replace(/[\u202f\u00a0]/g, ' ')
+    .toLowerCase();
+  return formatearFecha(fecha) + ', ' + parteHora;
+}
+
+/** Rol EFECTIVO del docente: rol2 'admin' prevalece sobre rol.
+ *  Es el MISMO criterio del inicio de sesión, que solo reconoce
+ *  como admin al documento con rol2 = 'admin'. */
+function rolDocente(docente: Docente): string {
+  if (textoSeguro(docente.rol2) === 'admin') return 'admin';
+  return textoSeguro(docente.rol);
+}
+
 /** ¿Ya existe OTRO docente con rol admin? (solo puede haber uno) */
 function hayOtroAdmin(idExcluido: string): boolean {
   return docentesCargados.some(
-    (d) => textoSeguro(d.rol) === 'admin' && d.id !== idExcluido,
+    (d) => rolDocente(d) === 'admin' && d.id !== idExcluido,
   );
 }
 
 /** Copia ordenada: admin primero, luego por nombre (A-Z). */
 function ordenarDocentes(lista: Docente[]): Docente[] {
   return [...lista].sort((a, b) => {
-    const adminA = textoSeguro(a.rol) === 'admin' ? 0 : 1;
-    const adminB = textoSeguro(b.rol) === 'admin' ? 0 : 1;
+    const adminA = rolDocente(a) === 'admin' ? 0 : 1;
+    const adminB = rolDocente(b) === 'admin' ? 0 : 1;
     if (adminA !== adminB) return adminA - adminB;
     return textoSeguro(a.nombre).localeCompare(textoSeguro(b.nombre), 'es');
   });
@@ -180,7 +330,116 @@ function sesionAutorizada(): boolean {
 }
 
 /* ============================================================
-  SECCIÓN 5 · MODAL GENÉRICO (NO EDITAR)
+  SECCIÓN 5 · MIGAS DE PAN (NO EDITAR)
+============================================================ */
+
+/** Migas de pan con el formato sección/subsección:
+ *  - Las partes que traen ruta SON clicables: pulsar "Inicio"
+ *    navega a la sección Inicio y la sidebar la marca como
+ *    activa (el hash cambia y todo el sistema reacciona).
+ *  - La ÚLTIMA parte es el nombre de la ubicación actual (p. ej.
+ *    "Docentes"): texto fijo SIN clic, marcada con aria-current.
+ *  Los pasos intermedios que traigan ruta también son clicables.
+ *  Ejemplo: Inicio (clicable) / Docentes (actual, sin clic). */
+function crearMigas(
+  elementos: { texto: string; ruta?: string }[],
+): HTMLElement {
+  const migas = document.createElement('nav');
+  migas.className = 'migas';
+  migas.setAttribute('aria-label', 'Ruta de navegación');
+  elementos.forEach((elemento, indice) => {
+    if (indice > 0) {
+      const separador = document.createElement('span');
+      separador.className = 'migas-separador';
+      separador.textContent = '/';
+      separador.setAttribute('aria-hidden', 'true');
+      migas.appendChild(separador);
+    }
+    const esActual = indice === elementos.length - 1;
+    if (esActual || elemento.ruta === undefined) {
+      // Ubicación actual (o paso sin ruta): texto plano, SIN clic.
+      const parte = document.createElement('span');
+      parte.className = 'migas-parte';
+      parte.textContent = elemento.texto;
+      if (esActual) parte.setAttribute('aria-current', 'page');
+      migas.appendChild(parte);
+    } else {
+      // Antecesora con ruta: ENLACE clicable (navega y la sidebar
+      // marca esa sección como activa sola, por el hashchange).
+      const enlace = document.createElement('a');
+      enlace.className = 'migas-enlace';
+      enlace.href = elemento.ruta;
+      enlace.textContent = elemento.texto;
+      migas.appendChild(enlace);
+    }
+  });
+  return migas;
+}
+
+/* ============================================================
+  SECCIÓN 6 · ICONOS DE LAS ACCIONES (NO EDITAR)
+============================================================ */
+
+/** Iconos SVG de las acciones (trazo uniforme, heredan el color
+ *  del botón con currentColor). innerHTML se usa SOLO para SVG,
+ *  como manda la convención del proyecto. */
+const ICONOS = {
+  ver: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true">
+      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </svg>`,
+  editar: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true">
+      <path d="M17.3 3.7a2.4 2.4 0 0 1 3.4 3.4L8 19.8 3 21l1.2-5z" />
+    </svg>`,
+  eliminar: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"
+         aria-hidden="true">
+      <path d="M4 7h16" />
+      <path d="M9 7V5h6v2" />
+      <path d="M6.5 7l0.8 12h9.4l0.8-12" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
+    </svg>`,
+  archivar: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true">
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" />
+      <path d="M10 12h4" />
+    </svg>`,
+  restaurar: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>`,
+  agregar: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"
+         aria-hidden="true">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>`,
+  actualizar: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true">
+      <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+      <path d="M21 3v6h-6" />
+    </svg>`,
+} as const;
+
+/* ============================================================
+  SECCIÓN 7 · MODAL GENÉRICO Y ANIMACIÓN DE CARGA (NO EDITAR)
 ============================================================ */
 
 /** Fondo oscuro del modal abierto (null = cerrado). */
@@ -265,11 +524,80 @@ function mostrarAviso(titulo: string, texto: string): void {
   abrirModal(titulo, [parrafo, pie]);
 }
 
+/* ----- ANIMACIÓN DE CARGA que BLOQUEA la pantalla -----
+   Se usa en las operaciones que ESCRIBEN en Firebase (guardar,
+   eliminar, archivar/restaurar): mientras dura la operación, un
+   spinner tapa TODA la aplicación (por encima incluso del modal)
+   y NINGÚN clic llega a la vista. Así el usuario siempre sabe
+   que algo está pasando y no se pueden disparar dos acciones a
+   la vez ni "doble clic" que repita la operación.
+   El contador permite llamadas anidadas (p. ej. guardar que
+   luego recarga la lista) sin que la primera cierre la animación
+   de la segunda. */
+let cargandoFondo: HTMLDivElement | null = null;
+let cargandoPendientes = 0; // operaciones en curso
+
+/** Muestra el spinner con el mensaje indicado y bloquea los
+ *  clics hasta que se llame a ocultarCargando(). */
+function mostrarCargando(mensaje: string): void {
+  cargandoPendientes += 1;
+  if (cargandoFondo === null) {
+    cargandoFondo = document.createElement('div');
+    cargandoFondo.className = 'cargando-fondo';
+    cargandoFondo.setAttribute('role', 'alert');
+    cargandoFondo.setAttribute('aria-live', 'assertive');
+
+    const tarjeta = document.createElement('div');
+    tarjeta.className = 'cargando-tarjeta';
+    const spinner = document.createElement('div');
+    spinner.className = 'cargando-spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    const texto = document.createElement('p');
+    texto.className = 'cargando-texto';
+    tarjeta.append(spinner, texto);
+    cargandoFondo.appendChild(tarjeta);
+    document.body.appendChild(cargandoFondo);
+  }
+  const texto = cargandoFondo.querySelector('.cargando-texto');
+  if (texto !== null) texto.textContent = mensaje;
+}
+
+/** Cierra la animación de carga cuando ya NO queda ninguna
+ *  operación pendiente (desbloquea los clics). */
+function ocultarCargando(): void {
+  if (cargandoPendientes > 0) cargandoPendientes -= 1;
+  if (cargandoPendientes === 0 && cargandoFondo !== null) {
+    cargandoFondo.remove();
+    cargandoFondo = null;
+  }
+}
+
 /* ============================================================
-  SECCIÓN 6 · ACCIONES DE FIREBASE (NO EDITAR)
+  SECCIÓN 8 · ACCIONES DE FIREBASE Y ESQUELETO (NO EDITAR)
 ============================================================ */
 
-/** Recarga la caché y vuelve a pintar listado y archivados. */
+/* ----- ESQUELETO DE CARGA del listado -----
+   Mientras Firebase responde, el listado se llena con filas
+   grises animadas (misma rejilla que las filas reales, los
+   anchos los dibuja el CSS) para que la sección no entre de
+   golpe. Cuando llegan los datos, el esqueleto se sustituye. */
+function pintarEsqueleto(lista: HTMLElement): void {
+  lista.textContent = '';
+  for (let fila = 0; fila < 6; fila += 1) {
+    const esqueleto = document.createElement('div');
+    esqueleto.className = 'esqueleto-fila';
+    // 5 líneas = Nombre, DUI, NIP, Teléfono y Acciones.
+    for (let columna = 0; columna < 5; columna += 1) {
+      const linea = document.createElement('span');
+      linea.className = 'esqueleto-linea';
+      esqueleto.appendChild(linea);
+    }
+    lista.appendChild(esqueleto);
+  }
+}
+
+/** Recarga la caché y vuelve a pintar resumen, listado y
+ *  archivados (con esqueleto mientras llega la respuesta). */
 async function cargarDocentes(): Promise<void> {
   if (contenedorVista === null) return;
 
@@ -279,7 +607,8 @@ async function cargarDocentes(): Promise<void> {
   );
   if (lista === null || cuerpoArchivados === null) return;
 
-  lista.textContent = 'Cargando docentes…';
+  // Esqueleto animado mientras Firebase responde.
+  if (lista instanceof HTMLElement) pintarEsqueleto(lista);
   cuerpoArchivados.textContent = '';
 
   try {
@@ -306,6 +635,17 @@ async function cargarDocentes(): Promise<void> {
   const archivados = ordenarDocentes(
     docentesCargados.filter((d) => booleanoSeguro(d.archivado)),
   );
+
+  // Resumen bajo el encabezado (activos · archivados).
+  const resumen = contenedorVista.querySelector('#docentes-resumen');
+  if (resumen !== null) {
+    resumen.textContent =
+      activos.length +
+      (activos.length === 1 ? ' docente' : ' docentes') +
+      ' · ' +
+      archivados.length +
+      (archivados.length === 1 ? ' archivado' : ' archivados');
+  }
 
   lista.textContent = '';
   if (activos.length === 0) {
@@ -358,6 +698,18 @@ async function guardarDocente(
   const seleccionRol = formulario.querySelector(
     '#docente-rol',
   ) as HTMLSelectElement | null;
+  const seleccionNivel = formulario.querySelector(
+    '#docente-nivel',
+  ) as HTMLSelectElement | null;
+  const especialidad = formulario.querySelector(
+    '#docente-especialidad',
+  ) as HTMLInputElement | null;
+  const telefono = formulario.querySelector(
+    '#docente-telefono',
+  ) as HTMLInputElement | null;
+  const anios = formulario.querySelector(
+    '#docente-anios',
+  ) as HTMLInputElement | null;
   const correoLocal = formulario.querySelector(
     '#docente-correo',
   ) as HTMLInputElement | null;
@@ -367,6 +719,10 @@ async function guardarDocente(
     dui === null ||
     nip === null ||
     fecha === null ||
+    seleccionNivel === null ||
+    especialidad === null ||
+    telefono === null ||
+    anios === null ||
     seleccionRol === null ||
     correoLocal === null
   ) {
@@ -402,6 +758,19 @@ async function guardarDocente(
     return;
   }
 
+  // Nivel: SIEMPRE debe quedar elegido (1 o 2).
+  const nivelFinal = seleccionNivel.value;
+  if (nivelFinal !== '1' && nivelFinal !== '2') {
+    lineaError.textContent = 'Selecciona el nivel (1 o 2).';
+    return;
+  }
+
+  // Los demás campos pueden quedar vacíos: si no existen en
+  // Firebase, la vista los muestra en blanco.
+  const especialidadFinal = especialidad.value.trim();
+  const telefonoFinal = telefono.value; // ya llega solo con dígitos
+  const aniosFinal = anios.value; // ya llega solo con dígitos
+
   const rolFinal = seleccionRol.value;
   if (rolFinal === 'admin' && hayOtroAdmin(docente?.id ?? '')) {
     lineaError.textContent =
@@ -413,10 +782,10 @@ async function guardarDocente(
   const correoFinal =
     parteLocal === '' ? '' : parteLocal + DOMINIO_CORREO;
 
-  // Grados marcados en los checkboxes.
+  // Grados marcados en las fichas (checkbox).
   const gradosMarcados: string[] = [];
-  const casillas = formulario.querySelectorAll('input[name="grados"]:checked');
-  casillas.forEach((casilla) => {
+  const marcados = formulario.querySelectorAll('input[name="grados"]:checked');
+  marcados.forEach((casilla) => {
     if (casilla instanceof HTMLInputElement) gradosMarcados.push(casilla.value);
   });
 
@@ -425,13 +794,22 @@ async function guardarDocente(
     dui: duiFinal,
     nip: nipFinal,
     fechaNacimiento: fecha.value,
+    nivel: nivelFinal,
+    especialidad: especialidadFinal,
+    telefono: telefonoFinal,
+    aniosServicio: aniosFinal,
     gradosAsignados: gradosMarcados,
     archivado: docente !== null ? booleanoSeguro(docente.archivado) : false,
     rol: rolFinal,
+    // rol2 es el campo que el inicio de sesión lee para reconocer
+    // al admin: SIEMPRE se escribe ('admin' solo si lo es, '' si
+    // no) para que el auth nunca pierda el rol admin.
+    rol2: rolFinal === 'admin' ? 'admin' : '',
     correo: correoFinal,
   };
 
   boton.disabled = true;
+  mostrarCargando('Guardando cambios…');
   try {
     const idDocumento = docente !== null ? docente.id : nipFinal;
     await setDoc(doc(db, COLECCION_DOCENTES, idDocumento), datos);
@@ -442,12 +820,17 @@ async function guardarDocente(
       'No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
     console.error(fallo);
   } finally {
+    ocultarCargando();
     boton.disabled = false;
   }
 }
 
 /** Borra el documento de Firebase tras confirmar en un modal. */
 function eliminarDocente(docente: Docente): void {
+  const icono = document.createElement('div');
+  icono.className = 'confirmar-icono';
+  icono.innerHTML = ICONOS.eliminar; // SOLO SVG
+
   const aviso = document.createElement('p');
   aviso.className = 'confirmar-aviso';
   aviso.textContent =
@@ -466,9 +849,9 @@ function eliminarDocente(docente: Docente): void {
   );
 
   const formulario = document.createElement('form');
-  formulario.className = 'modal-formulario';
-  formulario.append(lineaError, pie);
-  abrirModal('Eliminar docente', [aviso, formulario]);
+  formulario.className = 'modal-formulario modal-confirmar';
+  formulario.append(icono, aviso, lineaError, pie);
+  abrirModal('Eliminar docente', [formulario]);
 }
 
 async function confirmarEliminar(
@@ -476,6 +859,8 @@ async function confirmarEliminar(
   lineaError: HTMLElement,
 ): Promise<void> {
   lineaError.textContent = '';
+  // Animación de carga: bloquea los clics mientras se borra.
+  mostrarCargando('Eliminando docente…');
   try {
     await deleteDoc(doc(db, COLECCION_DOCENTES, docente.id));
     cerrarModal();
@@ -483,14 +868,21 @@ async function confirmarEliminar(
   } catch (fallo) {
     lineaError.textContent = 'No se pudo eliminar. Intenta de nuevo.';
     console.error(fallo);
+  } finally {
+    ocultarCargando();
   }
 }
 
-/** Archiva o restaura (merge: no toca los demás campos). */
+/** Archiva o restaura (merge: no toca los demás campos). La
+ *  animación de carga bloquea los clics mientras Firebase
+ *  responde, así no se archiva dos veces por doble clic. */
 async function archivarDocente(
   docente: Docente,
   archivado: boolean,
 ): Promise<void> {
+  mostrarCargando(
+    archivado ? 'Archivando docente…' : 'Restaurando docente…',
+  );
   try {
     await setDoc(
       doc(db, COLECCION_DOCENTES, docente.id),
@@ -506,43 +898,51 @@ async function archivarDocente(
         ? 'No se pudo archivar al docente. Intenta de nuevo.'
         : 'No se pudo restaurar al docente. Intenta de nuevo.',
     );
+  } finally {
+    ocultarCargando();
   }
 }
 
 /* ============================================================
-  SECCIÓN 7 · FORMULARIO DEL MODAL (NO EDITAR)
+  SECCIÓN 9 · FORMULARIO DEL MODAL (NO EDITAR)
 ============================================================ */
 
-/** Abre el modal con el formulario. Si docente es null, es
- *  "Agregar docente"; si no, es "Editar docente". */
+/** Campo del formulario: etiqueta + control. anchoCompleto hace
+ *  que el campo ocupe las dos columnas de la rejilla. */
+function crearCampo(
+  textoRotulo: string,
+  idControl: string,
+  control: HTMLElement,
+  anchoCompleto: boolean = false,
+): HTMLElement {
+  const campo = document.createElement('div');
+  campo.className =
+    'docentes-campo' + (anchoCompleto ? ' campo-completo' : '');
+  const rotulo = document.createElement('label');
+  rotulo.className = 'docentes-rotulo';
+  rotulo.htmlFor = idControl;
+  rotulo.textContent = textoRotulo;
+  campo.append(rotulo, control);
+  return campo;
+}
+
+/** Abre el modal con el formulario, estructurado en cuatro grupos:
+ *  Datos personales · Datos laborales · Acceso y permisos ·
+ *  Grados asignados. Si docente es null es "Agregar docente";
+ *  si no, "Editar". */
 function abrirModalFormulario(docente: Docente | null): void {
   const esEdicion = docente !== null;
   const marcados = listaSegura(docente?.gradosAsignados);
 
-  const formulario = document.createElement('form');
-  formulario.className = 'modal-formulario';
+  // --- Controles sueltos (ids que usa guardarDocente) ---
 
-  // --- Nombre ---
-  const grupoNombre = document.createElement('div');
-  grupoNombre.className = 'docentes-campo';
-  const rotuloNombre = document.createElement('label');
-  rotuloNombre.className = 'docentes-rotulo';
-  rotuloNombre.htmlFor = 'docente-nombre';
-  rotuloNombre.textContent = 'Nombre';
   const nombre = document.createElement('input');
   nombre.className = 'docentes-entrada';
   nombre.id = 'docente-nombre';
   nombre.type = 'text';
+  nombre.placeholder = 'Nombre completo';
   nombre.value = textoSeguro(docente?.nombre);
-  grupoNombre.append(rotuloNombre, nombre);
 
-  // --- DUI (guion automático, no se puede borrar) ---
-  const grupoDui = document.createElement('div');
-  grupoDui.className = 'docentes-campo';
-  const rotuloDui = document.createElement('label');
-  rotuloDui.className = 'docentes-rotulo';
-  rotuloDui.htmlFor = 'docente-dui';
-  rotuloDui.textContent = 'DUI';
   const dui = document.createElement('input');
   dui.className = 'docentes-entrada';
   dui.id = 'docente-dui';
@@ -554,46 +954,77 @@ function abrirModalFormulario(docente: Docente | null): void {
   dui.addEventListener('input', () => {
     dui.value = formatearDUI(dui.value);
   });
-  grupoDui.append(rotuloDui, dui);
 
-  // --- NIP (es el ID del documento: no editable al editar) ---
-  const grupoNip = document.createElement('div');
-  grupoNip.className = 'docentes-campo';
-  const rotuloNip = document.createElement('label');
-  rotuloNip.className = 'docentes-rotulo';
-  rotuloNip.htmlFor = 'docente-nip';
-  rotuloNip.textContent = 'NIP';
   const nip = document.createElement('input');
   nip.className = 'docentes-entrada';
   nip.id = 'docente-nip';
   nip.type = 'text';
   nip.inputMode = 'numeric';
-  nip.placeholder = 'Solo dígitos';
+  nip.placeholder = 'Solo números';
   nip.value = textoSeguro(docente?.nip) || docente?.id || '';
+  // SOLO NÚMEROS: cada tecla se filtra.
+  nip.addEventListener('input', () => {
+    nip.value = soloDigitos(nip.value);
+  });
   if (esEdicion) nip.disabled = true;
-  grupoNip.append(rotuloNip, nip);
 
-  // --- Fecha de nacimiento ---
-  const grupoFecha = document.createElement('div');
-  grupoFecha.className = 'docentes-campo';
-  const rotuloFecha = document.createElement('label');
-  rotuloFecha.className = 'docentes-rotulo';
-  rotuloFecha.htmlFor = 'docente-fecha';
-  rotuloFecha.textContent = 'Fecha de nacimiento';
   const fecha = document.createElement('input');
   fecha.className = 'docentes-entrada';
   fecha.id = 'docente-fecha';
   fecha.type = 'date';
   fecha.value = textoSeguro(docente?.fechaNacimiento);
-  grupoFecha.append(rotuloFecha, fecha);
 
-  // --- Rol (select; solo puede haber UN admin) ---
-  const grupoRol = document.createElement('div');
-  grupoRol.className = 'docentes-campo';
-  const rotuloRol = document.createElement('label');
-  rotuloRol.className = 'docentes-rotulo';
-  rotuloRol.htmlFor = 'docente-rol';
-  rotuloRol.textContent = 'Rol';
+  // Nivel: select con 1 y 2. Si el documento aún no guarda nivel
+  // queda vacío (en blanco) hasta que se elija.
+  const seleccionNivel = document.createElement('select');
+  seleccionNivel.className = 'docentes-entrada';
+  seleccionNivel.id = 'docente-nivel';
+  const opcionVacia = document.createElement('option');
+  opcionVacia.value = '';
+  opcionVacia.textContent = 'Selecciona un nivel…';
+  seleccionNivel.appendChild(opcionVacia);
+  for (const nivel of NIVELES_DOCENTE) {
+    const opcionNivel = document.createElement('option');
+    opcionNivel.value = nivel;
+    opcionNivel.textContent = 'Nivel ' + nivel;
+    seleccionNivel.appendChild(opcionNivel);
+  }
+  seleccionNivel.value = textoSeguro(docente?.nivel);
+
+  const especialidad = document.createElement('input');
+  especialidad.className = 'docentes-entrada';
+  especialidad.id = 'docente-especialidad';
+  especialidad.type = 'text';
+  especialidad.maxLength = 60;
+  especialidad.placeholder = 'Ej. Matemática, Lenguaje…';
+  especialidad.value = textoSeguro(docente?.especialidad);
+
+  const telefono = document.createElement('input');
+  telefono.className = 'docentes-entrada';
+  telefono.id = 'docente-telefono';
+  telefono.type = 'text';
+  telefono.inputMode = 'numeric';
+  telefono.maxLength = TELEFONO_MAX_DIGITOS;
+  telefono.placeholder = 'Solo números, sin guion';
+  telefono.value = textoSeguro(docente?.telefono);
+  // SOLO NÚMEROS y SIN GUION: cada tecla se filtra.
+  telefono.addEventListener('input', () => {
+    telefono.value = soloDigitos(telefono.value, TELEFONO_MAX_DIGITOS);
+  });
+
+  const aniosServicio = document.createElement('input');
+  aniosServicio.className = 'docentes-entrada';
+  aniosServicio.id = 'docente-anios';
+  aniosServicio.type = 'text';
+  aniosServicio.inputMode = 'numeric';
+  aniosServicio.maxLength = ANIOS_MAX_DIGITOS;
+  aniosServicio.placeholder = 'Solo números';
+  aniosServicio.value = textoSeguro(docente?.aniosServicio);
+  // SOLO NÚMEROS: cada tecla se filtra.
+  aniosServicio.addEventListener('input', () => {
+    aniosServicio.value = soloDigitos(aniosServicio.value, ANIOS_MAX_DIGITOS);
+  });
+
   const seleccionRol = document.createElement('select');
   seleccionRol.className = 'docentes-entrada';
   seleccionRol.id = 'docente-rol';
@@ -611,16 +1042,9 @@ function abrirModalFormulario(docente: Docente | null): void {
     }
     seleccionRol.appendChild(opcionRol);
   }
-  seleccionRol.value = textoSeguro(docente?.rol) || 'profesor';
-  grupoRol.append(rotuloRol, seleccionRol);
+  // Valor inicial: rol EFECTIVO (rol2 'admin' prevalece sobre rol).
+  seleccionRol.value = docente !== null ? rolDocente(docente) : 'profesor';
 
-  // --- Correo (parte editable + dominio fijo no editable) ---
-  const grupoCorreo = document.createElement('div');
-  grupoCorreo.className = 'docentes-campo';
-  const rotuloCorreo = document.createElement('label');
-  rotuloCorreo.className = 'docentes-rotulo';
-  rotuloCorreo.htmlFor = 'docente-correo';
-  rotuloCorreo.textContent = 'Correo';
   const campoCorreo = document.createElement('div');
   campoCorreo.className = 'campo-correo';
   const correoLocal = document.createElement('input');
@@ -635,7 +1059,6 @@ function abrirModalFormulario(docente: Docente | null): void {
   dominioCorreo.className = 'campo-correo-dominio';
   dominioCorreo.textContent = DOMINIO_CORREO;
   campoCorreo.append(correoLocal, dominioCorreo);
-  grupoCorreo.append(rotuloCorreo, campoCorreo);
 
   // Valor inicial: correo guardado (sin dominio) o generado.
   correoLocal.value =
@@ -647,12 +1070,58 @@ function abrirModalFormulario(docente: Docente | null): void {
     correoLocal.value = generarCorreoLocal(nombre.value);
   });
 
-  // --- Grados asignados (checkboxes) ---
+  // --- Grupo 1: Datos personales ---
+  const grupoDatos = document.createElement('div');
+  grupoDatos.className = 'form-grupo';
+  const tituloDatos = document.createElement('p');
+  tituloDatos.className = 'form-grupo-titulo';
+  tituloDatos.textContent = 'Datos personales';
+  const rejillaDatos = document.createElement('div');
+  rejillaDatos.className = 'form-rejilla';
+  rejillaDatos.append(
+    crearCampo('Nombre', 'docente-nombre', nombre, true),
+    crearCampo('DUI', 'docente-dui', dui),
+    crearCampo('NIP', 'docente-nip', nip),
+    crearCampo('Fecha de nacimiento', 'docente-fecha', fecha),
+    crearCampo('Nivel', 'docente-nivel', seleccionNivel),
+    crearCampo('Especialidad', 'docente-especialidad', especialidad, true),
+  );
+  grupoDatos.append(tituloDatos, rejillaDatos);
+
+  // --- Grupo 2: Datos laborales ---
+  const grupoLaboral = document.createElement('div');
+  grupoLaboral.className = 'form-grupo';
+  const tituloLaboral = document.createElement('p');
+  tituloLaboral.className = 'form-grupo-titulo';
+  tituloLaboral.textContent = 'Datos laborales';
+  const rejillaLaboral = document.createElement('div');
+  rejillaLaboral.className = 'form-rejilla';
+  rejillaLaboral.append(
+    crearCampo('Teléfono', 'docente-telefono', telefono),
+    crearCampo('Años de servicio', 'docente-anios', aniosServicio),
+  );
+  grupoLaboral.append(tituloLaboral, rejillaLaboral);
+
+  // --- Grupo 3: Acceso y permisos ---
+  const grupoAcceso = document.createElement('div');
+  grupoAcceso.className = 'form-grupo';
+  const tituloAcceso = document.createElement('p');
+  tituloAcceso.className = 'form-grupo-titulo';
+  tituloAcceso.textContent = 'Acceso y permisos';
+  const rejillaAcceso = document.createElement('div');
+  rejillaAcceso.className = 'form-rejilla';
+  rejillaAcceso.append(
+    crearCampo('Rol', 'docente-rol', seleccionRol),
+    crearCampo('Correo', 'docente-correo', campoCorreo, true),
+  );
+  grupoAcceso.append(tituloAcceso, rejillaAcceso);
+
+  // --- Grupo 4: Grados asignados (fichas con checkbox) ---
   const grupoGrados = document.createElement('div');
-  grupoGrados.className = 'docentes-campo';
-  const rotuloGrados = document.createElement('p');
-  rotuloGrados.className = 'docentes-rotulo';
-  rotuloGrados.textContent = 'Grados asignados';
+  grupoGrados.className = 'form-grupo';
+  const tituloGrados = document.createElement('p');
+  tituloGrados.className = 'form-grupo-titulo';
+  tituloGrados.textContent = 'Grados asignados';
   const casillas = document.createElement('div');
   casillas.className = 'docentes-grados';
   for (const etiqueta of GRADOS) {
@@ -668,7 +1137,7 @@ function abrirModalFormulario(docente: Docente | null): void {
     opcion.append(casilla, rotulo);
     casillas.appendChild(opcion);
   }
-  grupoGrados.append(rotuloGrados, casillas);
+  grupoGrados.append(tituloGrados, casillas);
 
   // --- Pie: error + Cancelar + Guardar ---
   const lineaError = crearLineaError();
@@ -685,13 +1154,12 @@ function abrirModalFormulario(docente: Docente | null): void {
   botonGuardar.textContent = 'Guardar';
   pie.appendChild(botonGuardar);
 
+  const formulario = document.createElement('form');
+  formulario.className = 'modal-formulario';
   formulario.append(
-    grupoNombre,
-    grupoDui,
-    grupoNip,
-    grupoFecha,
-    grupoRol,
-    grupoCorreo,
+    grupoDatos,
+    grupoLaboral,
+    grupoAcceso,
     grupoGrados,
     lineaError,
     pie,
@@ -709,18 +1177,30 @@ function abrirModalFormulario(docente: Docente | null): void {
   );
 }
 
-/** Modal de solo lectura con TODA la información del docente. */
+/** Modal de solo lectura con los datos del docente (sin el rol
+ *  ni el estado de archivado). */
 function verDocente(docente: Docente): void {
+  // NOTA: el modal de VER no muestra el rol ni si está archivado
+  // (eso se gestiona desde Editar). Los campos que el documento
+  // aún no tenga quedan EN BLANCO.
   const filas: [string, string][] = [
     ['Nombre', textoSeguro(docente.nombre)],
     ['DUI', textoSeguro(docente.dui)],
     ['NIP', textoSeguro(docente.nip)],
-    ['Fecha de nacimiento', textoSeguro(docente.fechaNacimiento)],
+    ['Fecha de nacimiento', formatearFecha(docente.fechaNacimiento)],
+    ['Nivel', textoSeguro(docente.nivel)],
+    ['Especialidad', textoSeguro(docente.especialidad)],
+    ['Teléfono', textoSeguro(docente.telefono)],
+    ['Años de servicio', textoSeguro(docente.aniosServicio)],
     ['Correo', textoSeguro(docente.correo)],
-    ['Rol', textoSeguro(docente.rol)],
     ['Grados asignados', listaSegura(docente.gradosAsignados).join(', ')],
-    ['Archivado', booleanoSeguro(docente.archivado) ? 'Sí' : 'No'],
   ];
+
+  // Si el documento guarda fecha de creación (creadoEn), se
+  // muestra con fecha y hora de El Salvador (si no existe, la
+  // fila no aparece).
+  const registrado = formatearFechaHora(docente.creadoEn);
+  if (registrado !== '') filas.push(['Registrado', registrado]);
 
   const detalles = document.createElement('div');
   detalles.className = 'modal-detalles';
@@ -740,36 +1220,56 @@ function verDocente(docente: Docente): void {
 }
 
 /* ============================================================
-  SECCIÓN 8 · LISTADO Y VISTA (NO EDITAR)
+  SECCIÓN 10 · LISTADO Y VISTA (NO EDITAR)
 ============================================================ */
 
-/** Botón pequeño de acción dentro de una fila. */
-function crearBotonAccion(texto: string, accion: () => void): HTMLButtonElement {
+/** Botón de acción con ICONO para las filas: title y aria-label
+ *  llevan el nombre (accesibilidad); el color lo pone la clase. */
+function crearBotonAccion(
+  icono: string,
+  texto: string,
+  clase: string,
+  accion: () => void,
+): HTMLButtonElement {
   const boton = document.createElement('button');
   boton.type = 'button';
-  boton.className = 'docentes-accion';
-  boton.textContent = texto;
+  boton.className = 'docentes-accion ' + clase;
+  boton.title = texto;
+  boton.setAttribute('aria-label', texto);
+  boton.innerHTML = icono; // SOLO SVG
   boton.addEventListener('click', accion);
   return boton;
 }
 
-/** Fila del listado (4 datos + acciones). Archivadas solo
- *  muestran Ver y Restaurar. */
+/** Fila del listado. En la vista principal SOLO se muestran
+ *  Nombre, DUI, NIP y Teléfono; lo demás se ve al abrir el
+ *  modal Ver/Editar. Archivadas muestran la ficha "Archivado"
+ *  y solo dejan Ver, Restaurar y Eliminar. Si un dato falta,
+ *  la celda queda en blanco. */
 function crearFilaDocente(docente: Docente, archivado: boolean): HTMLElement {
   const fila = document.createElement('div');
   fila.className = 'docentes-fila';
 
+  // SOLO 4 DATOS en la vista principal: lo demás vive en el
+  // modal (Ver/Editar). Si un dato falta, la celda queda en blanco.
   const celdas: [string, boolean][] = [
     [textoSeguro(docente.nombre), true],
     [textoSeguro(docente.dui), false],
     [textoSeguro(docente.nip), false],
-    [textoSeguro(docente.fechaNacimiento), false],
+    [textoSeguro(docente.telefono), false],
   ];
   for (const [valor, esNombre] of celdas) {
     const celda = document.createElement('span');
     celda.className =
       'docentes-celda' + (esNombre ? ' docentes-celda-nombre' : '');
     celda.textContent = valor; // en blanco si no existe el dato
+    if (esNombre && archivado) {
+      // El docente archivado se MARCA para distinguirlo solo.
+      const ficha = document.createElement('span');
+      ficha.className = 'docentes-chip-archivado';
+      ficha.textContent = 'Archivado';
+      celda.appendChild(ficha);
+    }
     fila.appendChild(celda);
   }
 
@@ -777,33 +1277,38 @@ function crearFilaDocente(docente: Docente, archivado: boolean): HTMLElement {
   acciones.className = 'docentes-acciones';
   if (archivado) {
     acciones.appendChild(
-      crearBotonAccion('Ver', () => {
+      crearBotonAccion(ICONOS.ver, 'Ver', 'accion-ver', () => {
         verDocente(docente);
       }),
     );
     acciones.appendChild(
-      crearBotonAccion('Restaurar', () => {
+      crearBotonAccion(ICONOS.restaurar, 'Restaurar', 'accion-restaurar', () => {
         void archivarDocente(docente, false);
+      }),
+    );
+    acciones.appendChild(
+      crearBotonAccion(ICONOS.eliminar, 'Eliminar', 'accion-eliminar', () => {
+        eliminarDocente(docente);
       }),
     );
   } else {
     acciones.appendChild(
-      crearBotonAccion('Ver', () => {
+      crearBotonAccion(ICONOS.ver, 'Ver', 'accion-ver', () => {
         verDocente(docente);
       }),
     );
     acciones.appendChild(
-      crearBotonAccion('Editar', () => {
+      crearBotonAccion(ICONOS.editar, 'Editar', 'accion-editar', () => {
         abrirModalFormulario(docente);
       }),
     );
     acciones.appendChild(
-      crearBotonAccion('Eliminar', () => {
+      crearBotonAccion(ICONOS.eliminar, 'Eliminar', 'accion-eliminar', () => {
         eliminarDocente(docente);
       }),
     );
     acciones.appendChild(
-      crearBotonAccion('Archivar', () => {
+      crearBotonAccion(ICONOS.archivar, 'Archivar', 'accion-archivar', () => {
         void archivarDocente(docente, true);
       }),
     );
@@ -812,33 +1317,89 @@ function crearFilaDocente(docente: Docente, archivado: boolean): HTMLElement {
   return fila;
 }
 
-/** Construye la vista completa de Docentes y la devuelve para
- *  que content.ts la cuelgue del contenedor de vistas. */
+/** Construye la vista COMPLETA de Docentes —migas, título del
+ *  panel con los botones a la par y cuadro blanco que cubre el
+ *  espacio restante (resumen, listado y archivados)— y la devuelve
+ *  para que content.ts la agregue al contenedor de vistas. */
 export function crearVistaDocentes(): HTMLElement {
   const vista = document.createElement('div');
   vista.className = 'vista-docentes';
+
+  // --- Migas arriba: "Inicio / Docentes". "Inicio" es un ENLACE
+  //     clicable: navega a la sección Inicio y la sidebar la
+  //     marca como activa sola. "Docentes" es la ubicación
+  //     actual: texto fijo SIN clic. ---
+  const migas = crearMigas([
+    { texto: 'Inicio', ruta: '#/inicio' }, // antecesora: clicable
+    { texto: 'Docentes' }, // ubicación actual: SIN clic
+  ]);
+
+  // --- Nombre del panel EN GRANDE + botones a la par ---
+  const encabezado = document.createElement('header');
+  encabezado.className = 'panel-encabezado';
+  const tituloPanel = document.createElement('h4');
+  tituloPanel.className = 'panel-titulo';
+  tituloPanel.textContent = 'Panel de Docentes';
+  const botones = document.createElement('div');
+  botones.className = 'panel-botones';
+  encabezado.append(tituloPanel, botones);
+
+  // --- Cuadro blanco: cubre TODO el espacio restante.
+  //     .tarjeta-vista es GENÉRICA: las demás vistas la reutilizan. ---
+  const tarjeta = document.createElement('section');
+  tarjeta.className = 'tarjeta-vista';
 
   // Permisos: la sección es solo para admin y director.
   if (!sesionAutorizada()) {
     const aviso = document.createElement('p');
     aviso.className = 'docentes-vacio';
     aviso.textContent = 'No tienes permiso para ver esta sección.';
-    vista.appendChild(aviso);
+    tarjeta.appendChild(aviso);
+    vista.append(migas, encabezado, tarjeta);
     contenedorVista = null;
     return vista;
   }
 
-  // --- Botonera (queda a la par del título de la vista) ---
-  const botonera = document.createElement('div');
-  botonera.className = 'docentes-botonera';
+  // Botón Actualizar: recarga la lista desde Firebase.
+  const botonActualizar = document.createElement('button');
+  botonActualizar.type = 'button';
+  botonActualizar.className = 'boton-secundario boton-con-icono';
+  botonActualizar.innerHTML = ICONOS.actualizar + '<span>Actualizar</span>';
+  botonActualizar.addEventListener('click', () => {
+    void cargarDocentes();
+  });
+
+  // Botón Agregar docente: abre el modal vacío.
   const botonAgregar = document.createElement('button');
   botonAgregar.type = 'button';
-  botonAgregar.className = 'boton-primario';
-  botonAgregar.textContent = 'Agregar docente';
+  botonAgregar.className = 'boton-primario boton-con-icono';
+  botonAgregar.innerHTML = ICONOS.agregar + '<span>Agregar docente</span>';
   botonAgregar.addEventListener('click', () => {
     abrirModalFormulario(null);
   });
-  botonera.appendChild(botonAgregar);
+  botones.append(botonActualizar, botonAgregar);
+
+  // --- Resumen (se llena al terminar la carga) ---
+  const resumen = document.createElement('p');
+  resumen.id = 'docentes-resumen';
+  resumen.className = 'docentes-resumen';
+
+  // --- Títulos de columna del listado ---
+  const cabecera = document.createElement('div');
+  cabecera.className = 'docentes-cabecera';
+  // Títulos de la vista principal: SOLO los 4 datos que se ven
+  // (Nombre, DUI, NIP, Teléfono) + Acciones.
+  for (const titulo of [
+    'Nombre',
+    'DUI',
+    'NIP',
+    'Teléfono',
+    'Acciones',
+  ]) {
+    const columna = document.createElement('span');
+    columna.textContent = titulo;
+    cabecera.appendChild(columna);
+  }
 
   // --- Listado principal ---
   const lista = document.createElement('div');
@@ -849,19 +1410,30 @@ export function crearVistaDocentes(): HTMLElement {
   const archivados = document.createElement('details');
   archivados.id = 'docentes-archivados';
   archivados.className = 'docentes-archivados';
-  const resumen = document.createElement('summary');
-  resumen.textContent = 'Archivados';
+  const resumenArchivados = document.createElement('summary');
+  resumenArchivados.textContent = 'Archivados';
   const cuerpoArchivados = document.createElement('div');
   cuerpoArchivados.id = 'docentes-archivados-cuerpo';
-  archivados.append(resumen, cuerpoArchivados);
+  archivados.append(resumenArchivados, cuerpoArchivados);
 
-  vista.append(botonera, lista, archivados);
+  tarjeta.append(resumen, cabecera, lista, archivados);
+  vista.append(migas, encabezado, tarjeta);
   contenedorVista = vista;
   void cargarDocentes();
   return vista;
 }
 
-/** Compatibilidad: si tu content.ts monta la vista con
+/** Docentes ACTIVOS (los archivados NO aparecen), ordenados con
+ *  el admin primero. Es la lista que deben usar las selecciones
+ *  futuras de otras vistas (asignar docentes a grados, etc.):
+ *  un docente archivado no se vuelve a elegir. */
+export function listarDocentesActivos(): Docente[] {
+  return ordenarDocentes(
+    docentesCargados.filter((d) => !booleanoSeguro(d.archivado)),
+  );
+}
+
+/** Compatibilidad: si algún código monta la vista con
  *  montarDocentes(contenedor), sigue funcionando igual. */
 export function montarDocentes(contenedor: HTMLElement): void {
   contenedor.appendChild(crearVistaDocentes());
