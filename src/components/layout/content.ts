@@ -24,7 +24,7 @@
 // sidebar: registro de secciones y subsecciones (nombres y rutas)
 import { infoDeRuta, RUTA_POR_DEFECTO } from './sidebar';
 // Vistas reales montadas por el router provisional:
-import { renderDocentes } from '../docentes/docentes';
+import { crearVistaDocentes } from '../docentes/docentes';
 
 /* ============================================================
   SECCIÓN 2 · CONFIGURACIÓN (EDITA AQUÍ)
@@ -55,7 +55,7 @@ const NOMBRES_RAIZ: Record<string, string> = {};
 type Vista = (contenedor: HTMLElement, acciones: HTMLElement) => void;
 
 const VISTAS: Record<string, Vista> = {
-  '#/docentes': renderDocentes,
+  '#/docentes': crearVistaDocentes,
 };
 
 /* ============================================================

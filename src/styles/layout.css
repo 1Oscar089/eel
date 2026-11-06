@@ -732,347 +732,209 @@ body:has(.sidebar.sidebar-open) .sidebar-overlay {
   flex-shrink: 0;
 }
 
-/* ---------- 17. Sección Docentes ---------- */
-.docentes-vista {
-  display: flex;
-  flex-direction: column;
-}
+/* ============================================================
+  SECCIÓN DOCENTES (vista, filas, archivados, modal, correo)
+  — Reemplaza cualquier bloque de docentes/modales anterior —
+============================================================ */
+.vista-docentes { display: flex; flex-direction: column; gap: 12px; align-self: stretch; width: 100%; }
 
-/* Avisos: carga, lista vacía y error de conexión */
-.docentes-aviso {
-  padding: 28px 16px;
-  text-align: center;
-  color: #64748b;
-  font-size: var(--texto-sm, 0.875rem);
-}
-.docentes-aviso--error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  color: #b91c1c;
-}
-.docentes-vacio {
-  padding: 16px;
-  text-align: center;
-  color: #94a3b8;
-  font-size: var(--texto-sm, 0.875rem);
-}
+.docentes-botonera { display: flex; justify-content: flex-end; gap: 8px; }
 
-/* Tabla de docentes (scroll horizontal en pantallas angostas) */
-.docentes-tabla-envoltorio {
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radio-borde, 10px);
-  background: #ffffff;
-  overflow-x: auto;
-}
-.docentes-tabla {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--texto-sm, 0.875rem);
-}
-.docentes-tabla th {
-  text-align: left;
-  padding: 11px 14px;
-  background: #f8fafc;
-  color: #64748b;
-  font-size: var(--texto-xs, 0.75rem);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  border-bottom: 1px solid #e2e8f0;
-  white-space: nowrap;
-}
-.docentes-tabla td {
-  padding: 10px 14px;
-  border-bottom: 1px solid #eef2f7;
-  color: #1e293b;
-  vertical-align: middle;
-}
-.docentes-tabla tbody tr:last-child td { border-bottom: none; }
-.docentes-tabla tbody tr { transition: background var(--t-rapida, 0.2s ease); }
-.docentes-tabla tbody tr:hover { background: #f8fafc; }
+.docentes-lista { display: flex; flex-direction: column; gap: 6px; }
 
-.docentes-celda { min-height: 1em; }
-.docentes-celda-nombre {
-  font-weight: 600;
-  color: #0f172a;
-  min-width: 180px;
-}
-/* Chapita "Admin" junto al nombre del docente administrador */
-.docentes-chapita-admin {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: #92400e;
-  background: #fef3c7;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.docentes-celda-acciones { white-space: nowrap; width: 1%; }
-.docentes-acciones {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Botones-icono de acciones (ver, editar, archivar, eliminar) */
-.docentes-accion {
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: var(--radio-pequeno, 6px);
-  color: #64748b;
-  cursor: pointer;
-  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
-}
-.docentes-accion:hover {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-/* Eliminar se tiñe de rojo al pasar (acción destructiva) */
-.docentes-accion--peligro:hover {
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
-/* Apartado de ARCHIVADOS: colapsable, cerrado por defecto */
-.docentes-archivados {
-  margin-top: 18px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radio-borde, 10px);
-}
-.docentes-archivados-resumen {
-  display: flex;
+.docentes-fila {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 0.8fr 1.2fr auto;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
-  list-style: none;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-pequeno, 6px);
+}
+
+.docentes-celda { font-size: var(--texto-sm, 0.875rem); color: #0f172a; overflow-wrap: anywhere; }
+.docentes-celda-nombre { font-weight: 600; }
+
+.docentes-acciones { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+.docentes-accion {
+  padding: 4px 10px;
+  font-size: var(--texto-xs, 0.75rem);
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radio-pequeno, 6px);
+  background: #f8fafc;
+  color: #0f172a;
   cursor: pointer;
+  transition: background var(--t-rapida, 0.2s ease);
+}
+.docentes-accion:hover { background: #e2e8f0; }
+
+.docentes-vacio { margin: 0; padding: 12px; font-size: var(--texto-sm, 0.875rem); color: #64748b; }
+
+.docentes-archivados summary {
+  cursor: pointer;
+  padding: 8px 12px;
   font-size: var(--texto-sm, 0.875rem);
   font-weight: 600;
   color: #334155;
-  border-radius: inherit;
-  transition: color var(--t-rapida, 0.2s ease);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-pequeno, 6px);
 }
-.docentes-archivados-resumen::-webkit-details-marker { display: none; }
-.docentes-archivados-resumen:hover { color: #1565c0; }
-.docentes-archivados-flecha {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  transition: transform var(--t-rapida, 0.2s ease);
-}
-.docentes-archivados[open] .docentes-archivados-flecha { transform: rotate(90deg); }
-.docentes-archivados-cuerpo { padding: 0 12px 12px; }
+.docentes-archivados > div { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
 
-/* Ficha de lectura (modal "ver"): etiquetas a la izquierda */
-.docentes-ficha {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 12px 20px;
-  margin: 0;
-}
-.docentes-ficha dt {
-  font-size: var(--texto-xs, 0.75rem);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #94a3b8;
-  align-self: center;
-  white-space: nowrap;
-}
-.docentes-ficha dd {
-  margin: 0;
-  min-height: 1em;
-  color: #1e293b;
-  font-size: var(--texto-sm, 0.875rem);
-  overflow-wrap: anywhere;
-}
+/* ---------- Formulario del modal ---------- */
+.modal-formulario { display: flex; flex-direction: column; gap: 12px; }
 
-/* Chips de grados (ficha "ver") */
-.docentes-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.docentes-chip {
-  padding: 3px 10px;
-  font-size: var(--texto-xs, 0.75rem);
-  font-weight: 600;
-  color: #0d47a1;
-  background: #e3f2fd;
-  border-radius: 999px;
-  white-space: nowrap;
-}
+.docentes-campo { display: flex; flex-direction: column; gap: 4px; }
+.docentes-rotulo { margin: 0; font-size: var(--texto-xs, 0.75rem); font-weight: 600; color: #475569; }
 
-/* Formulario del modal (crear/editar docente) */
-.docentes-formulario {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 16px;
-}
-.docentes-campo {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.docentes-campo--ancho { grid-column: 1 / -1; }
-.docentes-etiqueta {
-  font-size: var(--texto-sm, 0.875rem);
-  font-weight: 600;
-  color: #334155;
-}
 .docentes-entrada {
-  height: 40px;
-  padding: 0 10px;
-  font: inherit;
-  font-size: var(--texto-sm, 0.875rem);
-  color: #1e293b;
+  width: 100%;
+  padding: 9px 12px;
+  font-family: var(--fuente-base, 'Segoe UI', Inter, system-ui, sans-serif);
+  font-size: var(--texto-md, 1rem);
+  color: #0f172a;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: var(--radio-pequeno, 6px);
+}
+.docentes-entrada:focus { outline: none; border-color: #2563eb; }
+.docentes-entrada:disabled { opacity: 0.6; cursor: not-allowed; background: #f1f5f9; }
+
+.docentes-grados { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.docentes-opcion { display: flex; align-items: center; gap: 6px; font-size: var(--texto-sm, 0.875rem); color: #0f172a; }
+
+.campo-correo {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radio-pequeno, 6px);
+  overflow: hidden;
+  background: #ffffff;
+}
+.campo-correo:focus-within { border-color: #2563eb; }
+.campo-correo-entrada {
+  flex: 1 1 auto;
   min-width: 0;
+  border: none;
+  outline: none;
+  padding: 9px 12px;
+  font-family: var(--fuente-base, 'Segoe UI', Inter, system-ui, sans-serif);
+  font-size: var(--texto-md, 1rem);
+  color: #0f172a;
+  background: transparent;
 }
-.docentes-entrada:focus {
-  outline: 2px solid #1565c0;
-  outline-offset: 1px;
-  border-color: #1565c0;
-}
-/* Rejilla de checkboxes de grados */
-.docentes-grados {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 8px 10px;
-}
-.docentes-grado-opcion {
+.campo-correo-dominio {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  padding: 0 12px;
+  border-left: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  color: #64748b;
   font-size: var(--texto-sm, 0.875rem);
-  color: #334155;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radio-pequeno, 6px);
-  cursor: pointer;
+  white-space: nowrap;
   user-select: none;
-  transition: background var(--t-rapida, 0.2s ease), border-color var(--t-rapida, 0.2s ease),
-    color var(--t-rapida, 0.2s ease);
 }
-.docentes-grado-opcion:hover {
-  border-color: #90caf9;
-}
-.docentes-grado-opcion:has(input:checked) {
-  background: #e3f2fd;
-  border-color: #90caf9;
-  color: #0d47a1;
-  font-weight: 600;
-}
-.docentes-grado-opcion input { accent-color: #1565c0; }
 
-/* ---------- 18. Modales (agregar/editar/ver/eliminar docente) ---------- */
+.form-error { margin: 0; color: #dc2626; font-size: var(--texto-sm, 0.875rem); min-height: 1em; }
+
+/* ---------- Modal genérico ---------- */
 .modal-fondo {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal, 40); /* encima de userbar (20) y sidebar (15) */
+  z-index: 30; /* encima de sidebar (15) y userbar (20) */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(15, 23, 42, 0.45);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-  overflow-y: auto;
+  padding: 16px;
+  background: rgb(15 23 42 / 0.55);
 }
-.modal-caja {
+.modal-tarjeta {
   width: 100%;
-  max-width: 560px;
-  max-height: min(85vh, 720px);
-  display: flex;
-  flex-direction: column;
+  max-width: 460px;
+  max-height: 85vh;
+  overflow-y: auto;
   background: #ffffff;
   border-radius: var(--radio-borde, 10px);
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
-  animation: modal-entrada 0.18s ease;
-}
-@keyframes modal-entrada {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
-  to   { opacity: 1; transform: none; }
+  box-shadow: 0 20px 50px rgb(15 23 42 / 0.3);
 }
 .modal-cabecera {
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid #eef2f7;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
 }
-.modal-titulo {
-  font-size: var(--texto-md, 1rem);
-  font-weight: 700;
-  color: #0f172a;
-}
+.modal-titulo { margin: 0; font-size: var(--texto-lg, 1.25rem); color: #0f172a; }
 .modal-cerrar {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
   border: none;
-  border-radius: var(--radio-pequeno, 6px);
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
   color: #64748b;
   cursor: pointer;
-  transition: background var(--t-rapida, 0.2s ease), color var(--t-rapida, 0.2s ease);
+  padding: 2px 6px;
 }
-.modal-cerrar:hover { background: #f1f5f9; color: #0f172a; }
-.modal-cuerpo {
-  padding: 16px 20px;
-  overflow-y: auto;
-}
-/* Pie de botones. Dentro de un formulario usa margen; como hijo
-   directo de la caja usa padding (para pegarse abajo). */
-.modal-pie {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-}
-.modal-caja > .modal-pie {
-  flex-shrink: 0;
-  margin-top: 0;
-  padding: 0 20px 16px;
-}
-.modal-texto {
-  color: #334155;
-  font-size: var(--texto-sm, 0.875rem);
-  line-height: 1.5;
-}
-.modal-error {
-  grid-column: 1 / -1;
-  margin-top: 4px;
-  color: #b91c1c;
-  font-size: var(--texto-xs, 0.75rem);
-  font-weight: 600;
-}
-.modal-error[hidden] { display: none; }
+.modal-cerrar:hover { color: #0f172a; }
+.modal-cuerpo { padding: 16px; }
+.modal-pie { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
-/* ---------- 19. Móvil: ajustes de Docentes y modales ---------- */
+.boton-primario {
+  padding: 9px 16px;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  background: #2563eb;
+  color: #ffffff;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  cursor: pointer;
+}
+.boton-primario:hover { background: #1d4ed8; }
+.boton-primario:disabled { opacity: 0.6; cursor: not-allowed; }
+.boton-secundario {
+  padding: 9px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radio-pequeno, 6px);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: var(--texto-sm, 0.875rem);
+  cursor: pointer;
+}
+.boton-secundario:hover { background: #f1f5f9; }
+.boton-peligro {
+  padding: 9px 16px;
+  border: none;
+  border-radius: var(--radio-pequeno, 6px);
+  background: #dc2626;
+  color: #ffffff;
+  font-size: var(--texto-sm, 0.875rem);
+  font-weight: 600;
+  cursor: pointer;
+}
+.boton-peligro:hover { background: #b91c1c; }
+
+/* ---------- Modal Ver (solo lectura) ---------- */
+.modal-detalles { display: flex; flex-direction: column; gap: 6px; }
+.modal-detalle-fila {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.modal-detalle-clave { font-size: var(--texto-xs, 0.75rem); font-weight: 600; color: #64748b; }
+.modal-detalle-valor { font-size: var(--texto-sm, 0.875rem); color: #0f172a; overflow-wrap: anywhere; }
+
+.confirmar-aviso { margin: 0; font-size: var(--texto-sm, 0.875rem); color: #334155; }
+
+/* ---------- Móvil ---------- */
 @media (max-width: 768px) {
-  .docentes-formulario { grid-template-columns: 1fr; }
-  .docentes-ficha { grid-template-columns: 1fr; gap: 2px 0; }
-  .docentes-ficha dd { margin-bottom: 10px; }
-  .modal-fondo { padding: 10px; }
-  .modal-caja { max-width: none; max-height: 88dvh; }
+  .docentes-fila { grid-template-columns: 1fr auto; }
+  .docentes-celda { font-size: var(--texto-xs, 0.75rem); }
+  .docentes-acciones { grid-column: 1 / -1; justify-content: flex-start; }
 }
