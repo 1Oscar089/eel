@@ -47,7 +47,8 @@
      escritorio el panel a la par permanece mostrándola activa.
   - El panel a la par funciona en los 3 dispositivos: junto al
     menú expandido, junto al carril mini (72px), junto al panel
-    flotante de tablet y sobre el drawer de móvil.
+    flotante de tablet y sobre el drawer de móvil (allí lo cubre,
+    porque a la par no cabe).
 
   Iconos: catálogo con +14,000 SVG listos para copiar en
   download/iconos-svg.txt y download/catalogo-iconos.html
@@ -145,9 +146,11 @@ let seccionAbierta: string | null = null;
   se ordenan solas alfabéticamente (SECCIÓN 6). Las subsecciones
   de cada sección también salen en orden alfabético.
 
-  Habilitadas por ahora: Inicio (SIN subsecciones), Docentes y
-  Estudiantes. Las demás secciones quedan COMENTADAS y se activan
-  quitándoles el comentario conforme se construyan.
+  Habilitadas por ahora: Inicio (SIN subsecciones), Docentes,
+  Estudiantes (CON subsecciones) y Fondos (CON subsecciones y
+  SOLO para admin y director). Las demás secciones quedan
+  COMENTADAS y se activan quitándoles el comentario conforme se
+  construyan.
 ============================================================ */
 
 /* SECCIÓN HABILITADA — Inicio. Es SOLO la sección de entrada:
@@ -209,6 +212,39 @@ agregarItemMenu({
     { titulo: 'Actualizar', ruta: '#/estudiantes/actualizar', roles: PERSONAL },
     { titulo: 'Matricular', ruta: '#/estudiantes/matricular', roles: PERSONAL },
     { titulo: 'Nomina', ruta: '#/estudiantes/nomina', roles: PERSONAL },
+  ],
+});
+
+/* SECCIÓN HABILITADA — Fondos con sus 4 subsecciones (Fondos,
+   Ingresos-Gastos, Compras y Liquidaciones), SOLO para admin y
+   director (grupo DIRECCION de la SECCIÓN 2): profesor,
+   estudiante y padre de familia no ven NI la sección NI su
+   panel a la par. El clic en la sección NO cambia la vista:
+   abre el panel a la par; la vista cambia SOLO al elegir una
+   subsección. En el panel salen en orden alfabético automático:
+   Compras, Fondos, Ingresos-Gastos, Liquidaciones.
+   Cada subsección apunta a su propia ruta #/fondos/... (el slug
+   SIEMPRE va debajo de la ruta de su sección, igual que en
+   Estudiantes); por ahora esas vistas están SIN construir, así
+   que muestran el estado "Vista en construcción" de content.ts
+   hasta que se construya cada módulo en próximas entradas. */
+agregarItemMenu({
+  titulo: 'Fondos',
+  ruta: '#/fondos',
+  roles: DIRECCION, // SOLO admin + director (petición ENTRADA 32)
+  icono: `
+    <svg class="sidebar-icono" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+         stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="6.5" width="18" height="12" rx="1.5" />
+      <path d="M14.5 10.5h6v4h-6a2 2 0 0 1 0-4z" />
+      <path d="M17.5 12.5h.01" />
+    </svg>`,
+  subsecciones: [
+    { titulo: 'Fondos', ruta: '#/fondos/fondos', roles: DIRECCION },
+    { titulo: 'Ingresos-Gastos', ruta: '#/fondos/ingresos-gastos', roles: DIRECCION },
+    { titulo: 'Compras', ruta: '#/fondos/compras', roles: DIRECCION },
+    { titulo: 'Liquidaciones', ruta: '#/fondos/liquidaciones', roles: DIRECCION },
   ],
 });
 

@@ -5,3 +5,4 @@ dist/
 # Archivos de variables de entorno local
 .env.local
 .env.*.local
+*.local

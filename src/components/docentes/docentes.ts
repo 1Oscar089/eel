@@ -8,9 +8,7 @@
     Inicio y la sidebar la marca como activa — y la ÚLTIMA parte
     es el nombre de la ubicación actual: texto fijo SIN clic.
   - Debajo, el nombre del panel EN GRANDE ("Panel de Docentes")
-    con los botones Actualizar y Agregar docente A LA PAR (y, si
-    la sesión es admin, también "Probar conexión" y "Pasar
-    Firebase al Sheet" para la HOJA DE CÁLCULO).
+    con los botones Actualizar y Agregar docente A LA PAR.
   - Debajo, un CUADRO BLANCO (.tarjeta-vista) que cubre el resto
     con el resumen (activos · archivados), los títulos de
     columna, el listado y los archivados.
@@ -32,15 +30,27 @@
     · Cuando la escritura fue PROPIA (anti-eco), el snapshot de
       esa misma escritura no toca el formulario.
   - ESPEJO EN GOOGLE SHEETS (Apps Script): cada guardar,
-    archivar/restaurar o eliminar se copia a la hoja "DB
-    Docentes" de Drive (sincronizacionDocentes.ts). El admin
-    además tiene "Probar conexión" y "Pasar Firebase al Sheet"
-    para pasar los docentes que YA existen en Firebase.
+    archivar/restaurar o eliminar se copia EN SILENCIO a la hoja
+    "DB Docentes" de Drive (sincronizacionDocentes.ts). Sin
+    botones y sin avisos: la URL y el TOKEN se leen de
+    .env.local (o de los GitHub Secrets) y la migración de los
+    docentes que YA existen en Firebase corre sola, UNA vez por
+    navegador (migrarSiPendiente). Todo quedó interno.
+  - NOTIFICACIONES PUSH (ENTRADAS 26 y 29): lo que es SOLO
+    información sale como notificación ARRIBA A LA DERECHA, con
+    color según estado (verde/amarillo/rojo), dura 5 segundos y
+    se quita sola (servicios/notificaciones.ts). Lo que pide
+    datos o confirmación sigue siendo MODAL. TODA acción de
+    escritura avisa su resultado: docente creado / editado /
+    eliminado / archivado / restaurado → verde; si la operación
+    NO se pudo completar → rojo (el detalle para corregir
+    campos sigue DENTRO del formulario). Ya no existen el botón
+    "Probar conexión", el botón "Pasar Firebase al Sheet" ni el
+    aviso de "guardado en sheet": todo eso quedó invisible.
   - ANIMACIÓN DE CARGA: toda operación que ESCRIBE en Firebase
     (guardar, eliminar, archivar, restaurar) muestra un spinner
     que tapa TODA la pantalla y BLOQUEA los clics hasta que
-    termina. Los avisos de sincronización son toasts que NO
-    bloquean nada.
+    termina. Las notificaciones NO bloquean nada.
   - ESQUELETO DE CARGA: si el navegador aún no tiene caché, el
     listado se pinta con filas grises animadas hasta que llega
     el primer aviso de Firestore.
@@ -59,7 +69,7 @@
     SIEMPRE primero. En la vista principal SOLO se ven 4 datos:
     Nombre, DUI, NIP y Teléfono (TODO lo demás —nacimiento,
     nivel, especialidad, años de servicio, correo, grados— se
-    ve SOLO al abrir el modal Ver/Editar). Acciones con ICONOS
+    ve SOLO al abrir el modal). Acciones con ICONOS
     que llevan el BORDE de color y el fondo SIN relleno (Ver
     azul, Editar ámbar, Eliminar rojo, Archivar violeta,
     Restaurar verde). Los títulos de columna comparten la MISMA
@@ -111,12 +121,11 @@ import {
   guardarCache,
   enviarDocenteAlSheet,
   enviarEliminacionAlSheet,
-  migrarDocentesAlSheet,
-  probarConexionSheet,
-  sheetConfigurado,
+  migrarSiPendiente,
   type DocenteHoja,
   type CambioDocente,
 } from '../../servicios/sincronizacionDocentes';
+import { mostrarNotificacion } from '../../servicios/notificaciones';
 
 /* ============================================================
   SECCIÓN 2 · CONFIGURACIÓN (EDITA AQUÍ)
@@ -509,28 +518,10 @@ const ICONOS = {
       <path d="M21 12a9 9 0 1 1-2.64-6.36" />
       <path d="M21 3v6h-6" />
     </svg>`,
-  /* Hoja de cálculo (Pasar Firebase al Sheet) */
-  hoja: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-         aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <path d="M3 9h18" />
-      <path d="M3 15h18" />
-      <path d="M9 3v18" />
-    </svg>`,
-  /* Nube con palomita (Probar conexión con la hoja) */
-  nube: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-         aria-hidden="true">
-      <path d="M20 17.6A5 5 0 0 0 18 8h-1.3A8 8 0 1 0 4 16.2" />
-      <path d="M9 14.5l2.4 2.4L15.5 13" />
-    </svg>`,
 } as const;
 
 /* ============================================================
-  SECCIÓN 7 · MODAL GENÉRICO, CARGA Y TOASTS (NO EDITAR)
+  SECCIÓN 7 · MODAL GENÉRICO Y ANIMACIÓN DE CARGA (NO EDITAR)
 ============================================================ */
 
 /** Fondo oscuro del modal abierto (null = cerrado). */
@@ -608,17 +599,6 @@ function crearLineaError(): HTMLElement {
   return linea;
 }
 
-/** Modal pequeño de aviso con un solo botón Aceptar. */
-function mostrarAviso(titulo: string, texto: string): void {
-  const parrafo = document.createElement('p');
-  parrafo.className = 'confirmar-aviso';
-  parrafo.textContent = texto;
-  const pie = document.createElement('div');
-  pie.className = 'modal-pie';
-  pie.appendChild(crearBotonPie('boton-primario', 'Aceptar', cerrarModal));
-  abrirModal(titulo, [parrafo, pie]);
-}
-
 /** Aviso PEQUEÑO dentro del modal de edición cuando otro usuario
  *  cambió el docente: NO cierra el modal, NO recarga nada, solo
  *  informa que los campos libres se llenaron con los cambios. */
@@ -638,36 +618,12 @@ function avisarSincroModal(texto: string): void {
   aviso.textContent = texto;
 }
 
-/* ----- TOASTS de sincronización (NO bloquean nada) -----
-   Mensajitos flotantes abajo a la derecha: guardado en la hoja,
-   la hoja no respondió, otro usuario actualizó el docente…
-   Cada toast se quita solo a los ~4 segundos. */
-function mostrarToast(texto: string, esError: boolean = false): void {
-  let contenedor = document.querySelector('.sincro-contenedor');
-  if (contenedor === null) {
-    contenedor = document.createElement('div');
-    contenedor.className = 'sincro-contenedor';
-    document.body.appendChild(contenedor);
-  }
-  const toast = document.createElement('div');
-  toast.className = 'sincro-toast' + (esError ? ' sincro-toast-error' : '');
-  toast.textContent = texto;
-  contenedor.appendChild(toast);
-  window.setTimeout(() => {
-    toast.classList.add('sincro-toast-salida');
-  }, 3400);
-  window.setTimeout(() => {
-    toast.remove();
-  }, 3900);
-}
-
 /* ----- ANIMACIÓN DE CARGA que BLOQUEA la pantalla -----
    Se usa en las operaciones que ESCRIBEN en Firebase (guardar,
-   eliminar, archivar/restaurar) y en las acciones de la hoja:
-   mientras dura la operación, un spinner tapa TODA la
-   aplicación (por encima incluso del modal) y NINGÚN clic llega
-   a la vista. El contador permite llamadas anidadas sin que la
-   primera cierre la animación de la segunda. */
+   eliminar, archivar/restaurar): mientras dura la operación, un
+   spinner tapa TODA la aplicación (por encima incluso del modal)
+   y NINGÚN clic llega a la vista. El contador permite llamadas
+   anidadas sin que la primera cierre la animación de la segunda. */
 let cargandoFondo: HTMLDivElement | null = null;
 let cargandoPendientes = 0; // operaciones en curso
 
@@ -963,10 +919,13 @@ function aplicarSnapshot(lista: DocenteHoja[], cambios: CambioDocente[]): void {
   }
   guardarCache(lista);
 
-  // Primera emisión: pinta TODO (por si la caché estaba vieja).
+  // Primera emisión: pinta TODO (por si la caché estaba vieja)
+  // y, UNA vez por navegador, pasa en silencio los docentes que
+  // ya existían en Firebase a la hoja (migración interna).
   if (primeraEmision) {
     primeraEmision = false;
     pintarDesdeEstado();
+    migrarSiPendiente(lista);
     return;
   }
   if (cambios.length === 0) return;
@@ -984,7 +943,10 @@ function aplicarSnapshot(lista: DocenteHoja[], cambios: CambioDocente[]): void {
         !esEcoPropio
       ) {
         cerrarModal();
-        mostrarToast('Este docente fue eliminado por otro usuario', true);
+        mostrarNotificacion(
+          'Este docente fue eliminado por otro usuario.',
+          'error',
+        );
       }
     } else if (cambio.datos !== null) {
       const docenteNuevo = cambio.datos as unknown as Docente;
@@ -1050,72 +1012,19 @@ async function cargarDocentes(): Promise<void> {
     console.error(fallo);
     lista.textContent =
       'No se pudieron cargar los docentes. Revisa tu conexión e intenta de nuevo.';
+    mostrarNotificacion('No se pudieron cargar los docentes.', 'error');
     return;
   }
 
   pintarDesdeEstado();
 }
 
-/* ----- ESPEJO EN LA HOJA DE CÁLCULO (botones del admin) ----- */
-
-/** Botón "Probar conexión": comprueba que el Apps Script
- *  responde con la URL y el token configurados. */
-async function probarConexion(): Promise<void> {
-  if (!sheetConfigurado()) {
-    mostrarAviso(
-      'Conexión pendiente',
-      'Pega la URL y el token del Apps Script en ' +
-        'src/servicios/sincronizacionDocentes.ts (SECCIÓN 2 · EDITA AQUÍ).',
-    );
-    return;
-  }
-  mostrarCargando('Probando conexión con la hoja…');
-  const ok = await probarConexionSheet();
-  ocultarCargando();
-  mostrarAviso(
-    ok ? 'Conexión correcta' : 'Sin respuesta',
-    ok
-      ? 'El Apps Script respondió bien: la hoja "DB Docentes" está lista para guardar.'
-      : 'La hoja no respondió. Revisa la URL (/exec), el token y que el despliegue de la Aplicación web esté vigente.',
-  );
-}
-
-/** Botón "Pasar Firebase al Sheet": copia TODOS los docentes que
- *  ya existen en Firebase a la pestaña Docentes de la hoja
- *  (reemplaza las filas de la pestaña). */
-async function pasarAlSheet(): Promise<void> {
-  if (!sheetConfigurado()) {
-    mostrarAviso(
-      'Conexión pendiente',
-      'Pega la URL y el token del Apps Script en ' +
-        'src/servicios/sincronizacionDocentes.ts (SECCIÓN 2 · EDITA AQUÍ).',
-    );
-    return;
-  }
-  if (docentesCargados.length === 0) {
-    mostrarAviso(
-      'Nada que pasar',
-      'Aún no hay docentes cargados en esta sesión. Pulsa "Actualizar" e intenta de nuevo.',
-    );
-    return;
-  }
-  mostrarCargando('Pasando docentes a la hoja…');
-  const lista = docentesCargados.map((d) => ({ ...d, id: d.id }) as DocenteHoja);
-  const ok = await migrarDocentesAlSheet(lista);
-  ocultarCargando();
-  mostrarAviso(
-    ok ? 'Listo' : 'Sin respuesta',
-    ok
-      ? 'Los ' +
-        docentesCargados.length +
-        ' docentes se copiaron a la pestaña "Docentes" de la hoja.'
-      : 'La hoja no respondió. Revisa la URL (/exec), el token y el despliegue de la Aplicación web.',
-  );
-}
-
 /* ============================================================
   SECCIÓN 9 · GUARDAR, ELIMINAR Y ARCHIVAR (NO EDITAR)
-  Cada escritura: 1) anti-eco, 2) Firestore, 3) copia a la hoja.
+  Cada escritura: 1) anti-eco, 2) Firestore, 3) copia a la hoja
+  en silencio, 4) notificación push del resultado (verde si se
+  logró, roja si falló; los errores de VALIDACIÓN quedan
+  escritos dentro del formulario, no en notificación).
   La tabla se actualiza SOLA con el snapshot: ya no se recarga.
 ============================================================ */
 
@@ -1265,23 +1174,23 @@ async function guardarDocente(
     ecoPropio.fecha = Date.now();
     await setDoc(doc(db, COLECCION_DOCENTES, idDocumento), datos);
     cerrarModal();
-    // La tabla se actualiza SOLA con el snapshot (sin recargar).
-    // Copia del docente a la HOJA DE CÁLCULO (Apps Script).
-    void enviarDocenteAlSheet({ id: idDocumento, ...datos }).then(
-      (guardadoEnHoja) => {
-        if (guardadoEnHoja) {
-          mostrarToast('Docente guardado también en la hoja de cálculo');
-        } else if (sheetConfigurado()) {
-          mostrarToast(
-            'La hoja de cálculo no respondió (Firebase sí guardó el docente)',
-            true,
-          );
-        }
-      },
+    // Notificación push del resultado (arriba a la derecha, 5 s):
+    // verde si se guardó, según sea CREACIÓN o EDICIÓN.
+    mostrarNotificacion(
+      docente !== null
+        ? 'Docente editado correctamente.'
+        : 'Docente creado correctamente.',
+      'exito',
     );
+    // La tabla se actualiza SOLA con el snapshot (sin recargar).
+    // Copia EN SILENCIO del docente a la HOJA DE CÁLCULO (Apps
+    // Script): sin notificación; si la hoja no responde, la app
+    // sigue igual (Firebase sí guardó el docente).
+    void enviarDocenteAlSheet({ id: idDocumento, ...datos });
   } catch (fallo) {
     lineaError.textContent =
       'No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
+    mostrarNotificacion('No se pudo guardar el docente.', 'error');
     console.error(fallo);
   } finally {
     ocultarCargando();
@@ -1331,20 +1240,14 @@ async function confirmarEliminar(
     ecoPropio.fecha = Date.now();
     await deleteDoc(doc(db, COLECCION_DOCENTES, docente.id));
     cerrarModal();
+    // Notificación push del resultado (arriba a la derecha, 5 s).
+    mostrarNotificacion('Docente eliminado correctamente.', 'exito');
     // La fila sale SOLA con el snapshot (sin recargar).
-    // La fila del docente también se borra de la HOJA.
-    void enviarEliminacionAlSheet(docente.id).then((borradoEnHoja) => {
-      if (borradoEnHoja) {
-        mostrarToast('Fila borrada también de la hoja de cálculo');
-      } else if (sheetConfigurado()) {
-        mostrarToast(
-          'La hoja de cálculo no respondió (Firebase sí eliminó el docente)',
-          true,
-        );
-      }
-    });
+    // La fila del docente también se borra de la HOJA en silencio.
+    void enviarEliminacionAlSheet(docente.id);
   } catch (fallo) {
     lineaError.textContent = 'No se pudo eliminar. Intenta de nuevo.';
+    mostrarNotificacion('No se pudo eliminar al docente.', 'error');
     console.error(fallo);
   } finally {
     ocultarCargando();
@@ -1370,27 +1273,22 @@ async function archivarDocente(
       { archivado },
       { merge: true },
     );
-    // La fila se mueve SOLA de zona con el snapshot.
-    // La hoja recibe SOLO el cambio parcial (columna Archivado).
-    void enviarDocenteAlSheet({ id: docente.id, archivado }).then(
-      (guardadoEnHoja) => {
-        if (guardadoEnHoja) {
-          mostrarToast('Estado actualizado también en la hoja de cálculo');
-        } else if (sheetConfigurado()) {
-          mostrarToast(
-            'La hoja de cálculo no respondió (Firebase sí actualizó el docente)',
-            true,
-          );
-        }
-      },
+    // Notificación push del resultado (arriba a la derecha, 5 s).
+    mostrarNotificacion(
+      archivado ? 'Docente archivado.' : 'Docente restaurado.',
+      'exito',
     );
+    // La fila se mueve SOLA de zona con el snapshot.
+    // La hoja recibe SOLO el cambio parcial (columna Archivado),
+    // en silencio (sin notificación).
+    void enviarDocenteAlSheet({ id: docente.id, archivado });
   } catch (fallo) {
     console.error(fallo);
-    mostrarAviso(
-      'Error',
+    mostrarNotificacion(
       archivado
         ? 'No se pudo archivar al docente. Intenta de nuevo.'
         : 'No se pudo restaurar al docente. Intenta de nuevo.',
+      'error',
     );
   } finally {
     ocultarCargando();
@@ -1906,29 +1804,6 @@ export function crearVistaDocentes(): HTMLElement {
   });
   botones.append(botonActualizar, botonAgregar);
 
-  // Botones de la HOJA DE CÁLCULO: SOLO el admin los ve.
-  if (rolSesionActual() === 'admin') {
-    const botonProbar = document.createElement('button');
-    botonProbar.type = 'button';
-    botonProbar.className = 'boton-secundario boton-con-icono';
-    botonProbar.title = 'Comprueba que la hoja de cálculo responde';
-    botonProbar.innerHTML = ICONOS.nube + '<span>Probar conexión</span>';
-    botonProbar.addEventListener('click', () => {
-      void probarConexion();
-    });
-
-    const botonPasar = document.createElement('button');
-    botonPasar.type = 'button';
-    botonPasar.className = 'boton-secundario boton-con-icono';
-    botonPasar.title = 'Copia TODOS los docentes de Firebase a la hoja';
-    botonPasar.innerHTML = ICONOS.hoja + '<span>Pasar Firebase al Sheet</span>';
-    botonPasar.addEventListener('click', () => {
-      void pasarAlSheet();
-    });
-
-    botones.append(botonProbar, botonPasar);
-  }
-
   // --- Resumen (se llena al terminar la carga) ---
   const resumen = document.createElement('p');
   resumen.id = 'docentes-resumen';
@@ -2000,6 +1875,9 @@ export function crearVistaDocentes(): HTMLElement {
     ) {
       listaViva.textContent =
         'No se pudieron cargar los docentes. Revisa tu conexión e intenta de nuevo.';
+      // Notificación roja SOLO si el listado quedó vacío (si hay
+      // filas pintadas no se avisa, para no saturar de avisos).
+      mostrarNotificacion('No se pudieron cargar los docentes.', 'error');
     }
   });
 
