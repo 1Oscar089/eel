@@ -31,20 +31,23 @@
   - Subsección restringida → la sección SE SIGUE viendo, pero esa
     subsección no aparece en su lista.
   - Si a un rol no le queda NINGUNA subsección visible, la sección
-    navega directo (no abre la vista de subsecciones).
+    navega directo (no abre el panel de subsecciones).
 
   COMPORTAMIENTO DE LAS SUBSECCIONES (en los 3 dispositivos):
-  1. Clic en una sección CON subsecciones: navega a la sección y el
-     menú se sustituye COMPLETO por la vista de subsecciones; arriba
-     solo queda la flecha atrás (←).
-  2. La flecha atrás (o ESC, o un segundo clic en la misma sección)
-     cierra las subsecciones y regresa el menú.
-  3. Clic en una sección SIN subsecciones: navega y, si había
-     subsecciones abiertas, el menú regresa solo.
-  - Escritorio: si el sidebar estaba en mini (72px), se expande solo.
-  - Tablet/móvil: si el menú está cerrado, se abre el panel flotante.
-  - Al cerrar el panel flotante o colapsar a mini, las subsecciones
-    se cierran solas y el menú vuelve a su lugar.
+  1. Clic en una sección CON subsecciones: NO navega y la vista
+     actual NO se quita; se abre OTRA SIDEBAR A LA PAR (un panel
+     pegado al costado del menú) con sus subsecciones.
+  2. La X del panel, ESC, un segundo clic en la misma sección o
+     un clic FUERA del sidebar cierran el panel a la par.
+  3. Clic en una sección SIN subsecciones (p. ej. Inicio): navega
+     directo y, si el panel estaba abierto, se cierra solo.
+  4. Al ELEGIR una subsección SÍ cambia la vista: la subsección
+     queda marcada y la sección padre activa. En tablet/móvil el
+     panel flotante se cierra para dejar ver la vista elegida; en
+     escritorio el panel a la par permanece mostrándola activa.
+  - El panel a la par funciona en los 3 dispositivos: junto al
+    menú expandido, junto al carril mini (72px), junto al panel
+    flotante de tablet y sobre el drawer de móvil.
 
   Iconos: catálogo con +14,000 SVG listos para copiar en
   download/iconos-svg.txt y download/catalogo-iconos.html
@@ -55,12 +58,12 @@
 ============================================================ */
 import { rolEfectivo, type Rol } from '../proyecto-1/login';
 
-/** Subsección: opción de segundo nivel que vive DENTRO del sidebar.
- *  `roles` decide quién ve ESTA subsección (la sección puede verse
- *  igual aunque alguna subsección quede oculta). */
+/** Subsección: opción de segundo nivel que se abre A LA PAR del
+ *  sidebar. `roles` decide quién ve ESTA subsección (la sección
+ *  puede verse igual aunque alguna subsección quede oculta). */
 export interface SubSeccion {
-  titulo: string;   // texto visible en la vista de subsecciones
-  ruta: string;     // hash de navegación, p. ej. '#/inicio/resumen'
+  titulo: string;   // texto visible en el panel a la par
+  ruta: string;     // hash de navegación, p. ej. '#/estudiantes/nomina'
   roles: Rol[];     // quiénes pueden ver esta subsección
 }
 
@@ -71,7 +74,7 @@ export interface ItemMenu {
   ruta: string;                    // hash de navegación, p. ej. '#/inicio'
   roles: Rol[];                    // quiénes pueden ver esta sección
   icono: string;                   // SVG inline (stroke="currentColor" hereda el color)
-  subsecciones?: SubSeccion[];     // si se declara, la sección abre la vista de subsecciones
+  subsecciones?: SubSeccion[];     // si se declara, la sección abre el PANEL A LA PAR
 }
 
 /* ============================================================
@@ -84,8 +87,8 @@ const RUTA_POR_DEFECTO = '#/inicio';
 
 /** Media query de tablet/móvil: debe coincidir con
  *  @media (max-width: 1024px) de layout.css. En estos anchos el
- *  menú funciona como carril de iconos o panel flotante, y las
- *  subsecciones se muestran dentro de él. */
+ *  menú funciona como carril de iconos o panel flotante, y el
+ *  panel de subsecciones se abre A LA PAR de cualquiera de los dos. */
 const MQ_TABLET = '(max-width: 1024px)';
 
 /** GRUPOS DE ROLES listos para usar en `roles` (secciones y
@@ -113,11 +116,12 @@ let listaMontada: HTMLUListElement | null = null;
 /** <nav> del sidebar cuando ya está en pantalla (null antes de montar). */
 let navMontado: HTMLElement | null = null;
 
-/** Vista de subsecciones (se crea al usarse por primera vez). */
-let vistaSub: HTMLElement | null = null;
+/** Panel de subsecciones A LA PAR (se crea al usarse por primera
+ *  vez; vive DENTRO del nav y el CSS lo ancla a su costado). */
+let panelSub: HTMLElement | null = null;
 
-/** Ruta de la sección cuyas subsecciones están abiertas
- *  (null = se está viendo el menú normal). */
+/** Ruta de la sección cuyo panel de subsecciones está abierto
+ *  (null = el panel está cerrado). */
 let seccionAbierta: string | null = null;
 
 /* ============================================================
@@ -132,18 +136,24 @@ let seccionAbierta: string | null = null;
   - icono:  SVG con fill="none" stroke="currentColor";
             líneas rectas → butt/miter · curvas → round/round.
   - subsecciones (OPCIONAL): lista { titulo, ruta, roles }. Si se
-            declara, la sección abre la vista de subsecciones.
+            declara, el clic NO navega y NO cambia la vista: abre
+            el PANEL A LA PAR; la vista cambia SOLO al ELEGIR una
+            subsección.
 
   ORDEN AUTOMÁTICO: da igual el orden en que se escriban los
   bloques. "Inicio" SIEMPRE queda arriba y las demás secciones
   se ordenan solas alfabéticamente (SECCIÓN 6). Las subsecciones
   de cada sección también salen en orden alfabético.
 
-  Habilitadas por ahora: Inicio, Docentes y Estudiantes. Las
-  demás secciones quedan COMENTADAS y se activan quitándoles
-  el comentario conforme se construyan.
+  Habilitadas por ahora: Inicio (SIN subsecciones), Docentes y
+  Estudiantes. Las demás secciones quedan COMENTADAS y se activan
+  quitándoles el comentario conforme se construyan.
 ============================================================ */
 
+/* SECCIÓN HABILITADA — Inicio. Es SOLO la sección de entrada:
+   NO tiene subsecciones y su clic navega directo a la vista
+   general (por ahora el estado general; el contenido por rol se
+   construirá más adelante, según quién vea). */
 agregarItemMenu({
   titulo: 'Inicio',
   ruta: '#/inicio',
@@ -156,15 +166,6 @@ agregarItemMenu({
       <path d="M5 9.5V21h14V9.5" />
       <path d="M9 21v-6h6v6" />
     </svg>`,
-  // EDITA AQUÍ: subsecciones de ejemplo. Cada una lleva SU propio
-  // `roles`: la sección se ve para todos, pero cada subsección solo
-  // la ven los roles de su lista (prueba con "Ver como").
-  subsecciones: [
-    { titulo: 'Resumen del día', ruta: '#/inicio/resumen', roles: TODOS },
-    { titulo: 'Accesos rápidos', ruta: '#/inicio/accesos', roles: PERSONAL },
-    { titulo: 'Avisos y recordatorios', ruta: '#/inicio/avisos', roles: TODOS },
-    { titulo: 'Calendario escolar', ruta: '#/inicio/calendario', roles: DIRECCION },
-  ],
 });
 
 /* SECCIÓN HABILITADA — Docentes (solo admin y director). Aunque
@@ -186,14 +187,16 @@ agregarItemMenu({
 });
 
 /* SECCIÓN HABILITADA — Estudiantes con sus subsecciones
-   (Matricular, Nomina y Actualizar). Al hacer clic, el menú se
-   sustituye por la vista de subsecciones (con la flecha atrás);
-   cada subsección navega a su propia ruta. En la lista salen en
-   orden alfabético: Actualizar, Matricular, Nomina. */
+   (Actualizar, Matricular y Nomina). Visible para admin, director
+   y MAESTROS (profesor), y SUS SUBSECCIONES TAMBIÉN PARA LOS
+   TRES (grupo PERSONAL). El clic NO cambia la vista: abre el
+   panel a la par; la vista cambia solo al elegir una subsección.
+   En la lista salen en orden alfabético: Actualizar, Matricular,
+   Nomina. */
 agregarItemMenu({
   titulo: 'Estudiantes',
   ruta: '#/estudiantes',
-  roles: DIRECCION, // EDITA AQUÍ: quién ve la sección completa
+  roles: PERSONAL, // admin + director + maestros (profesor)
   icono: `
     <svg class="sidebar-icono" viewBox="0 0 24 24" fill="none"
          stroke="currentColor" stroke-width="2" stroke-linecap="butt"
@@ -203,9 +206,9 @@ agregarItemMenu({
       <path d="M21.5 9.5v5.5" />
     </svg>`,
   subsecciones: [
-    { titulo: 'Actualizar', ruta: '#/estudiantes/actualizar', roles: DIRECCION },
-    { titulo: 'Matricular', ruta: '#/estudiantes/matricular', roles: DIRECCION },
-    { titulo: 'Nomina', ruta: '#/estudiantes/nomina', roles: DIRECCION },
+    { titulo: 'Actualizar', ruta: '#/estudiantes/actualizar', roles: PERSONAL },
+    { titulo: 'Matricular', ruta: '#/estudiantes/matricular', roles: PERSONAL },
+    { titulo: 'Nomina', ruta: '#/estudiantes/nomina', roles: PERSONAL },
   ],
 });
 
@@ -819,8 +822,9 @@ function rutaActual(): string {
 /**
  * Marca como activa la opción cuya ruta coincida con el hash.
  * También activa la sección padre de una subsección:
- * con '#/inicio/avisos' queda activo 'Inicio' (#/inicio).
- * Sin hash en la URL se usa RUTA_POR_DEFECTO (SECCIÓN 2).
+ * con '#/estudiantes/nomina' queda activo 'Estudiantes'
+ * (#/estudiantes). Sin hash en la URL se usa RUTA_POR_DEFECTO
+ * (SECCIÓN 2).
  */
 function seleccionarItem(ruta: string): void {
   const rutaBuscada = ruta === '' ? RUTA_POR_DEFECTO : ruta;
@@ -834,27 +838,31 @@ function seleccionarItem(ruta: string): void {
     enlace.classList.toggle('activo', esActual);
   });
 
-  // Y marca la subsección activa dentro de la vista (si está abierta)
+  // Y marca la subsección activa dentro del panel (si está abierto)
   seleccionarSub(rutaBuscada);
 }
 
-/** Marca como activa la subsección que coincida con el hash. */
+/** Marca como activa la subsección que coincida con el hash
+ *  dentro del panel a la par (si está en pantalla). */
 function seleccionarSub(ruta: string): void {
-  const vista = vistaSub;
-  if (vista === null) return;
-  const enlaces = vista.querySelectorAll('a.sub-item');
+  const panel = panelSub;
+  if (panel === null) return;
+  const enlaces = panel.querySelectorAll('a.sub-item');
   enlaces.forEach((enlace) => {
     enlace.classList.toggle('activo', enlace.getAttribute('href') === ruta);
   });
 }
 
 /* ============================================================
-  SECCIÓN 8 · VISTA DE SUBSECCIONES (NO EDITAR)
-  Sustituye al menú DENTRO del mismo sidebar: al abrir las
-  subsecciones, el menú (marca + lista) se oculta completo y queda
-  una vista con la flecha atrás, el nombre de la sección y la
-  lista. Funciona en los 3 dispositivos (escritorio, panel flotante
-  de tablet y drawer de móvil).
+  SECCIÓN 8 · PANEL DE SUBSECCIONES A LA PAR (NO EDITAR)
+  Al abrir las subsecciones de una sección NO se sustituye el
+  menú y la vista actual NO se quita: se muestra OTRA SIDEBAR a
+  la par — un panel hijo del <nav> anclado a su costado (left:
+  100%) con el nombre de la sección, la lista de subsecciones y
+  una X para cerrar. Como es hijo del nav, se mueve con él en los
+  3 dispositivos: junto al menú expandido, junto al carril mini
+  (72px), junto al panel flotante de tablet y sobre el drawer de
+  móvil (allí lo cubre, porque a la par no cabe).
 ============================================================ */
 
 /** true si la ventana actual es tablet o móvil (≤1024px). */
@@ -862,65 +870,64 @@ function esPantallaChica(): boolean {
   return window.matchMedia(MQ_TABLET).matches;
 }
 
-/** Crea (una sola vez) la vista de subsecciones y la deja dentro del
- *  nav, después de la lista del menú. El CSS la mantiene oculta
- *  hasta que el nav reciba la clase .con-sub. */
-function obtenerVistaSub(nav: HTMLElement): HTMLElement {
-  if (vistaSub !== null) return vistaSub;
+/** Crea (una sola vez) el panel a la par y lo deja DENTRO del nav
+ *  (el CSS lo ancla a left: 100%). Oculto hasta recibir .abierto. */
+function obtenerPanelSub(nav: HTMLElement): HTMLElement {
+  if (panelSub !== null) return panelSub;
 
-  const vista = document.createElement('div');
-  vista.className = 'sidebar-vista-sub';
-  vista.setAttribute('aria-label', 'Subsecciones de la sección');
+  const panel = document.createElement('div');
+  panel.className = 'panel-sub';
+  panel.setAttribute('aria-label', 'Subsecciones de la sección');
 
-  // Cabecera: flecha atrás + nombre de la sección
+  // Cabecera: nombre de la sección + botón X para cerrar
   const cabecera = document.createElement('div');
-  cabecera.className = 'sub-cabecera';
-
-  const botonAtras = document.createElement('button');
-  botonAtras.type = 'button';
-  botonAtras.className = 'sub-atras';
-  botonAtras.setAttribute('aria-label', 'Volver al menú');
-  botonAtras.innerHTML = `
-    <svg class="sub-atras-icono" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2" stroke-linecap="butt"
-         stroke-linejoin="miter" aria-hidden="true">
-      <path d="M19 12H5" />
-      <path d="M11 6l-6 6 6 6" />
-    </svg>`;
-  botonAtras.addEventListener('click', () => cerrarVistaSub());
+  cabecera.className = 'panel-sub-cabecera';
 
   const titulo = document.createElement('span');
-  titulo.className = 'sub-titulo';
+  titulo.className = 'panel-sub-titulo';
 
-  cabecera.appendChild(botonAtras);
-  cabecera.appendChild(titulo);
+  const botonCerrar = document.createElement('button');
+  botonCerrar.type = 'button';
+  botonCerrar.className = 'panel-sub-cerrar';
+  botonCerrar.setAttribute('aria-label', 'Cerrar subsecciones');
+  botonCerrar.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"
+         aria-hidden="true">
+      <path d="M5 5l14 14" />
+      <path d="M19 5L5 19" />
+    </svg>`;
+  botonCerrar.addEventListener('click', () => cerrarPanelSub());
 
-  // Lista de subsecciones (se llena en abrirVistaSub)
+  cabecera.append(titulo, botonCerrar);
+
+  // Lista de subsecciones (se llena en abrirPanelSub)
   const lista = document.createElement('ul');
   lista.className = 'sub-lista';
 
-  vista.appendChild(cabecera);
-  vista.appendChild(lista);
+  panel.append(cabecera, lista);
 
-  // Vive DENTRO del nav, después de la lista del menú
-  nav.appendChild(vista);
+  // Vive DENTRO del nav: el CSS lo pega a la par (left: 100%)
+  nav.appendChild(panel);
 
-  vistaSub = vista;
-  return vista;
+  panelSub = panel;
+  return panel;
 }
 
-/** Sustituye el menú por la vista con las subsecciones VISIBLES de
- *  la sección indicada (las bloqueadas por rol no se dibujan). */
-function abrirVistaSub(item: ItemMenu): void {
+/** Abre el panel a la par con las subsecciones VISIBLES de la
+ *  sección indicada (las bloqueadas por rol no se dibujan). NO
+ *  navega: la vista actual sigue en pantalla hasta que se elija
+ *  una subsección. */
+function abrirPanelSub(item: ItemMenu): void {
   const nav = navMontado;
   if (nav === null) return;
-  const vista = obtenerVistaSub(nav);
+  const panel = obtenerPanelSub(nav);
 
   // Nombre de la sección en la cabecera
-  const titulo = vista.querySelector('.sub-titulo');
+  const titulo = panel.querySelector('.panel-sub-titulo');
   if (titulo !== null) titulo.textContent = item.titulo;
 
-  const lista = vista.querySelector('.sub-lista');
+  const lista = panel.querySelector('.sub-lista');
   if (lista !== null) {
     lista.innerHTML = '';
     for (const sub of subsVisibles(item)) {
@@ -934,15 +941,17 @@ function abrirVistaSub(item: ItemMenu): void {
     }
   }
 
-  // El menú completo se oculta y la vista entra en su lugar
-  nav.classList.add('con-sub');
+  panel.classList.add('abierto');
   seccionAbierta = item.ruta;
+  // Si la vista ya era una subsección de esta sección, queda
+  // marcada al instante (p. ej. recargar en #/estudiantes/nomina).
   seleccionarSub(rutaActual());
 }
 
-/** Cierra la vista de subsecciones y regresa el menú. */
-function cerrarVistaSub(): void {
-  navMontado?.classList.remove('con-sub');
+/** Cierra el panel a la par (X, ESC, segundo clic en la sección,
+ *  clic fuera del sidebar o navegación a una sección ajena). */
+function cerrarPanelSub(): void {
+  panelSub?.classList.remove('abierto');
   seccionAbierta = null;
 }
 
@@ -991,7 +1000,6 @@ export function crearSidebar(): HTMLElement {
   nav.appendChild(marca);
 
   // Lista con SOLO las opciones permitidas para el rol activo
-  // (itemsMenu ya viene ordenado: Inicio arriba, resto A-Z)
   const lista = document.createElement('ul');
   lista.className = 'sidebar-lista';
   for (const item of itemsMenu) {
@@ -1004,68 +1012,69 @@ export function crearSidebar(): HTMLElement {
   listaMontada = lista;
   navMontado = nav;
 
-  // --- Clic en una sección: subsecciones o navegación directa ---
+  // --- Clic dentro del sidebar ---
   nav.addEventListener('click', (evento) => {
-    const enlace = (evento.target as HTMLElement).closest('a.sidebar-item');
+    // a) Elegir una SUBSECCIÓN SÍ navega (el enlace actúa solo).
+    //    En tablet/móvil el panel flotante se cierra para dejar
+    //    ver la vista elegida; en escritorio el panel a la par
+    //    permanece abierto mostrando la subsección activa.
+    const subElegida = (evento.target as HTMLElement).closest(
+      'a.sub-item',
+    );
+    if (subElegida !== null) {
+      if (esPantallaChica()) {
+        nav.classList.remove('sidebar-open');
+        cerrarPanelSub();
+      }
+      return;
+    }
+
+    // b) Clic en una SECCIÓN del menú
+    const enlace = (evento.target as HTMLElement).closest(
+      'a.sidebar-item',
+    );
     if (enlace === null) return;
 
     const item = itemPorRuta(enlace.getAttribute('href') ?? '');
     if (item === undefined) return;
 
     if (tieneSubseccionesVisibles(item)) {
-      // Segundo clic sobre la misma sección: regresar al menú
+      // CLAVE: la vista actual NO se quita. El clic NO navega
+      // (se cancela el enlace): solo abre/cierra el panel a la
+      // par. La vista cambia SOLO al elegir una subsección.
+      evento.preventDefault();
       if (seccionAbierta === item.ruta) {
-        cerrarVistaSub();
-        return;
-      }
-      // Asegurar que el sidebar tenga ancho para las subsecciones:
-      // tablet/móvil → panel flotante; escritorio → salir del mini
-      if (esPantallaChica()) {
-        nav.classList.add('sidebar-open');
+        cerrarPanelSub(); // segundo clic en la misma sección: cerrar
       } else {
-        nav.classList.remove('sidebar-mini');
+        abrirPanelSub(item);
       }
-      abrirVistaSub(item);
     } else if (seccionAbierta !== null) {
-      // Sección sin subsecciones visibles: el menú regresa
-      cerrarVistaSub();
+      // Sección SIN subsecciones (p. ej. Inicio): navega y el
+      // panel a la par se cierra solo.
+      cerrarPanelSub();
     }
   });
 
-  // Si el sidebar colapsa a mini o el panel flotante se cierra,
-  // las subsecciones se cierran solas (el menú vuelve a su lugar)
-  const observador = new MutationObserver(() => {
+  // Un clic FUERA del sidebar también cierra el panel a la par
+  document.addEventListener('click', (evento) => {
     if (seccionAbierta === null) return;
-    const enMini = nav.classList.contains('sidebar-mini');
-    const flotanteCerrado =
-      esPantallaChica() && !nav.classList.contains('sidebar-open');
-    if (enMini || flotanteCerrado) cerrarVistaSub();
+    if (navMontado?.contains(evento.target as Node)) return;
+    cerrarPanelSub();
   });
-  observador.observe(nav, { attributes: true, attributeFilter: ['class'] });
 
-  // La tecla ESC también cierra las subsecciones
+  // La tecla ESC también cierra el panel a la par
   document.addEventListener('keydown', (evento) => {
-    if (evento.key === 'Escape' && seccionAbierta !== null) cerrarVistaSub();
-  });
-
-  // Al redimensionar, cierra las subsecciones si el sidebar quedó
-  // en un estado donde no caben (carril de tablet o mini)
-  window.addEventListener('resize', () => {
-    if (seccionAbierta === null) return;
-    if (esPantallaChica()) {
-      if (!nav.classList.contains('sidebar-open')) cerrarVistaSub();
-    } else if (nav.classList.contains('sidebar-mini')) {
-      cerrarVistaSub();
-    }
+    if (evento.key === 'Escape' && seccionAbierta !== null) cerrarPanelSub();
   });
 
   // Marca la sección activa según el hash con el que se entró
   seleccionarItem(rutaActual());
 
   // Y la actualiza cada vez que el hash cambie (clic o flechas).
-  // Si quedaron las subsecciones de OTRA sección abiertas y la
-  // navegación fue a una ruta ajena (p. ej. por las migas), el
-  // menú regresa solo para mostrar la sección que corresponde.
+  // Si el panel a la par quedó abierto de una sección y la
+  // navegación fue a una ruta ajena (p. ej. por las migas), se
+  // cierra solo; si fue a una subsección de ESA sección, queda
+  // abierto mostrándola activa.
   window.addEventListener('hashchange', () => {
     const ruta = rutaActual() || RUTA_POR_DEFECTO;
     if (seccionAbierta !== null) {
@@ -1073,7 +1082,7 @@ export function crearSidebar(): HTMLElement {
       const sigueAbierta =
         abierta !== undefined &&
         (ruta === abierta.ruta || ruta.startsWith(abierta.ruta + '/'));
-      if (!sigueAbierta) cerrarVistaSub();
+      if (!sigueAbierta) cerrarPanelSub();
     }
     seleccionarItem(ruta);
   });
